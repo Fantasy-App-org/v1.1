@@ -1,11 +1,16 @@
-import 'package:fantasy/pages/splash.dart';
-import 'package:fantasy/pages/welcome.dart';
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'body/homescreen.dart';
+import 'body/login.dart';
+import 'body/refral.dart';
+import 'body/splash.dart';
+import 'body/welcome.dart';
+
 // Screens
-import 'package:fantasy/pages/homescreen.dart';
-import 'package:fantasy/pages/login.dart';
+
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
