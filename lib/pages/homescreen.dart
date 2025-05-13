@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'login.dart';
-import 'mygame.dart';
+import 'package:fantasy/pages/login.dart';
+import 'package:fantasy/pages/mygame.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
