@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../service/user_service.dart';
 import 'homescreen.dart';
 
 class Dream11LoginPage extends StatefulWidget {
@@ -12,9 +13,88 @@ class Dream11LoginPage extends StatefulWidget {
 class _Dream11LoginPageState extends State<Dream11LoginPage> {
   bool isEmailLogin = false;
   bool isAgeVerified = false;
+  bool isLoading = false;
+  String? errorMessage;
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController referralController = TextEditingController();
+  final UserService _userService = UserService();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeService();
+  }
+
+  Future<void> _initializeService() async {
+    // Initialize the service
+    await _userService.initialize();
+    // Check login status after initialization
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final bool isLoggedIn = await _userService.checkLoginStatus();
+    if (isLoggedIn) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    }
+  }
+
+  Future<void> _requestOtp() async {
+    if (!isAgeVerified) {
+      setState(() {
+        errorMessage = "Please verify that you are above 18 years";
+      });
+      return;
+    }
+
+    String contact = isEmailLogin ? emailController.text : mobileController.text;
+
+    if (contact.isEmpty) {
+      setState(() {
+        errorMessage = isEmailLogin
+            ? "Please enter your email address"
+            : "Please enter your mobile number";
+      });
+      return;
+    }
+
+    setState(() {
+      errorMessage = null;
+      isLoading = true;
+    });
+
+    try {
+      bool success = await _userService.requestOtp(contact);
+
+      if (success) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OTPVerificationScreen(
+              contact: contact,
+              isEmail: isEmailLogin,
+              userService: _userService,
+            ),
+          ),
+        );
+      } else {
+        setState(() {
+          errorMessage = "Failed to send OTP. Please try again.";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = "An error occurred: ${e.toString()}";
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -37,7 +117,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Premium Header with Gradient - Using same colors as drawer
+              // Premium Header with Gradient
               Container(
                 height: screenHeight * 0.35,
                 width: double.infinity,
@@ -299,38 +379,37 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                         ],
                       ),
 
+                      // Error message display
+                      if (errorMessage != null) ...[
+                        SizedBox(height: screenHeight * 0.02),
+                        Text(
+                          errorMessage!,
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontSize: isTablet ? 14 : 12,
+                          ),
+                        ),
+                      ],
+
                       SizedBox(height: screenHeight * 0.04),
 
                       // Continue Button
                       GestureDetector(
-                        onTap: isAgeVerified
-                            ? () {
-                          String contact = isEmailLogin ? emailController.text : mobileController.text;
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => OTPVerificationScreen(
-                                contact: contact,
-                                isEmail: isEmailLogin,
-                              ),
-                            ),
-                          );
-                        }
-                            : null,
+                        onTap: isAgeVerified && !isLoading ? _requestOtp : null,
                         child: Container(
                           width: double.infinity,
                           height: screenHeight * 0.07,
                           decoration: BoxDecoration(
-                            gradient: isAgeVerified
+                            gradient: isAgeVerified && !isLoading
                                 ? LinearGradient(
                               colors: [Color(0xFF1E3A8A), Color(0xFF1E293B)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             )
                                 : null,
-                            color: isAgeVerified ? null : Colors.grey[300],
+                            color: isAgeVerified && !isLoading ? null : Colors.grey[300],
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: isAgeVerified
+                            boxShadow: isAgeVerified && !isLoading
                                 ? [
                               BoxShadow(
                                 color: Color(0xFF1E3A8A).withOpacity(0.3),
@@ -341,7 +420,9 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                                 : null,
                           ),
                           child: Center(
-                            child: Text(
+                            child: isLoading
+                                ? CircularProgressIndicator(color: Colors.white)
+                                : Text(
                               'CONTINUE',
                               style: TextStyle(
                                 color: isAgeVerified ? Colors.white : Colors.grey[500],
@@ -596,15 +677,17 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
   }
 }
 
-// OTP Verification Screen
+// OTP Verification Screen (included in the same file)
 class OTPVerificationScreen extends StatefulWidget {
   final String contact;
   final bool isEmail;
+  final UserService userService;
 
   const OTPVerificationScreen({
     Key? key,
     required this.contact,
     required this.isEmail,
+    required this.userService,
   }) : super(key: key);
 
   @override
@@ -622,6 +705,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   );
 
   bool isOTPComplete = false;
+  bool isVerifying = false;
+  String? errorMessage;
   int resendTimer = 30;
 
   @override
@@ -652,6 +737,85 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
         });
       }
     });
+  }
+
+  // Verify OTP with the service
+  Future<void> _verifyOTP() async {
+    if (!isOTPComplete) {
+      setState(() {
+        errorMessage = "Please enter the complete OTP";
+      });
+      return;
+    }
+
+    setState(() {
+      isVerifying = true;
+      errorMessage = null;
+    });
+
+    try {
+      final otp = getOTP();
+      final bool success = await widget.userService.verifyOtp(widget.contact, otp);
+
+      if (success) {
+        // Navigate to home screen on success
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
+          ),
+        );
+      } else {
+        setState(() {
+          errorMessage = "Invalid OTP. Please try again.";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = "An error occurred: ${e.toString()}";
+      });
+    } finally {
+      setState(() {
+        isVerifying = false;
+      });
+    }
+  }
+
+  // Resend OTP
+  Future<void> _resendOTP() async {
+    if (resendTimer > 0) {
+      return;
+    }
+
+    setState(() {
+      isVerifying = true;
+      errorMessage = null;
+    });
+
+    try {
+      final bool success = await widget.userService.requestOtp(widget.contact);
+
+      if (success) {
+        setState(() {
+          resendTimer = 30;
+          startResendTimer();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('OTP sent successfully')),
+        );
+      } else {
+        setState(() {
+          errorMessage = "Failed to resend OTP. Please try again.";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = "An error occurred: ${e.toString()}";
+      });
+    } finally {
+      setState(() {
+        isVerifying = false;
+      });
+    }
   }
 
   @override
@@ -786,34 +950,38 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                 }),
               ),
 
+              // Error message display
+              if (errorMessage != null) ...[
+                SizedBox(height: screenHeight * 0.02),
+                Text(
+                  errorMessage!,
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: isTablet ? 14 : 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+
               SizedBox(height: screenHeight * 0.04),
 
               // Verify Button
               GestureDetector(
-                onTap: isOTPComplete
-                    ? () {
-                  // Navigate to home screen after OTP verification
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (context) => const HomeScreen(),
-                    ),
-                  );
-                }
-                    : null,
+                onTap: isOTPComplete && !isVerifying ? _verifyOTP : null,
                 child: Container(
                   width: double.infinity,
                   height: screenHeight * 0.07,
                   decoration: BoxDecoration(
-                    gradient: isOTPComplete
+                    gradient: isOTPComplete && !isVerifying
                         ? LinearGradient(
                       colors: [Color(0xFF1E3A8A), Color(0xFF1E293B)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     )
                         : null,
-                    color: isOTPComplete ? null : Colors.grey[300],
+                    color: isOTPComplete && !isVerifying ? null : Colors.grey[300],
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: isOTPComplete
+                    boxShadow: isOTPComplete && !isVerifying
                         ? [
                       BoxShadow(
                         color: Color(0xFF1E3A8A).withOpacity(0.3),
@@ -824,7 +992,9 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         : null,
                   ),
                   child: Center(
-                    child: Text(
+                    child: isVerifying
+                        ? CircularProgressIndicator(color: Colors.white)
+                        : Text(
                       'VERIFY OTP',
                       style: TextStyle(
                         color: isOTPComplete ? Colors.white : Colors.grey[500],
@@ -851,15 +1021,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: resendTimer == 0
-                        ? () {
-                      setState(() {
-                        resendTimer = 30;
-                        startResendTimer();
-                      });
-                      // Resend OTP logic here
-                    }
-                        : null,
+                    onTap: (resendTimer == 0 && !isVerifying) ? _resendOTP : null,
                     child: Text(
                       resendTimer > 0 ? 'Resend in ${resendTimer}s' : 'Resend OTP',
                       style: TextStyle(

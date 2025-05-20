@@ -35,6 +35,11 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   shared_preferences:
+  http: ^1.1.0
+
+  # Device information packages (for device token generation)
+  device_info_plus: ^9.1.1
+  package_info_plus: ^5.0.1
 
 dev_dependencies:
   flutter_test:
