@@ -1,7 +1,8 @@
-
+import 'package:fantasy/body/profile.dart';
 import 'package:fantasy/body/refral.dart';
 import 'package:fantasy/body/tree.dart';
 import 'package:fantasy/body/wallet.dart';
+
 import 'package:flutter/material.dart';
 import 'login.dart';
 import 'mygame.dart';
@@ -932,54 +933,65 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 padding: EdgeInsets.all(screenWidth * 0.04),
                 child: Column(
                   children: [
-                    // Profile Picture
-                    Stack(
-                      children: [
-                        Container(
-                          width: isTablet ? 90 : 80,
-                          height: isTablet ? 90 : 80,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white.withOpacity(0.3), width: 3),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 15,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
+                    // Profile Picture with Tap Gesture
+                    GestureDetector(
+                      onTap: () {
+                        // Navigate to profile page
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProfilePage(),
                           ),
-                          child: CircleAvatar(
-                            backgroundColor: Colors.white,
-                            child: Icon(
-                              Icons.person,
-                              size: isTablet ? 50 : 40,
-                              color: Color(0xFF1E3A8A),
-                            ),
-                          ),
-                        ),
-                        // Premium Badge
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 28,
-                            height: 28,
+                        );
+                      },
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: isTablet ? 90 : 80,
+                            height: isTablet ? 90 : 80,
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.amber[600]!, Colors.amber[800]!],
-                              ),
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
+                              border: Border.all(color: Colors.white.withOpacity(0.3), width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
                             ),
-                            child: Icon(
-                              Icons.star,
-                              size: 16,
-                              color: Colors.white,
+                            child: CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                Icons.person,
+                                size: isTablet ? 50 : 40,
+                                color: Color(0xFF1E3A8A),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          // Premium Badge
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Colors.amber[600]!, Colors.amber[800]!],
+                                ),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: Icon(
+                                Icons.star,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     SizedBox(height: screenHeight * 0.015),
                     // User Name

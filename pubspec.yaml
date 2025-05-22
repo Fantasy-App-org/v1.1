@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences:
   http: ^1.1.0
+  image_picker:
 
   # Device information packages (for device token generation)
   device_info_plus: ^9.1.1
