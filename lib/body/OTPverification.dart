@@ -5,13 +5,13 @@ import 'homescreen.dart';
 class OTPVerificationScreen extends StatefulWidget {
   final String contact;
   final bool isEmail;
-  final UserService userService; // Add UserService parameter
+  final UserService userService; //add user_service parameter
 
   const OTPVerificationScreen({
     Key? key,
     required this.contact,
     required this.isEmail,
-    required this.userService, // Required parameter
+    required this.userService,
   }) : super(key: key);
 
   @override
@@ -29,8 +29,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   );
 
   bool isOTPComplete = false;
-  bool isVerifying = false; // Add loading state
-  String? errorMessage; // Add error message state
+  bool isVerifying = false; //add loading state
+  String? errorMessage; //add error message state
   int resendTimer = 30;
 
   @override
@@ -38,7 +38,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     super.initState();
     startResendTimer();
 
-    // Check if OTP is complete whenever text changes
+    //check if otp is complete whenever text changes
     for (var controller in otpControllers) {
       controller.addListener(_checkOTPComplete);
     }
@@ -63,7 +63,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     });
   }
 
-  // Verify OTP with the service
+  //verify otp with the service
   Future<void> _verifyOTP() async {
     if (!isOTPComplete) {
       setState(() {
@@ -82,7 +82,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       final bool success = await widget.userService.verifyOtp(widget.contact, otp);
 
       if (success) {
-        // Navigate to home screen on success
+        //home screen on success
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => const HomeScreen(),
@@ -104,7 +104,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     }
   }
 
-  // Resend OTP
+  //resend OTP
   Future<void> _resendOTP() async {
     if (resendTimer > 0) {
       return;
@@ -180,7 +180,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // OTP Icon
+              // otp icon
               Container(
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -196,7 +196,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               SizedBox(height: screenHeight * 0.03),
 
-              // Title
               Text(
                 'OTP Verification',
                 style: TextStyle(
@@ -208,7 +207,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               SizedBox(height: screenHeight * 0.02),
 
-              // Description
               Text(
                 'We have sent a verification code to',
                 style: TextStyle(
@@ -220,7 +218,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               SizedBox(height: screenHeight * 0.01),
 
-              // Contact Display
               Text(
                 widget.isEmail ? widget.contact : '+91 ${widget.contact}',
                 style: TextStyle(
@@ -232,7 +229,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               SizedBox(height: screenHeight * 0.04),
 
-              // OTP Input Fields
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: List.generate(6, (index) {
@@ -274,7 +270,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                 }),
               ),
 
-              // Error message display
+              // error message
               if (errorMessage != null) ...[
                 SizedBox(height: screenHeight * 0.02),
                 Text(
@@ -289,7 +285,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               SizedBox(height: screenHeight * 0.04),
 
-              // Verify Button
+              // verify button
               GestureDetector(
                 onTap: isOTPComplete && !isVerifying ? _verifyOTP : null,
                 child: Container(
@@ -333,7 +329,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               SizedBox(height: screenHeight * 0.03),
 
-              // Resend OTP
+              // resend otp
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -360,7 +356,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               SizedBox(height: screenHeight * 0.03),
 
-              // Change Number/Email Option
+              // change number/ email
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Text(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../service/user_service.dart';
+import '../service/user_service.dart'; // Use UserService instead of login_api
 import 'homescreen.dart';
 
 class Dream11LoginPage extends StatefulWidget {
@@ -18,7 +18,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController referralController = TextEditingController();
-  final UserService _userService = UserService();
+  final UserService _userService = UserService(); // Use UserService
 
   @override
   void initState() {
@@ -36,6 +36,8 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
   Future<void> _checkLoginStatus() async {
     final bool isLoggedIn = await _userService.checkLoginStatus();
     if (isLoggedIn) {
+      // Token is automatically available through UserService
+      print('User is logged in with token: ${_userService.authToken}');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
@@ -117,7 +119,6 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Premium Header with Gradient
               Container(
                 height: screenHeight * 0.35,
                 width: double.infinity,
@@ -130,7 +131,6 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                 ),
                 child: Stack(
                   children: [
-                    // Pattern Background
                     Positioned(
                       right: -50,
                       top: -50,
@@ -156,7 +156,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                       ),
                     ),
 
-                    // Content
+                    //content
                     Padding(
                       padding: EdgeInsets.all(screenWidth * 0.05),
                       child: Column(
@@ -198,7 +198,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                 ),
               ),
 
-              // Login Form Container
+              //login Form Container
               Container(
                 transform: Matrix4.translationValues(0, -30, 0),
                 decoration: BoxDecoration(
@@ -222,7 +222,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                     children: [
                       SizedBox(height: screenHeight * 0.02),
 
-                      // Login/Register Tabs
+                      //login/register tabs
                       Center(
                         child: Container(
                           decoration: BoxDecoration(
@@ -281,7 +281,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.04),
 
-                      // Input Field
+                      //input field
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[50],
@@ -313,7 +313,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.02),
 
-                      // Referral Code Field
+                      //referral field
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[50],
@@ -345,7 +345,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.03),
 
-                      // Age Verification with Custom Checkbox
+                      //age verification and custom checkbox
                       Row(
                         children: [
                           GestureDetector(
@@ -379,7 +379,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                         ],
                       ),
 
-                      // Error message display
+                      //error message
                       if (errorMessage != null) ...[
                         SizedBox(height: screenHeight * 0.02),
                         Text(
@@ -393,7 +393,6 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.04),
 
-                      // Continue Button
                       GestureDetector(
                         onTap: isAgeVerified && !isLoading ? _requestOtp : null,
                         child: Container(
@@ -437,7 +436,6 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.02),
 
-                      // Terms Text
                       Center(
                         child: RichText(
                           textAlign: TextAlign.center,
@@ -470,7 +468,6 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.03),
 
-                      // Divider
                       Row(
                         children: [
                           Expanded(child: Divider(color: Colors.grey[300])),
@@ -491,7 +488,6 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.03),
 
-                      // Social Login Options
                       Column(
                         children: [
                           _buildSocialButton(
@@ -517,7 +513,6 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.03),
 
-                      // Alternative Options
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -677,7 +672,6 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
   }
 }
 
-// OTP Verification Screen (included in the same file)
 class OTPVerificationScreen extends StatefulWidget {
   final String contact;
   final bool isEmail;
@@ -714,7 +708,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     super.initState();
     startResendTimer();
 
-    // Check if OTP is complete whenever text changes
+    //check if otp is complete whenever text changes
     for (var controller in otpControllers) {
       controller.addListener(_checkOTPComplete);
     }
@@ -739,7 +733,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     });
   }
 
-  // Verify OTP with the service
+  //verify otp with the service
   Future<void> _verifyOTP() async {
     if (!isOTPComplete) {
       setState(() {
@@ -758,7 +752,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       final bool success = await widget.userService.verifyOtp(widget.contact, otp);
 
       if (success) {
-        // Navigate to home screen on success
+        //home screen on success
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => const HomeScreen(),
@@ -780,7 +774,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     }
   }
 
-  // Resend OTP
+  // resend otp
   Future<void> _resendOTP() async {
     if (resendTimer > 0) {
       return;
@@ -950,7 +944,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                 }),
               ),
 
-              // Error message display
+              //error message
               if (errorMessage != null) ...[
                 SizedBox(height: screenHeight * 0.02),
                 Text(
@@ -965,7 +959,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               SizedBox(height: screenHeight * 0.04),
 
-              // Verify Button
+              //verify button
               GestureDetector(
                 onTap: isOTPComplete && !isVerifying ? _verifyOTP : null,
                 child: Container(
@@ -1009,7 +1003,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               SizedBox(height: screenHeight * 0.03),
 
-              // Resend OTP
+              //resend otp
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -1036,7 +1030,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               SizedBox(height: screenHeight * 0.03),
 
-              // Change Number/Email Option
+              //change number/email
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Text(
