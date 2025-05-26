@@ -193,8 +193,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
   }
 
-  // Add this method to your _HomeScreenState class in homescreen.dart
-
+  // API connection test method
   Future<void> _testApiConnection() async {
     final userService = UserService();
 
@@ -273,7 +272,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -510,7 +508,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 style: TextStyle(color: Colors.white),
               ),
             ),
-            // Add this button to your error screen (replace the existing retry button):
+            SizedBox(height: 8),
             ElevatedButton(
               onPressed: _testApiConnection,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
@@ -628,15 +626,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             // Contest Categories
             _buildContestCategories(screenWidth, isTablet),
 
-            // Live Matches Section
+            // Live Matches Section - Show API data if available, fallback to static data
             if (_liveMatches.isNotEmpty) ...[
               _buildSectionHeader('LIVE MATCHES', screenWidth, isTablet),
               ..._liveMatches.map((match) => _buildLiveMatchCardFromApi(match, screenWidth, isTablet)),
+            ] else if (_fixtures.isEmpty && !_isLoading) ...[
+              // Fallback to static data if no API data available
+              _buildSectionHeader('LIVE MATCHES', screenWidth, isTablet),
+              _buildStaticLiveMatchCard(screenWidth, isTablet),
             ],
 
-            // Upcoming Matches Section
+            // Upcoming Matches Section - Show API data if available, fallback to static data
             _buildSectionHeader('UPCOMING MATCHES', screenWidth, isTablet),
-            if (_upcomingMatches.isEmpty)
+            if (_upcomingMatches.isEmpty && _fixtures.isEmpty && !_isLoading) ...[
+              // Fallback to static data if no API data available
+              _buildStaticUpcomingMatchCard(screenWidth, isTablet, 'Mumbai Indians', 'MI', Colors.blue[800], 'Chennai Super Kings', 'CSK', Colors.yellow[700], 'IPL 2025', '2h 30m', '24 Contests', '₹5 Lakhs'),
+              _buildStaticUpcomingMatchCard(screenWidth, isTablet, 'India', 'IND', Colors.blue[900], 'England', 'ENG', Colors.red[700], 'Test Match - Day 1', '1 Day', '18 Contests', '₹10 Lakhs'),
+            ] else if (_upcomingMatches.isEmpty)
               Container(
                 margin: EdgeInsets.all(screenWidth * 0.04),
                 padding: EdgeInsets.all(screenWidth * 0.08),
@@ -670,6 +676,269 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             SizedBox(height: screenHeight * 0.02),
           ],
         ),
+      ),
+    );
+  }
+
+  // Static fallback live match card
+  Widget _buildStaticLiveMatchCard(double screenWidth, bool isTablet) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenWidth * 0.02),
+      padding: EdgeInsets.all(screenWidth * 0.04),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.green[700]!, Colors.green[900]!],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withOpacity(0.3),
+            blurRadius: 12,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.circle, size: 8, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text(
+                          'LIVE',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isTablet ? 12 : 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'ODI - 3rd Match',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: isTablet ? 14 : 12,
+                    ),
+                  ),
+                ],
+              ),
+              Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+            ],
+          ),
+          SizedBox(height: screenWidth * 0.04),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildTeamScore('India', '🇮🇳', '285/6', screenWidth, isTablet),
+              Text(
+                'VS',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isTablet ? 18 : 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              _buildTeamScore('Australia', '🇦🇺', '267/8', screenWidth, isTablet),
+            ],
+          ),
+          SizedBox(height: screenWidth * 0.04),
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'India won by 18 runs',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isTablet ? 14 : 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Static fallback upcoming match card
+  Widget _buildStaticUpcomingMatchCard(
+      double screenWidth,
+      bool isTablet,
+      String team1,
+      String team1Logo,
+      Color? team1Color,
+      String team2,
+      String team2Logo,
+      Color? team2Color,
+      String matchType,
+      String timeLeft,
+      String contestCount,
+      String prizeMoney
+      ) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenWidth * 0.02),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 12,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Match Type Header
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenWidth * 0.03),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  matchType,
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontSize: isTablet ? 14 : 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Text(
+                    timeLeft,
+                    style: TextStyle(
+                      color: Colors.red[700],
+                      fontSize: isTablet ? 12 : 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Teams
+          Padding(
+            padding: EdgeInsets.all(screenWidth * 0.04),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildTeamLogo(team1, team1Logo, team1Color, screenWidth, isTablet),
+                Column(
+                  children: [
+                    Text(
+                      'VS',
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: isTablet ? 16 : 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Icon(Icons.sports_cricket, color: Colors.grey[400], size: 20),
+                  ],
+                ),
+                _buildTeamLogo(team2, team2Logo, team2Color, screenWidth, isTablet),
+              ],
+            ),
+          ),
+
+          // Contest Info
+          Container(
+            padding: EdgeInsets.all(screenWidth * 0.04),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.emoji_events, color: Colors.amber[700], size: isTablet ? 20 : 18),
+                    SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          prizeMoney,
+                          style: TextStyle(
+                            color: Colors.grey[900],
+                            fontSize: isTablet ? 16 : 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          contestCount,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: isTablet ? 12 : 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF3B82F6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.04,
+                      vertical: screenWidth * 0.025,
+                    ),
+                  ),
+                  child: Text(
+                    'JOIN NOW',
+                    style: TextStyle(
+                      fontSize: isTablet ? 14 : 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1075,7 +1344,71 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  Widget _buildTeamScore(String team, String flag, String score, double screenWidth, bool isTablet) {
+    return Column(
+      children: [
+        Text(
+          flag,
+          style: TextStyle(fontSize: isTablet ? 36 : 32),
+        ),
+        SizedBox(height: 4),
+        Text(
+          team,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: isTablet ? 16 : 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Text(
+          score,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: isTablet ? 20 : 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildApiTeamLogo(String team, String logo, Color? color, double screenWidth, bool isTablet) {
+    return Column(
+      children: [
+        Container(
+          width: isTablet ? 80 : 70,
+          height: isTablet ? 80 : 70,
+          decoration: BoxDecoration(
+            color: color?.withOpacity(0.1) ?? Colors.grey[100],
+            shape: BoxShape.circle,
+            border: Border.all(color: color ?? Colors.grey[300]!, width: 2),
+          ),
+          child: Center(
+            child: Text(
+              logo,
+              style: TextStyle(
+                color: color ?? Colors.grey[700],
+                fontSize: isTablet ? 28 : 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          team,
+          style: TextStyle(
+            color: Colors.grey[800],
+            fontSize: isTablet ? 14 : 12,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTeamLogo(String team, String logo, Color? color, double screenWidth, bool isTablet) {
     return Column(
       children: [
         Container(
@@ -1363,7 +1696,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.015),
-                    // User Name
+                    // User Name - Use dynamic name
                     Text(
                       _getUserDisplayName(),
                       style: TextStyle(

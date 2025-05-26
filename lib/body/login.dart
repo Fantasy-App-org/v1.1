@@ -660,6 +660,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                     'SUBMIT',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
                   ),
                 ),
