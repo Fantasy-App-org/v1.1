@@ -1,6 +1,7 @@
+import 'package:fantasy/body/signup.dart';
 import 'package:flutter/material.dart';
 
-import 'homescreen.dart';
+
 import 'login.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -18,7 +19,7 @@ class _SplashScreenState extends State<SplashScreen> {
     Future.delayed(const Duration(seconds: 2), () {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => const Dream11LoginPage(), // Replace with your login screen
+          builder: (context) => const SignupPage(), // Replace with your login screen
         ),
       );
     });
