@@ -204,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       // Test 1: Check if server is reachable
       print('📡 Testing server connectivity...');
       final pingResponse = await http.get(
-        Uri.parse('http://localhost:3000/'),
+        Uri.parse('http://13.232.147.237:3000/'),
       ).timeout(Duration(seconds: 5));
 
       print('✅ Server reachable: ${pingResponse.statusCode}');
@@ -228,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       print('Token preview: ${token.substring(0, 30)}...');
 
       final response = await http.get(
-        Uri.parse('http://localhost:3000/web-services/fixtures?page=1'),
+        Uri.parse('http://13.232.147.237:3000/web-services/fixtures?page=1'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

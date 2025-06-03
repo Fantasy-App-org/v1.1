@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../service/user_service.dart';
 
 class FixtureApi {
-  static const String baseUrl = 'http://localhost:3000'; // Replace with your actual API URL
+  static const String baseUrl = 'http://13.232.147.237:3000'; // Replace with your actual API URL
   static final UserService _userService = UserService();
 
   static Future<Map<String, dynamic>> getFixtures({int page = 1}) async {

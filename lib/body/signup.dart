@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'homescreen.dart';
 import 'login.dart';
+import '../api/signup_api.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({Key? key}) : super(key: key);
@@ -382,18 +383,72 @@ class _SignupPageState extends State<SignupPage> {
                       // Sign Up Button
                       GestureDetector(
                         onTap: areFieldsValid()
-                            ? () {
+                            ? () async {
                           String contact = isEmailSignup ? emailController.text : mobileController.text;
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => OTPVerificationScreen(
-                                contact: contact,
-                                isEmail: isEmailSignup,
-                                isSignup: true,
+                          String userName = nameController.text;
+                          String inviteCode = referralController.text;
+
+                          // Show loading indicator
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
                               ),
                             ),
                           );
+
+                          // Request OTP
+                          Map<String, dynamic> response = await SignupApi.requestSignupOtp(
+                            contact,
+                            userName,
+                            inviteCode,
+                          );
+
+                          // Hide loading indicator
+                          Navigator.pop(context);
+
+                          if (response['success']) {
+                            // Navigate to OTP screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OTPVerificationScreen(
+                                  contact: contact,
+                                  isEmail: isEmailSignup,
+                                  isSignup: true,
+                                  userName: userName,
+                                  inviteCode: inviteCode,
+                                ),
+                              ),
+                            );
+                          } else {
+                            String errorMessage = response['message'] ?? 'Failed to send OTP. Please try again.';
+                            if (errorMessage.toLowerCase().contains('user already exist')) {
+                              errorMessage = 'This account already exists. Please login instead.';
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(errorMessage),
+                                backgroundColor: Colors.red,
+                                action: errorMessage.toLowerCase().contains('already exists')
+                                    ? SnackBarAction(
+                                  label: 'Login',
+                                  textColor: Colors.white,
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => Dream11LoginPage(),
+                                      ),
+                                    );
+                                  },
+                                )
+                                    : null,
+                              ),
+                            );
+                          }
                         }
                             : null,
                         child: Container(
@@ -547,6 +602,31 @@ class _SignupPageState extends State<SignupPage> {
                         ],
                       ),
 
+                      SizedBox(height: screenHeight * 0.02),
+
+                      // Have an invite code? (moved from login page)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => _buildInviteCodeDialog(context, isTablet),
+                              );
+                            },
+                            child: Text(
+                              'Have an invite code?',
+                              style: TextStyle(
+                                color: Color(0xFF1E3A8A),
+                                fontSize: isTablet ? 16 : 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
                       SizedBox(height: screenHeight * 0.03),
                     ],
                   ),
@@ -611,6 +691,79 @@ class _SignupPageState extends State<SignupPage> {
       ),
     );
   }
+
+  // Invite code dialog (moved from login page)
+  Widget _buildInviteCodeDialog(BuildContext context, bool isTablet) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Enter Invite Code',
+              style: TextStyle(
+                fontSize: isTablet ? 20 : 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Enter your invite code',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                ),
+              ),
+            ),
+            SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'CANCEL',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF1E3A8A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  child: Text(
+                    'SUBMIT',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // OTP Verification Screen for Signup
@@ -618,12 +771,16 @@ class OTPVerificationScreen extends StatefulWidget {
   final String contact;
   final bool isEmail;
   final bool isSignup;
+  final String userName;
+  final String inviteCode;
 
   const OTPVerificationScreen({
     Key? key,
     required this.contact,
     required this.isEmail,
     this.isSignup = false,
+    required this.userName,
+    required this.inviteCode,
   }) : super(key: key);
 
   @override
@@ -810,13 +967,40 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               // Verify Button
               GestureDetector(
                 onTap: isOTPComplete
-                    ? () {
-                  // Navigate to home screen after OTP verification
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (context) => const HomeScreen(),
+                    ? () async {
+                  // Show loading indicator
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
+                      ),
                     ),
                   );
+
+                  // Verify OTP
+                  bool success = await SignupApi.verifySignupOtp(getOTP());
+
+                  // Hide loading indicator
+                  Navigator.pop(context);
+
+                  if (success) {
+                    // Navigate to home screen after successful verification
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => const HomeScreen(),
+                      ),
+                    );
+                  } else {
+                    // Show error message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Invalid OTP. Please try again.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
                     : null,
                 child: Container(
@@ -871,12 +1055,41 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                   ),
                   GestureDetector(
                     onTap: resendTimer == 0
-                        ? () {
+                        ? () async {
                       setState(() {
                         resendTimer = 30;
                         startResendTimer();
                       });
-                      // Resend OTP logic here
+
+                      // Show loading indicator
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
+                          ),
+                        ),
+                      );
+
+                      // Resend OTP
+                      bool success = (await SignupApi.requestSignupOtp(
+                        widget.contact,
+                        widget.userName,
+                        widget.inviteCode,
+                      )) as bool;
+
+                      // Hide loading indicator
+                      Navigator.pop(context);
+
+                      if (!success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to resend OTP. Please try again.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     }
                         : null,
                     child: Text(

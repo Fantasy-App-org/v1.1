@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../model/user.dart';
+import 'package:fantasy/model/user.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -18,7 +18,7 @@ class UserService {
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _authTokenKey = 'auth_token'; // Add key for auth token
   static const String _deviceTokenKey = 'device_token';
-  final String baseUrl = 'http://localhost:3000'; // Update with your localhost port
+  final String baseUrl = 'http://13.232.147.237:3000'; // Update with your localhost port
 
   factory UserService() {
     return _instance;

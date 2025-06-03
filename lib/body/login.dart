@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../service/user_service.dart'; // Use UserService instead of login_api
 import 'homescreen.dart';
+import 'signup.dart'; // Add this import for SignupPage
 
 class Dream11LoginPage extends StatefulWidget {
   const Dream11LoginPage({Key? key}) : super(key: key);
@@ -513,18 +514,28 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.03),
 
+                      // Don't have an account? Sign up
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          Text(
+                            "Don't have an account? ",
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: isTablet ? 16 : 14,
+                            ),
+                          ),
                           GestureDetector(
                             onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => _buildInviteCodeDialog(context, isTablet),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SignupPage(),
+                                ),
                               );
                             },
                             child: Text(
-                              'Have an invite code?',
+                              'Sign up',
                               style: TextStyle(
                                 color: Color(0xFF1E3A8A),
                                 fontSize: isTablet ? 16 : 14,
@@ -596,78 +607,6 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildInviteCodeDialog(BuildContext context, bool isTablet) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Enter Invite Code',
-              style: TextStyle(
-                fontSize: isTablet ? 20 : 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 16),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Enter your invite code',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(16),
-                ),
-              ),
-            ),
-            SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'CANCEL',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF1E3A8A),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  child: Text(
-                    'SUBMIT',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }
