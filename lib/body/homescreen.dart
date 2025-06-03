@@ -1889,3 +1889,443 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ),
     ),
     ],
+    ),
+      Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          contests,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    ],
+    ),
+    ),
+          ],
+      ),
+    );
+  }
+
+  Widget _buildPerformanceStats() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF1E293B).withOpacity(0.08),
+            blurRadius: 20,
+            offset: Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Color(0xFFF1F5F9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Your Performance',
+                style: TextStyle(
+                  color: Color(0xFF0F172A),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Color(0xFF10B981).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'This Month',
+                  style: TextStyle(
+                    color: Color(0xFF10B981),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Contests Joined',
+                  '0',
+                  Icons.emoji_events_rounded,
+                  Color(0xFF3B82F6),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Total Winnings',
+                  '₹0',
+                  Icons.account_balance_wallet_rounded,
+                  Color(0xFF10B981),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Win Rate',
+                  '0%',
+                  Icons.trending_up_rounded,
+                  Color(0xFFF59E0B),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Best Rank',
+                  '#0',
+                  Icons.military_tech_rounded,
+                  Color(0xFF8B5CF6),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(
+      String title,
+      String value,
+      IconData icon,
+      Color color,
+      ) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          SizedBox(height: 12),
+          Text(
+            title,
+            style: TextStyle(
+              color: Color(0xFF64748B),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: Color(0xFF0F172A),
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(
+      String title,
+      String actionText,
+      VoidCallback onTap,
+      ) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: Color(0xFF0F172A),
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          GestureDetector(
+            onTap: onTap,
+            child: Text(
+              actionText,
+              style: TextStyle(
+                color: Color(0xFF3B82F6),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumDrawer() {
+    return Drawer(
+      backgroundColor: Colors.white,
+      child: Column(
+        children: [
+          Container(
+            height: 200,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1E40AF), Color(0xFF3730A3)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ProfilePage()),
+                        );
+                      },
+                      child: CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        child: Icon(Icons.person, color: Colors.white, size: 32),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      _getUserDisplayName(),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'Fantasy Cricket Player',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _buildDrawerItem(Icons.person_rounded, 'Profile', () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ProfilePage()),
+                  );
+                }),
+                _buildDrawerItem(
+                  Icons.account_balance_wallet_rounded,
+                  'Wallet',
+                      () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => WalletScreen()),
+                    );
+                  },
+                ),
+                _buildDrawerItem(
+                  Icons.history_rounded,
+                  'Transaction History',
+                      () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TransactionHistoryPage(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDrawerItem(Icons.stars_rounded, 'Fantasy Points', () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FantasyPointsPage(),
+                    ),
+                  );
+                }),
+                _buildDrawerItem(Icons.share_rounded, 'Referral', () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ReferralScreen()),
+                  );
+                }),
+                _buildDrawerItem(Icons.support_agent_rounded, 'Support', () {}),
+                _buildDrawerItem(Icons.info_rounded, 'About', () {}),
+                Divider(height: 32),
+                _buildDrawerItem(Icons.logout_rounded, 'Logout', _handleLogout, isDestructive: true),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(
+      IconData icon,
+      String title,
+      VoidCallback onTap, {
+        bool isDestructive = false,
+      }) {
+    return ListTile(
+      leading: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color:
+          isDestructive
+              ? Color(0xFFEF4444).withOpacity(0.1)
+              : Color(0xFF3B82F6).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          color: isDestructive ? Color(0xFFEF4444) : Color(0xFF3B82F6),
+          size: 20,
+        ),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isDestructive ? Color(0xFFEF4444) : Color(0xFF1E293B),
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+        ),
+      ),
+      onTap: onTap,
+      contentPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+    );
+  }
+
+  Widget _buildPremiumBottomNav() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF1E293B).withOpacity(0.1),
+            blurRadius: 20,
+            offset: Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(Icons.home_rounded, 'Home', 0),
+              _buildNavItem(Icons.sports_cricket_rounded, 'My Games', 1),
+              _buildNavItem(Icons.trending_up_rounded, 'Earnings', 2),
+              _buildNavItem(Icons.group_add_rounded, 'Refer', 3),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, int index) {
+    final isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedIndex = index),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient:
+          isSelected
+              ? LinearGradient(
+            colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+          )
+              : null,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Color(0xFF64748B),
+              size: 20,
+            ),
+            SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Color(0xFF64748B),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Placeholder classes for navigation - you'll need to create these screens
+class AllLiveMatchesPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('All Live Matches')),
+      body: Center(child: Text('Live Matches Page')),
+    );
+  }
+}
+
+class AllUpcomingMatchesPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('All Upcoming Matches')),
+      body: Center(child: Text('Upcoming Matches Page')),
+    );
+  }
+}
