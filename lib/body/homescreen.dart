@@ -2,8 +2,12 @@ import 'package:fantasy/body/profile.dart';
 import 'package:fantasy/body/refral.dart';
 import 'package:fantasy/body/tree.dart';
 import 'package:fantasy/body/wallet.dart';
+import 'package:fantasy/model/fixture.dart'; // Your existing Fixture model
+import 'package:fantasy/service/fixture_service.dart';
+import 'package:fantasy/service/user_service.dart';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'login.dart';
 import 'mygame.dart';
 
@@ -17,6 +21,257 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // API Integration variables
+  List<FixtureModel> _fixtures = [];
+  List<FixtureModel> _liveMatches = [];
+  List<FixtureModel> _upcomingMatches = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+  int _currentPage = 1;
+  bool _isAuthenticated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    try {
+      // Initialize UserService first
+      final userService = UserService();
+      await userService.initialize();
+
+      // Check authentication status
+      _isAuthenticated = await userService.checkLoginStatus();
+
+      if (_isAuthenticated) {
+        print('User authenticated with token: ${userService.authToken != null ? userService.authToken!.substring(0, 20) + '...' : 'null'}');
+        await _loadFixtures();
+      } else {
+        // Redirect to login if not authenticated
+        _handleAuthenticationRequired();
+      }
+    } catch (e) {
+      print('App initialization error: $e');
+      setState(() {
+        _errorMessage = 'Failed to initialize app: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _handleAuthenticationRequired() {
+    setState(() {
+      _isLoading = false;
+      _errorMessage = 'Please login to continue';
+    });
+
+    // Navigate to login screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const Dream11LoginPage(),
+        ),
+      );
+    });
+  }
+
+  Future<void> _loadFixtures() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      // Check authentication status before making API call
+      final authStatus = FixtureService.getAuthStatus();
+      print('Auth Status: $authStatus');
+
+      if (FixtureService.needsAuthentication()) {
+        throw Exception('Authentication required');
+      }
+
+      final fixtures = await FixtureService.getFixtures(page: _currentPage);
+
+      setState(() {
+        _fixtures = fixtures;
+        _liveMatches = FixtureService.filterLiveMatches(fixtures);
+        _upcomingMatches = FixtureService.filterUpcomingMatches(fixtures);
+        _isLoading = false;
+      });
+
+      print('Successfully loaded ${fixtures.length} fixtures');
+      print('Live matches: ${_liveMatches.length}');
+      print('Upcoming matches: ${_upcomingMatches.length}');
+
+    } catch (e) {
+      print('Error loading fixtures: $e');
+      setState(() {
+        _isLoading = false;
+      });
+
+      // Handle authentication errors
+      if (e.toString().contains('Authentication required') ||
+          e.toString().contains('Authentication failed') ||
+          e.toString().contains('401')) {
+        _handleAuthenticationRequired();
+      } else {
+        setState(() {
+          _errorMessage = e.toString();
+        });
+      }
+    }
+  }
+
+  String _getUserDisplayName() {
+    final userService = UserService();
+    if (userService.isLoggedIn && userService.userData != null) {
+      final userData = userService.userData!;
+      return userData['name'] ?? userData['username'] ?? userData['mobile_number'] ?? userData['email'] ?? 'User';
+    }
+    return 'Guest User';
+  }
+
+  Future<void> _handleLogout() async {
+    try {
+      final userService = UserService();
+      await userService.logout();
+
+      // Navigate to login screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const Dream11LoginPage(),
+        ),
+      );
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Logout failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Method to handle fixture activation
+  Future<void> _activateFixture(int fixtureId) async {
+    try {
+      final success = await FixtureService.activateFixture(fixtureId);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fixture activated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Reload fixtures to get updated data
+        _loadFixtures();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to activate fixture'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error activating fixture: $e');
+      if (e.toString().contains('Authentication required') ||
+          e.toString().contains('Authentication failed')) {
+        _handleAuthenticationRequired();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // API connection test method
+  Future<void> _testApiConnection() async {
+    final userService = UserService();
+
+    print('🧪 Testing API connection...');
+    print('Auth status: ${userService.getAuthStatus()}');
+
+    try {
+      // Test 1: Check if server is reachable
+      print('📡 Testing server connectivity...');
+      final pingResponse = await http.get(
+        Uri.parse('http://13.232.147.237:3000/'),
+      ).timeout(Duration(seconds: 5));
+
+      print('✅ Server reachable: ${pingResponse.statusCode}');
+    } catch (e) {
+      print('❌ Server NOT reachable: $e');
+      _showTestResult('Server is not running or not accessible');
+      return;
+    }
+
+    try {
+      // Test 2: Test API with your token
+      print('🔑 Testing API with auth token...');
+      final token = userService.authToken;
+
+      if (token == null) {
+        _showTestResult('No auth token available');
+        return;
+      }
+
+      print('Token length: ${token.length}');
+      print('Token preview: ${token.substring(0, 30)}...');
+
+      final response = await http.get(
+        Uri.parse('http://13.232.147.237:3000/web-services/fixtures?page=1'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(Duration(seconds: 10));
+
+      print('📥 API Response: ${response.statusCode}');
+      print('📥 Response body: ${response.body.substring(0, 100)}...');
+
+      if (response.statusCode == 200) {
+        _showTestResult('✅ API working perfectly! The issue was CORS.');
+      } else {
+        _showTestResult('❌ API returned ${response.statusCode}: ${response.body}');
+      }
+
+    } catch (e) {
+      print('❌ API Test failed: $e');
+
+      if (e.toString().contains('XMLHttpRequest') || e.toString().contains('CORS')) {
+        _showTestResult('❌ CORS Error: Please configure CORS on your server.\n\nAdd this to your Node.js server:\n\nconst cors = require(\'cors\');\napp.use(cors());');
+      } else {
+        _showTestResult('❌ Network Error: $e');
+      }
+    }
+  }
+
+  void _showTestResult(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('API Test Result'),
+        content: SingleChildScrollView(
+          child: Text(message),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -176,249 +431,257 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildCricketHomeScreen(double screenHeight, double screenWidth, bool isTablet) {
-    return SingleChildScrollView(
-      physics: BouncingScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Premium Cricket Banner
-          Container(
-            height: screenHeight * 0.18,
-            width: double.infinity,
-            margin: EdgeInsets.all(screenWidth * 0.04),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.withOpacity(0.3),
-                  blurRadius: 15,
-                  offset: Offset(0, 8),
-                ),
-              ],
+    if (_isLoading) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
             ),
-            child: Stack(
-              children: [
-                // Cricket illustration
-                Positioned(
-                  right: -20,
-                  bottom: -20,
-                  child: Transform.rotate(
-                    angle: -0.2,
-                    child: Icon(
-                      Icons.sports_cricket,
-                      size: screenWidth * 0.3,
-                      color: Colors.white.withOpacity(0.1),
+            SizedBox(height: 16),
+            Text(
+              'Loading fixtures...',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+                _errorMessage!.contains('Authentication required') || _errorMessage!.contains('Please login')
+                    ? Icons.login
+                    : Icons.error_outline,
+                size: 64,
+                color: _errorMessage!.contains('Authentication required') || _errorMessage!.contains('Please login')
+                    ? Colors.blue[400]
+                    : Colors.red[400]
+            ),
+            SizedBox(height: 16),
+            Text(
+              _errorMessage!.contains('Authentication required') || _errorMessage!.contains('Please login')
+                  ? 'Login Required'
+                  : 'Error loading matches',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                  _errorMessage!.contains('Authentication required') || _errorMessage!.contains('Please login')
+                      ? 'Please login to view cricket matches'
+                      : _errorMessage!,
+                  textAlign: TextAlign.center
+              ),
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                if (_errorMessage!.contains('Authentication required') || _errorMessage!.contains('Please login')) {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => const Dream11LoginPage(),
+                    ),
+                  );
+                } else {
+                  _loadFixtures();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _errorMessage!.contains('Authentication required') || _errorMessage!.contains('Please login')
+                    ? Color(0xFF3B82F6)
+                    : Colors.grey[600],
+              ),
+              child: Text(
+                _errorMessage!.contains('Authentication required') || _errorMessage!.contains('Please login')
+                    ? 'Go to Login'
+                    : 'Retry',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _testApiConnection,
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              child: Text('Test API Connection', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadFixtures,
+      child: SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Debug info (can be removed in production)
+            if (true) // Set to false in production
+              Container(
+                margin: EdgeInsets.all(screenWidth * 0.04),
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Debug Info:',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                    Text('Auth Status: ${FixtureService.getAuthStatus()}', style: TextStyle(fontSize: 10)),
+                    Text('Fixtures Count: ${_fixtures.length}', style: TextStyle(fontSize: 10)),
+                    Text('Live: ${_liveMatches.length}, Upcoming: ${_upcomingMatches.length}', style: TextStyle(fontSize: 10)),
+                  ],
+                ),
+              ),
+
+            // Premium Cricket Banner
+            Container(
+              height: screenHeight * 0.18,
+              width: double.infinity,
+              margin: EdgeInsets.all(screenWidth * 0.04),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -20,
+                    bottom: -20,
+                    child: Transform.rotate(
+                      angle: -0.2,
+                      child: Icon(
+                        Icons.sports_cricket,
+                        size: screenWidth * 0.3,
+                        color: Colors.white.withOpacity(0.1),
+                      ),
                     ),
                   ),
+                  Padding(
+                    padding: EdgeInsets.all(screenWidth * 0.04),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'CRICKET FANTASY',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isTablet ? 14 : 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        SizedBox(height: screenHeight * 0.01),
+                        Text(
+                          'Play & Win Big',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isTablet ? 28 : 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: screenHeight * 0.01),
+                        Text(
+                          'Join the ultimate cricket fantasy experience',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: isTablet ? 16 : 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Contest Categories
+            _buildContestCategories(screenWidth, isTablet),
+
+            // Live Matches Section - Show API data if available, fallback to static data
+            if (_liveMatches.isNotEmpty) ...[
+              _buildSectionHeader('LIVE MATCHES', screenWidth, isTablet),
+              ..._liveMatches.map((match) => _buildLiveMatchCardFromApi(match, screenWidth, isTablet)),
+            ] else if (_fixtures.isEmpty && !_isLoading) ...[
+              // Fallback to static data if no API data available
+              _buildSectionHeader('LIVE MATCHES', screenWidth, isTablet),
+              _buildStaticLiveMatchCard(screenWidth, isTablet),
+            ],
+
+            // Upcoming Matches Section - Show API data if available, fallback to static data
+            _buildSectionHeader('UPCOMING MATCHES', screenWidth, isTablet),
+            if (_upcomingMatches.isEmpty && _fixtures.isEmpty && !_isLoading) ...[
+              // Fallback to static data if no API data available
+              _buildStaticUpcomingMatchCard(screenWidth, isTablet, 'Mumbai Indians', 'MI', Colors.blue[800], 'Chennai Super Kings', 'CSK', Colors.yellow[700], 'IPL 2025', '2h 30m', '24 Contests', '₹5 Lakhs'),
+              _buildStaticUpcomingMatchCard(screenWidth, isTablet, 'India', 'IND', Colors.blue[900], 'England', 'ENG', Colors.red[700], 'Test Match - Day 1', '1 Day', '18 Contests', '₹10 Lakhs'),
+            ] else if (_upcomingMatches.isEmpty)
+              Container(
+                margin: EdgeInsets.all(screenWidth * 0.04),
+                padding: EdgeInsets.all(screenWidth * 0.08),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                Padding(
-                  padding: EdgeInsets.all(screenWidth * 0.04),
+                child: Center(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      Icon(Icons.sports_cricket, size: 48, color: Colors.grey[400]),
+                      SizedBox(height: 16),
                       Text(
-                        'CRICKET FANTASY',
+                        'No upcoming matches',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: isTablet ? 14 : 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 2,
-                        ),
-                      ),
-                      SizedBox(height: screenHeight * 0.01),
-                      Text(
-                        'Play & Win Big',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: isTablet ? 28 : 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: screenHeight * 0.01),
-                      Text(
-                        'Join the ultimate cricket fantasy experience',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: isTablet ? 16 : 14,
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
+              )
+            else
+              ..._upcomingMatches.map((match) => _buildUpcomingMatchCardFromApi(match, screenWidth, isTablet)),
 
-          // Contest Categories
-          _buildContestCategories(screenWidth, isTablet),
+            // Quick Stats
+            _buildQuickStats(screenWidth, screenHeight, isTablet),
 
-          // Live Matches Section
-          _buildSectionHeader('LIVE MATCHES', screenWidth, isTablet),
-          _buildLiveMatchCard(
-            team1: 'India',
-            team1Flag: '🇮🇳',
-            team1Score: '285/6',
-            team2: 'Australia',
-            team2Flag: '🇦🇺',
-            team2Score: '267/8',
-            matchType: 'ODI - 3rd Match',
-            status: 'India won by 18 runs',
-            screenWidth: screenWidth,
-            isTablet: isTablet,
-          ),
-
-          // Upcoming Matches Section
-          _buildSectionHeader('UPCOMING MATCHES', screenWidth, isTablet),
-          _buildUpcomingMatchCard(
-            team1: 'Mumbai Indians',
-            team1Logo: 'MI',
-            team1Color: Colors.blue[800],
-            team2: 'Chennai Super Kings',
-            team2Logo: 'CSK',
-            team2Color: Colors.yellow[700],
-            matchType: 'IPL 2025',
-            timeLeft: '2h 30m',
-            contestCount: '24 Contests',
-            prizeMoney: '₹5 Lakhs',
-            screenWidth: screenWidth,
-            isTablet: isTablet,
-          ),
-          _buildUpcomingMatchCard(
-            team1: 'India',
-            team1Logo: 'IND',
-            team1Color: Colors.blue[900],
-            team2: 'England',
-            team2Logo: 'ENG',
-            team2Color: Colors.red[700],
-            matchType: 'Test Match - Day 1',
-            timeLeft: '1 Day',
-            contestCount: '18 Contests',
-            prizeMoney: '₹10 Lakhs',
-            screenWidth: screenWidth,
-            isTablet: isTablet,
-          ),
-
-          // Quick Stats
-          _buildQuickStats(screenWidth, screenHeight, isTablet),
-
-          SizedBox(height: screenHeight * 0.02),
-        ],
+            SizedBox(height: screenHeight * 0.02),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildContestCategories(double screenWidth, bool isTablet) {
-    final categories = [
-      {'icon': Icons.flash_on, 'title': 'Quick', 'color': Colors.orange},
-      {'icon': Icons.emoji_events, 'title': 'Mega', 'color': Colors.amber},
-      {'icon': Icons.star, 'title': 'Premium', 'color': Colors.purple},
-      {'icon': Icons.group, 'title': 'Head2Head', 'color': Colors.blue},
-    ];
-
-    return Container(
-      height: isTablet ? 100 : 90,
-      margin: EdgeInsets.symmetric(vertical: screenWidth * 0.02),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          final category = categories[index];
-          return Container(
-            width: screenWidth * 0.22,
-            margin: EdgeInsets.only(right: screenWidth * 0.03),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(screenWidth * 0.025),
-                  decoration: BoxDecoration(
-                    color: (category['color'] as Color).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    category['icon'] as IconData,
-                    color: category['color'] as Color,
-                    size: isTablet ? 28 : 24,
-                  ),
-                ),
-                SizedBox(height: screenWidth * 0.02),
-                Text(
-                  category['title'] as String,
-                  style: TextStyle(
-                    fontSize: isTablet ? 14 : 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, double screenWidth, bool isTablet) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: screenWidth * 0.04,
-        vertical: screenWidth * 0.03,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.grey[800],
-              fontSize: isTablet ? 18 : 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-          Text(
-            'View All',
-            style: TextStyle(
-              color: Color(0xFF3B82F6),
-              fontSize: isTablet ? 14 : 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLiveMatchCard({
-    required String team1,
-    required String team1Flag,
-    required String team1Score,
-    required String team2,
-    required String team2Flag,
-    required String team2Score,
-    required String matchType,
-    required String status,
-    required double screenWidth,
-    required bool isTablet,
-  }) {
+  // Static fallback live match card
+  Widget _buildStaticLiveMatchCard(double screenWidth, bool isTablet) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenWidth * 0.02),
       padding: EdgeInsets.all(screenWidth * 0.04),
@@ -467,7 +730,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
                   SizedBox(width: 8),
                   Text(
-                    matchType,
+                    'ODI - 3rd Match',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: isTablet ? 14 : 12,
@@ -482,7 +745,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildTeamScore(team1, team1Flag, team1Score, screenWidth, isTablet),
+              _buildTeamScore('India', '🇮🇳', '285/6', screenWidth, isTablet),
               Text(
                 'VS',
                 style: TextStyle(
@@ -491,7 +754,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              _buildTeamScore(team2, team2Flag, team2Score, screenWidth, isTablet),
+              _buildTeamScore('Australia', '🇦🇺', '267/8', screenWidth, isTablet),
             ],
           ),
           SizedBox(height: screenWidth * 0.04),
@@ -502,7 +765,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              status,
+              'India won by 18 runs',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: isTablet ? 14 : 12,
@@ -515,48 +778,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildTeamScore(String team, String flag, String score, double screenWidth, bool isTablet) {
-    return Column(
-      children: [
-        Text(
-          flag,
-          style: TextStyle(fontSize: isTablet ? 36 : 32),
-        ),
-        SizedBox(height: 4),
-        Text(
-          team,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: isTablet ? 16 : 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        Text(
-          score,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: isTablet ? 20 : 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUpcomingMatchCard({
-    required String team1,
-    required String team1Logo,
-    required Color? team1Color,
-    required String team2,
-    required String team2Logo,
-    required Color? team2Color,
-    required String matchType,
-    required String timeLeft,
-    required String contestCount,
-    required String prizeMoney,
-    required double screenWidth,
-    required bool isTablet,
-  }) {
+  // Static fallback upcoming match card
+  Widget _buildStaticUpcomingMatchCard(
+      double screenWidth,
+      bool isTablet,
+      String team1,
+      String team1Logo,
+      Color? team1Color,
+      String team2,
+      String team2Logo,
+      Color? team2Color,
+      String matchType,
+      String timeLeft,
+      String contestCount,
+      String prizeMoney
+      ) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenWidth * 0.02),
       decoration: BoxDecoration(
@@ -695,6 +931,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     style: TextStyle(
                       fontSize: isTablet ? 14 : 12,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -703,6 +940,471 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildContestCategories(double screenWidth, bool isTablet) {
+    final categories = [
+      {'icon': Icons.flash_on, 'title': 'Quick', 'color': Colors.orange},
+      {'icon': Icons.emoji_events, 'title': 'Mega', 'color': Colors.amber},
+      {'icon': Icons.star, 'title': 'Premium', 'color': Colors.purple},
+      {'icon': Icons.group, 'title': 'Head2Head', 'color': Colors.blue},
+    ];
+
+    return Container(
+      height: isTablet ? 100 : 90,
+      margin: EdgeInsets.symmetric(vertical: screenWidth * 0.02),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+        itemCount: categories.length,
+        itemBuilder: (context, index) {
+          final category = categories[index];
+          return Container(
+            width: screenWidth * 0.22,
+            margin: EdgeInsets.only(right: screenWidth * 0.03),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(screenWidth * 0.025),
+                  decoration: BoxDecoration(
+                    color: (category['color'] as Color).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    category['icon'] as IconData,
+                    color: category['color'] as Color,
+                    size: isTablet ? 28 : 24,
+                  ),
+                ),
+                SizedBox(height: screenWidth * 0.02),
+                Text(
+                  category['title'] as String,
+                  style: TextStyle(
+                    fontSize: isTablet ? 14 : 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, double screenWidth, bool isTablet) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.04,
+        vertical: screenWidth * 0.03,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.grey[800],
+              fontSize: isTablet ? 18 : 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+          Text(
+            'View All',
+            style: TextStyle(
+              color: Color(0xFF3B82F6),
+              fontSize: isTablet ? 14 : 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLiveMatchCardFromApi(FixtureModel match, double screenWidth, bool isTablet) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenWidth * 0.02),
+      padding: EdgeInsets.all(screenWidth * 0.04),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.green[700]!, Colors.green[900]!],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withOpacity(0.3),
+            blurRadius: 12,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.circle, size: 8, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text(
+                          'LIVE',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isTablet ? 12 : 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    match.matchType,
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: isTablet ? 14 : 12,
+                    ),
+                  ),
+                ],
+              ),
+              Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
+            ],
+          ),
+          SizedBox(height: screenWidth * 0.04),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildApiTeamScore(
+                match.teamA,
+                match.teamAFlag ?? FixtureService.getTeamFlag(match.teamA),
+                'Live',
+                screenWidth,
+                isTablet,
+              ),
+              Text(
+                'VS',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isTablet ? 18 : 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              _buildApiTeamScore(
+                match.teamB,
+                match.teamBFlag ?? FixtureService.getTeamFlag(match.teamB),
+                'Live',
+                screenWidth,
+                isTablet,
+              ),
+            ],
+          ),
+          SizedBox(height: screenWidth * 0.04),
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              match.matchTitle,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isTablet ? 14 : 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpcomingMatchCardFromApi(FixtureModel match, double screenWidth, bool isTablet) {
+    final timeLeft = FixtureService.formatTimeLeft(match.matchDate);
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenWidth * 0.02),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 12,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Match Type Header
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: screenWidth * 0.03),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    match.matchType,
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: isTablet ? 14 : 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Text(
+                    timeLeft,
+                    style: TextStyle(
+                      color: Colors.red[700],
+                      fontSize: isTablet ? 12 : 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Teams
+          Padding(
+            padding: EdgeInsets.all(screenWidth * 0.04),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildApiTeamLogo(
+                    match.teamA,
+                    match.teamAShort,
+                    Colors.blue[800],
+                    screenWidth,
+                    isTablet
+                ),
+                Column(
+                  children: [
+                    Text(
+                      'VS',
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: isTablet ? 16 : 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Icon(Icons.sports_cricket, color: Colors.grey[400], size: 20),
+                  ],
+                ),
+                _buildApiTeamLogo(
+                    match.teamB,
+                    match.teamBShort,
+                    Colors.red[800],
+                    screenWidth,
+                    isTablet
+                ),
+              ],
+            ),
+          ),
+
+          // Contest Info
+          Container(
+            padding: EdgeInsets.all(screenWidth * 0.04),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.emoji_events, color: Colors.amber[700], size: isTablet ? 20 : 18),
+                    SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          match.matchContest,
+                          style: TextStyle(
+                            color: Colors.grey[900],
+                            fontSize: isTablet ? 16 : 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${match.totalContest} Contests',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: isTablet ? 12 : 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                ElevatedButton(
+                  onPressed: match.lineupOut ? () {
+                    // Navigate to contest selection or activate fixture
+                    _activateFixture(match.id);
+                  } : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: match.lineupOut ? Color(0xFF3B82F6) : Colors.grey[400],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.04,
+                      vertical: screenWidth * 0.025,
+                    ),
+                  ),
+                  child: Text(
+                    match.lineupOut ? 'JOIN NOW' : 'LINEUP PENDING',
+                    style: TextStyle(
+                      fontSize: isTablet ? 14 : 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApiTeamScore(String team, String flag, String score, double screenWidth, bool isTablet) {
+    return Column(
+      children: [
+        Text(
+          flag,
+          style: TextStyle(fontSize: isTablet ? 36 : 32),
+        ),
+        SizedBox(height: 4),
+        Text(
+          team,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: isTablet ? 16 : 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Text(
+          score,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: isTablet ? 20 : 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTeamScore(String team, String flag, String score, double screenWidth, bool isTablet) {
+    return Column(
+      children: [
+        Text(
+          flag,
+          style: TextStyle(fontSize: isTablet ? 36 : 32),
+        ),
+        SizedBox(height: 4),
+        Text(
+          team,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: isTablet ? 16 : 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Text(
+          score,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: isTablet ? 20 : 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildApiTeamLogo(String team, String logo, Color? color, double screenWidth, bool isTablet) {
+    return Column(
+      children: [
+        Container(
+          width: isTablet ? 80 : 70,
+          height: isTablet ? 80 : 70,
+          decoration: BoxDecoration(
+            color: color?.withOpacity(0.1) ?? Colors.grey[100],
+            shape: BoxShape.circle,
+            border: Border.all(color: color ?? Colors.grey[300]!, width: 2),
+          ),
+          child: Center(
+            child: Text(
+              logo,
+              style: TextStyle(
+                color: color ?? Colors.grey[700],
+                fontSize: isTablet ? 28 : 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          team,
+          style: TextStyle(
+            color: Colors.grey[800],
+            fontSize: isTablet ? 14 : 12,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 
@@ -994,9 +1696,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.015),
-                    // User Name
+                    // User Name - Use dynamic name
                     Text(
-                      'pll3mu1',
+                      _getUserDisplayName(),
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: isTablet ? 22 : 20,
@@ -1209,13 +1911,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 _buildDrawerMenuItem(
                   icon: Icons.logout,
                   title: 'Logout',
-                  onTap: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => const Dream11LoginPage(),
-                      ),
-                    );
-                  },
+                  onTap: _handleLogout,
                   screenWidth: screenWidth,
                   isTablet: isTablet,
                   isLogout: true,

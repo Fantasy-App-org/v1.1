@@ -1,37 +1,51 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:fantasy/service/user_service.dart'; // Import the UserService
 
 class LoginApi {
-  static const String baseUrl = 'http://localhost:3000';
+  static final UserService _userService = UserService();
 
+  // Use UserService methods directly instead of duplicating logic
   static Future<bool> requestOtp(String mobileNumber) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/web-services/signin'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'mobile_number': mobileNumber}),
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      print('OTP request error: $e');
-      return false;
-    }
+    return await _userService.requestOtp(mobileNumber);
   }
 
-  static Future<Map<String, dynamic>?> verifyOtp(String mobileNumber, String otp) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/web-services/verify-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'mobile_number': mobileNumber, 'otp': otp}),
-      );
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      return null;
-    } catch (e) {
-      print('OTP verification error: $e');
-      return null;
-    }
+  static Future<bool> verifyOtp(String mobileNumber, String otp) async {
+    return await _userService.verifyOtp(mobileNumber, otp);
+  }
+
+  // Additional helper method to get user data after login
+  static Map<String, dynamic>? getUserData() {
+    return _userService.userData;
+  }
+
+  // Helper method to get auth token
+  static String? getAuthToken() {
+    return _userService.authToken;
+  }
+
+  // Helper method to check if user is logged in
+  static bool isLoggedIn() {
+    return _userService.isLoggedIn;
+  }
+
+  // Helper method to logout
+  static Future<void> logout() async {
+    await _userService.logout();
+  }
+
+  // Helper method to make authenticated API calls
+  static Future<http.Response> makeAuthenticatedRequest({
+    required String endpoint,
+    required String method,
+    Map<String, dynamic>? body,
+    Map<String, String>? additionalHeaders,
+  }) async {
+    return await _userService.makeAuthenticatedRequest(
+      endpoint: endpoint,
+      method: method,
+      body: body,
+      additionalHeaders: additionalHeaders,
+    );
   }
 }

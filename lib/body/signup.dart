@@ -1,110 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../service/user_service.dart'; // Use UserService instead of login_api
 import 'homescreen.dart';
-import 'signup.dart'; // Add this import for SignupPage
+import 'login.dart';
+import '../api/signup_api.dart';
 
-class Dream11LoginPage extends StatefulWidget {
-  const Dream11LoginPage({Key? key}) : super(key: key);
+class SignupPage extends StatefulWidget {
+  const SignupPage({Key? key}) : super(key: key);
 
   @override
-  State<Dream11LoginPage> createState() => _Dream11LoginPageState();
+  State<SignupPage> createState() => _SignupPageState();
 }
 
-class _Dream11LoginPageState extends State<Dream11LoginPage> {
-  bool isEmailLogin = false;
+class _SignupPageState extends State<SignupPage> {
+  bool isEmailSignup = false;
   bool isAgeVerified = false;
-  bool isLoading = false;
-  String? errorMessage;
+  final TextEditingController nameController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController referralController = TextEditingController();
-  final UserService _userService = UserService(); // Use UserService
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeService();
-  }
-
-  Future<void> _initializeService() async {
-    // Initialize the service
-    await _userService.initialize();
-    // Check login status after initialization
-    _checkLoginStatus();
-  }
-
-  Future<void> _checkLoginStatus() async {
-    final bool isLoggedIn = await _userService.checkLoginStatus();
-    if (isLoggedIn) {
-      // Token is automatically available through UserService
-      print('User is logged in with token: ${_userService.authToken}');
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-    }
-  }
-
-  Future<void> _requestOtp() async {
-    if (!isAgeVerified) {
-      setState(() {
-        errorMessage = "Please verify that you are above 18 years";
-      });
-      return;
-    }
-
-    String contact = isEmailLogin ? emailController.text : mobileController.text;
-
-    if (contact.isEmpty) {
-      setState(() {
-        errorMessage = isEmailLogin
-            ? "Please enter your email address"
-            : "Please enter your mobile number";
-      });
-      return;
-    }
-
-    setState(() {
-      errorMessage = null;
-      isLoading = true;
-    });
-
-    try {
-      bool success = await _userService.requestOtp(contact);
-
-      if (success) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OTPVerificationScreen(
-              contact: contact,
-              isEmail: isEmailLogin,
-              userService: _userService,
-            ),
-          ),
-        );
-      } else {
-        setState(() {
-          errorMessage = "Failed to send OTP. Please try again.";
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = "An error occurred: ${e.toString()}";
-      });
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
 
   @override
   void dispose() {
+    nameController.dispose();
     mobileController.dispose();
     emailController.dispose();
     referralController.dispose();
     super.dispose();
+  }
+
+  bool isReferralValid() {
+    return referralController.text.isNotEmpty;
+  }
+
+  bool areFieldsValid() {
+    if (isEmailSignup) {
+      return emailController.text.isNotEmpty && nameController.text.isNotEmpty && isReferralValid() && isAgeVerified;
+    } else {
+      return mobileController.text.isNotEmpty && nameController.text.isNotEmpty && isReferralValid() && isAgeVerified;
+    }
   }
 
   @override
@@ -120,8 +53,9 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
+              // Premium Header with Gradient
               Container(
-                height: screenHeight * 0.35,
+                height: screenHeight * 0.32,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -132,6 +66,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                 ),
                 child: Stack(
                   children: [
+                    // Pattern Background
                     Positioned(
                       right: -50,
                       top: -50,
@@ -157,7 +92,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                       ),
                     ),
 
-                    //content
+                    // Content
                     Padding(
                       padding: EdgeInsets.all(screenWidth * 0.05),
                       child: Column(
@@ -169,14 +104,14 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                           ),
                           Spacer(),
                           Text(
-                            'Welcome to',
+                            'Create Account',
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: isTablet ? 18 : 16,
                             ),
                           ),
                           Text(
-                            'Fantasy Cricket',
+                            'Join Fantasy Cricket',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: isTablet ? 36 : 32,
@@ -185,7 +120,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                           ),
                           SizedBox(height: screenHeight * 0.01),
                           Text(
-                            'Play, Win & Celebrate',
+                            'Create, Compete & Win',
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: isTablet ? 16 : 14,
@@ -199,7 +134,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                 ),
               ),
 
-              //login Form Container
+              // Signup Form Container
               Container(
                 transform: Matrix4.translationValues(0, -30, 0),
                 decoration: BoxDecoration(
@@ -223,7 +158,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                     children: [
                       SizedBox(height: screenHeight * 0.02),
 
-                      //login/register tabs
+                      // Mobile/Email Tabs
                       Center(
                         child: Container(
                           decoration: BoxDecoration(
@@ -234,20 +169,20 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               GestureDetector(
-                                onTap: () => setState(() => isEmailLogin = false),
+                                onTap: () => setState(() => isEmailSignup = false),
                                 child: Container(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: screenWidth * 0.06,
                                     vertical: screenHeight * 0.015,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: !isEmailLogin ? Color(0xFF1E3A8A) : Colors.transparent,
+                                    color: !isEmailSignup ? Color(0xFF1E3A8A) : Colors.transparent,
                                     borderRadius: BorderRadius.circular(25),
                                   ),
                                   child: Text(
                                     'Mobile',
                                     style: TextStyle(
-                                      color: !isEmailLogin ? Colors.white : Colors.grey[600],
+                                      color: !isEmailSignup ? Colors.white : Colors.grey[600],
                                       fontWeight: FontWeight.w600,
                                       fontSize: isTablet ? 16 : 14,
                                     ),
@@ -255,20 +190,20 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: () => setState(() => isEmailLogin = true),
+                                onTap: () => setState(() => isEmailSignup = true),
                                 child: Container(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: screenWidth * 0.06,
                                     vertical: screenHeight * 0.015,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: isEmailLogin ? Color(0xFF1E3A8A) : Colors.transparent,
+                                    color: isEmailSignup ? Color(0xFF1E3A8A) : Colors.transparent,
                                     borderRadius: BorderRadius.circular(25),
                                   ),
                                   child: Text(
                                     'Email',
                                     style: TextStyle(
-                                      color: isEmailLogin ? Colors.white : Colors.grey[600],
+                                      color: isEmailSignup ? Colors.white : Colors.grey[600],
                                       fontWeight: FontWeight.w600,
                                       fontSize: isTablet ? 16 : 14,
                                     ),
@@ -282,7 +217,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.04),
 
-                      //input field
+                      // Name Field
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[50],
@@ -290,17 +225,16 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                           border: Border.all(color: Colors.grey[200]!),
                         ),
                         child: TextField(
-                          controller: isEmailLogin ? emailController : mobileController,
-                          keyboardType: isEmailLogin ? TextInputType.emailAddress : TextInputType.phone,
+                          controller: nameController,
                           style: TextStyle(fontSize: isTablet ? 18 : 16),
                           decoration: InputDecoration(
-                            hintText: isEmailLogin ? 'Email address' : 'Mobile number',
+                            hintText: 'Full Name',
                             hintStyle: TextStyle(
                               color: Colors.grey[400],
                               fontSize: isTablet ? 18 : 16,
                             ),
                             prefixIcon: Icon(
-                              isEmailLogin ? Icons.email_outlined : Icons.phone_outlined,
+                              Icons.person_outline,
                               color: Colors.grey[400],
                             ),
                             border: InputBorder.none,
@@ -314,7 +248,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.02),
 
-                      //referral field
+                      // Mobile/Email Field
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[50],
@@ -322,17 +256,17 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                           border: Border.all(color: Colors.grey[200]!),
                         ),
                         child: TextField(
-                          controller: referralController,
-                          textCapitalization: TextCapitalization.characters,
+                          controller: isEmailSignup ? emailController : mobileController,
+                          keyboardType: isEmailSignup ? TextInputType.emailAddress : TextInputType.phone,
                           style: TextStyle(fontSize: isTablet ? 18 : 16),
                           decoration: InputDecoration(
-                            hintText: 'Referral Code (Optional)',
+                            hintText: isEmailSignup ? 'Email address' : 'Mobile number',
                             hintStyle: TextStyle(
                               color: Colors.grey[400],
                               fontSize: isTablet ? 18 : 16,
                             ),
                             prefixIcon: Icon(
-                              Icons.card_giftcard_outlined,
+                              isEmailSignup ? Icons.email_outlined : Icons.phone_outlined,
                               color: Colors.grey[400],
                             ),
                             border: InputBorder.none,
@@ -344,9 +278,73 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                         ),
                       ),
 
+                      SizedBox(height: screenHeight * 0.02),
+
+                      // Referral Code Field (Mandatory)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Referral Code *',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: isTablet ? 16 : 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: screenHeight * 0.01),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: !isReferralValid() && referralController.text.isNotEmpty
+                                    ? Colors.red[400]!
+                                    : Colors.grey[200]!,
+                              ),
+                            ),
+                            child: TextField(
+                              controller: referralController,
+                              textCapitalization: TextCapitalization.characters,
+                              style: TextStyle(fontSize: isTablet ? 18 : 16),
+                              decoration: InputDecoration(
+                                hintText: 'Enter referral code',
+                                hintStyle: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: isTablet ? 18 : 16,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.card_giftcard_outlined,
+                                  color: Colors.grey[400],
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.04,
+                                  vertical: screenHeight * 0.02,
+                                ),
+                              ),
+                              onChanged: (value) {
+                                setState(() {});
+                              },
+                            ),
+                          ),
+                          if (!isReferralValid() && referralController.text.isNotEmpty)
+                            Padding(
+                              padding: EdgeInsets.only(top: 5),
+                              child: Text(
+                                'Valid referral code is required',
+                                style: TextStyle(
+                                  color: Colors.red[400],
+                                  fontSize: isTablet ? 14 : 12,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+
                       SizedBox(height: screenHeight * 0.03),
 
-                      //age verification and custom checkbox
+                      // Age Verification with Custom Checkbox
                       Row(
                         children: [
                           GestureDetector(
@@ -380,36 +378,93 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                         ],
                       ),
 
-                      //error message
-                      if (errorMessage != null) ...[
-                        SizedBox(height: screenHeight * 0.02),
-                        Text(
-                          errorMessage!,
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: isTablet ? 14 : 12,
-                          ),
-                        ),
-                      ],
-
                       SizedBox(height: screenHeight * 0.04),
 
+                      // Sign Up Button
                       GestureDetector(
-                        onTap: isAgeVerified && !isLoading ? _requestOtp : null,
+                        onTap: areFieldsValid()
+                            ? () async {
+                          String contact = isEmailSignup ? emailController.text : mobileController.text;
+                          String userName = nameController.text;
+                          String inviteCode = referralController.text;
+
+                          // Show loading indicator
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
+                              ),
+                            ),
+                          );
+
+                          // Request OTP
+                          Map<String, dynamic> response = await SignupApi.requestSignupOtp(
+                            contact,
+                            userName,
+                            inviteCode,
+                          );
+
+                          // Hide loading indicator
+                          Navigator.pop(context);
+
+                          if (response['success']) {
+                            // Navigate to OTP screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OTPVerificationScreen(
+                                  contact: contact,
+                                  isEmail: isEmailSignup,
+                                  isSignup: true,
+                                  userName: userName,
+                                  inviteCode: inviteCode,
+                                ),
+                              ),
+                            );
+                          } else {
+                            String errorMessage = response['message'] ?? 'Failed to send OTP. Please try again.';
+                            if (errorMessage.toLowerCase().contains('user already exist')) {
+                              errorMessage = 'This account already exists. Please login instead.';
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(errorMessage),
+                                backgroundColor: Colors.red,
+                                action: errorMessage.toLowerCase().contains('already exists')
+                                    ? SnackBarAction(
+                                  label: 'Login',
+                                  textColor: Colors.white,
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => Dream11LoginPage(),
+                                      ),
+                                    );
+                                  },
+                                )
+                                    : null,
+                              ),
+                            );
+                          }
+                        }
+                            : null,
                         child: Container(
                           width: double.infinity,
                           height: screenHeight * 0.07,
                           decoration: BoxDecoration(
-                            gradient: isAgeVerified && !isLoading
+                            gradient: areFieldsValid()
                                 ? LinearGradient(
                               colors: [Color(0xFF1E3A8A), Color(0xFF1E293B)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             )
                                 : null,
-                            color: isAgeVerified && !isLoading ? null : Colors.grey[300],
+                            color: areFieldsValid() ? null : Colors.grey[300],
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: isAgeVerified && !isLoading
+                            boxShadow: areFieldsValid()
                                 ? [
                               BoxShadow(
                                 color: Color(0xFF1E3A8A).withOpacity(0.3),
@@ -420,12 +475,10 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                                 : null,
                           ),
                           child: Center(
-                            child: isLoading
-                                ? CircularProgressIndicator(color: Colors.white)
-                                : Text(
-                              'CONTINUE',
+                            child: Text(
+                              'SIGN UP',
                               style: TextStyle(
-                                color: isAgeVerified ? Colors.white : Colors.grey[500],
+                                color: areFieldsValid() ? Colors.white : Colors.grey[500],
                                 fontSize: isTablet ? 18 : 16,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.2,
@@ -437,11 +490,12 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.02),
 
+                      // Terms Text
                       Center(
                         child: RichText(
                           textAlign: TextAlign.center,
                           text: TextSpan(
-                            text: 'By continuing, you agree to our ',
+                            text: 'By signing up, you agree to our ',
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: isTablet ? 14 : 12,
@@ -469,6 +523,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.03),
 
+                      // Divider
                       Row(
                         children: [
                           Expanded(child: Divider(color: Colors.grey[300])),
@@ -489,10 +544,11 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.03),
 
+                      // Social Login Options
                       Column(
                         children: [
                           _buildSocialButton(
-                            'Continue with Google',
+                            'Sign up with Google',
                             'assets/images/google_icon.png',
                             Colors.white,
                             screenWidth,
@@ -501,7 +557,7 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                           ),
                           SizedBox(height: screenHeight * 0.015),
                           _buildSocialButton(
-                            'Continue with Facebook',
+                            'Sign up with Facebook',
                             'assets/images/facebook_icon.png',
                             Color(0xFF1877F2),
                             screenWidth,
@@ -514,12 +570,12 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
 
                       SizedBox(height: screenHeight * 0.03),
 
-                      // Don't have an account? Sign up
+                      // Already have an account
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Don't have an account? ",
+                            'Already have an account? ',
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: isTablet ? 16 : 14,
@@ -530,12 +586,37 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => SignupPage(),
+                                  builder: (context) => Dream11LoginPage(),
                                 ),
                               );
                             },
                             child: Text(
-                              'Sign up',
+                              'Login',
+                              style: TextStyle(
+                                color: Color(0xFF1E3A8A),
+                                fontSize: isTablet ? 16 : 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: screenHeight * 0.02),
+
+                      // Have an invite code? (moved from login page)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => _buildInviteCodeDialog(context, isTablet),
+                              );
+                            },
+                            child: Text(
+                              'Have an invite code?',
                               style: TextStyle(
                                 color: Color(0xFF1E3A8A),
                                 fontSize: isTablet ? 16 : 14,
@@ -610,18 +691,96 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
       ),
     );
   }
+
+  // Invite code dialog (moved from login page)
+  Widget _buildInviteCodeDialog(BuildContext context, bool isTablet) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Enter Invite Code',
+              style: TextStyle(
+                fontSize: isTablet ? 20 : 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Enter your invite code',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                ),
+              ),
+            ),
+            SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'CANCEL',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF1E3A8A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  child: Text(
+                    'SUBMIT',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
+// OTP Verification Screen for Signup
 class OTPVerificationScreen extends StatefulWidget {
   final String contact;
   final bool isEmail;
-  final UserService userService;
+  final bool isSignup;
+  final String userName;
+  final String inviteCode;
 
   const OTPVerificationScreen({
     Key? key,
     required this.contact,
     required this.isEmail,
-    required this.userService,
+    this.isSignup = false,
+    required this.userName,
+    required this.inviteCode,
   }) : super(key: key);
 
   @override
@@ -639,8 +798,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   );
 
   bool isOTPComplete = false;
-  bool isVerifying = false;
-  String? errorMessage;
   int resendTimer = 30;
 
   @override
@@ -648,7 +805,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     super.initState();
     startResendTimer();
 
-    //check if otp is complete whenever text changes
+    // Check if OTP is complete whenever text changes
     for (var controller in otpControllers) {
       controller.addListener(_checkOTPComplete);
     }
@@ -671,85 +828,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
         });
       }
     });
-  }
-
-  //verify otp with the service
-  Future<void> _verifyOTP() async {
-    if (!isOTPComplete) {
-      setState(() {
-        errorMessage = "Please enter the complete OTP";
-      });
-      return;
-    }
-
-    setState(() {
-      isVerifying = true;
-      errorMessage = null;
-    });
-
-    try {
-      final otp = getOTP();
-      final bool success = await widget.userService.verifyOtp(widget.contact, otp);
-
-      if (success) {
-        //home screen on success
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const HomeScreen(),
-          ),
-        );
-      } else {
-        setState(() {
-          errorMessage = "Invalid OTP. Please try again.";
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = "An error occurred: ${e.toString()}";
-      });
-    } finally {
-      setState(() {
-        isVerifying = false;
-      });
-    }
-  }
-
-  // resend otp
-  Future<void> _resendOTP() async {
-    if (resendTimer > 0) {
-      return;
-    }
-
-    setState(() {
-      isVerifying = true;
-      errorMessage = null;
-    });
-
-    try {
-      final bool success = await widget.userService.requestOtp(widget.contact);
-
-      if (success) {
-        setState(() {
-          resendTimer = 30;
-          startResendTimer();
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('OTP sent successfully')),
-        );
-      } else {
-        setState(() {
-          errorMessage = "Failed to resend OTP. Please try again.";
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = "An error occurred: ${e.toString()}";
-      });
-    } finally {
-      setState(() {
-        isVerifying = false;
-      });
-    }
   }
 
   @override
@@ -884,38 +962,61 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                 }),
               ),
 
-              //error message
-              if (errorMessage != null) ...[
-                SizedBox(height: screenHeight * 0.02),
-                Text(
-                  errorMessage!,
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: isTablet ? 14 : 12,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-
               SizedBox(height: screenHeight * 0.04),
 
-              //verify button
+              // Verify Button
               GestureDetector(
-                onTap: isOTPComplete && !isVerifying ? _verifyOTP : null,
+                onTap: isOTPComplete
+                    ? () async {
+                  // Show loading indicator
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
+                      ),
+                    ),
+                  );
+
+                  // Verify OTP
+                  bool success = await SignupApi.verifySignupOtp(getOTP());
+
+                  // Hide loading indicator
+                  Navigator.pop(context);
+
+                  if (success) {
+                    // Navigate to home screen after successful verification
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => const HomeScreen(),
+                      ),
+                    );
+                  } else {
+                    // Show error message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Invalid OTP. Please try again.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+                    : null,
                 child: Container(
                   width: double.infinity,
                   height: screenHeight * 0.07,
                   decoration: BoxDecoration(
-                    gradient: isOTPComplete && !isVerifying
+                    gradient: isOTPComplete
                         ? LinearGradient(
                       colors: [Color(0xFF1E3A8A), Color(0xFF1E293B)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     )
                         : null,
-                    color: isOTPComplete && !isVerifying ? null : Colors.grey[300],
+                    color: isOTPComplete ? null : Colors.grey[300],
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: isOTPComplete && !isVerifying
+                    boxShadow: isOTPComplete
                         ? [
                       BoxShadow(
                         color: Color(0xFF1E3A8A).withOpacity(0.3),
@@ -926,10 +1027,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         : null,
                   ),
                   child: Center(
-                    child: isVerifying
-                        ? CircularProgressIndicator(color: Colors.white)
-                        : Text(
-                      'VERIFY OTP',
+                    child: Text(
+                      widget.isSignup ? 'CREATE ACCOUNT' : 'VERIFY OTP',
                       style: TextStyle(
                         color: isOTPComplete ? Colors.white : Colors.grey[500],
                         fontSize: isTablet ? 18 : 16,
@@ -943,7 +1042,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               SizedBox(height: screenHeight * 0.03),
 
-              //resend otp
+              // Resend OTP
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -955,7 +1054,44 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: (resendTimer == 0 && !isVerifying) ? _resendOTP : null,
+                    onTap: resendTimer == 0
+                        ? () async {
+                      setState(() {
+                        resendTimer = 30;
+                        startResendTimer();
+                      });
+
+                      // Show loading indicator
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A8A)),
+                          ),
+                        ),
+                      );
+
+                      // Resend OTP
+                      bool success = (await SignupApi.requestSignupOtp(
+                        widget.contact,
+                        widget.userName,
+                        widget.inviteCode,
+                      )) as bool;
+
+                      // Hide loading indicator
+                      Navigator.pop(context);
+
+                      if (!success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to resend OTP. Please try again.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                        : null,
                     child: Text(
                       resendTimer > 0 ? 'Resend in ${resendTimer}s' : 'Resend OTP',
                       style: TextStyle(
@@ -970,7 +1106,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
               SizedBox(height: screenHeight * 0.03),
 
-              //change number/email
+              // Change Number/Email Option
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Text(
