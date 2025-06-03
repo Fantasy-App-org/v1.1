@@ -114,7 +114,7 @@ class StarFantasyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/welcome': (context) => const WelcomeScreen(),
+         '/welcome': (context) => const WelcomeScreen(),
         '/signup': (context) => const SignupPage(),
         '/home': (context) => const HomeScreen(),
         '/referral': (context) => const ReferralScreen(),

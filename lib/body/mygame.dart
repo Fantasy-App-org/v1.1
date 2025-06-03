@@ -43,12 +43,25 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            _buildUpcomingContent(screenWidth, screenHeight, isTablet),
-            _buildEmptyState(screenWidth, screenHeight, isTablet, 'Live'),
-            _buildEmptyState(screenWidth, screenHeight, isTablet, 'Completed'),
-          ],
+        body: Container(
+          decoration: const BoxDecoration(
+            // White background
+            color: Colors.white,
+            // Cricket illustration background - made darker
+            image: DecorationImage(
+              image: AssetImage('assets/images/no_upcoming_fixtures_found.png'),
+              fit: BoxFit.contain,
+              alignment: Alignment.center,
+              opacity: 0.3, // Changed from 0.1 to 0.3 to make it darker
+            ),
+          ),
+          child: TabBarView(
+            children: [
+              _buildUpcomingContent(screenWidth, screenHeight, isTablet),
+              _buildEmptyState(screenWidth, screenHeight, isTablet, 'Live'),
+              _buildEmptyState(screenWidth, screenHeight, isTablet, 'Completed'),
+            ],
+          ),
         ),
       ),
     );
@@ -101,17 +114,32 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          // Header
+          // Header with gradient background
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              gradient: LinearGradient(
+                colors: [Colors.blue[50]!, Colors.white],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
               border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
             ),
             child: Row(
@@ -127,13 +155,22 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    borderRadius: BorderRadius.circular(4),
+                    gradient: LinearGradient(
+                      colors: [Colors.red[400]!, Colors.red[600]!],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Text(
                     timeLeft,
                     style: const TextStyle(
-                      color: Colors.red,
+                      color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -143,22 +180,41 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
             ),
           ),
 
-          // Teams
-          Padding(
+          // Teams section with subtle background
+          Container(
             padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.8),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Column(
                   children: [
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: Colors.grey[100],
-                      child: Text(
-                        team1Logo,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Colors.blue[100]!, Colors.blue[50]!],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withOpacity(0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 25,
+                        backgroundColor: Colors.transparent,
+                        child: Text(
+                          team1Logo,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.blue,
+                          ),
                         ),
                       ),
                     ),
@@ -172,24 +228,47 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
                     ),
                   ],
                 ),
-                const Text(
-                  'VS',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text(
+                    'VS',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
                 Column(
                   children: [
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: Colors.grey[100],
-                      child: Text(
-                        team2Logo,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Colors.orange[100]!, Colors.orange[50]!],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.orange.withOpacity(0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 25,
+                        backgroundColor: Colors.transparent,
+                        child: Text(
+                          team2Logo,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.orange,
+                          ),
                         ),
                       ),
                     ),
@@ -207,11 +286,19 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
             ),
           ),
 
-          // Stats
+          // Stats section with gradient
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              gradient: LinearGradient(
+                colors: [Colors.grey[50]!, Colors.grey[100]!],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
               border: Border(top: BorderSide(color: Colors.grey[300]!)),
             ),
             child: Row(
@@ -219,16 +306,26 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.emoji_events, size: 16, color: Colors.grey[600]),
+                    Icon(Icons.emoji_events, size: 16, color: Colors.amber[600]),
                     const SizedBox(width: 4),
-                    Text('$contests Contests', style: const TextStyle(fontSize: 12)),
+                    Text('$contests Contests',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
                 Row(
                   children: [
-                    Icon(Icons.groups, size: 16, color: Colors.grey[600]),
+                    Icon(Icons.groups, size: 16, color: Colors.green[600]),
                     const SizedBox(width: 4),
-                    Text('$teams Teams', style: const TextStyle(fontSize: 12)),
+                    Text('$teams Teams',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -244,23 +341,20 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.sports_cricket,
-            size: 80,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 16),
+
+          const SizedBox(height: 70),
           Text(
             type == 'Live'
                 ? 'No live matches'
                 : type == 'Completed'
                 ? 'No completed matches'
-                : 'Ready to play?',
+                : 'You haven\'t joined any upcoming matches!',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.grey[800],
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
@@ -268,32 +362,50 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
                 ? 'Check back when matches are live'
                 : type == 'Completed'
                 ? 'Your completed matches will appear here'
-                : 'Join a match now',
+                : 'Find any upcoming matches to join and start winning.',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],
             ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 24),
-          TextButton(
-            onPressed: () {},
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.blue,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          const SizedBox(height: 32),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue[400]!, Colors.blue[600]!],
               ),
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: const Text(
-              'VIEW MATCHES',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+            child: TextButton(
+              onPressed: () {},
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: const Text(
+                'VIEW MATCHES',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+
   }
 }

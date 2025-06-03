@@ -1,7 +1,6 @@
 import 'package:fantasy/body/signup.dart';
 import 'package:flutter/material.dart';
 
-
 import 'login.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -28,62 +27,71 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Star logo with gradient
-            Container(
-              height: 100,
-              width: 100,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFB956D7), Color(0xFF8B3DB3)],
-                ),
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: Center(
-                child: Image.asset(
-                  'assets/star_logo.png',
-                  height: 60,
-                  width: 60,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'STAR25PRO',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1D48),
-              ),
-            ),
-            const SizedBox(height: 10),
-            RichText(
-              text: const TextSpan(
-                children: [
-                  TextSpan(
-                    text: 'Play Hard! ',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontStyle: FontStyle.italic,
-                      color: Color(0xFF1A1D48),
-                    ),
+      body: Container(
+        height: MediaQuery.of(context).size.height,
+        width: MediaQuery.of(context).size.width,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background.jpg'), // Replace with your background image path
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Star logo with gradient
+              Container(
+                height: 100,
+                width: 100,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFB956D7), Color(0xFF8B3DB3)],
                   ),
-                  TextSpan(
-                    text: 'Earn Daily!',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontStyle: FontStyle.italic,
-                      color: Color(0xFFB956D7),
-                    ),
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Center(
+                  child: Image.asset(
+                    'assets/images/app_logo_dpl.png',
+                    height: 60,
+                    width: 60,
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              const Text(
+                'STAR25PRO',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1D48),
+                ),
+              ),
+              const SizedBox(height: 10),
+              RichText(
+                text: const TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Play Hard! ',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontStyle: FontStyle.italic,
+                        color: Color(0xFF1A1D48),
+                      ),
+                    ),
+                    TextSpan(
+                      text: 'Earn Daily!',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontStyle: FontStyle.italic,
+                        color: Color(0xFFB956D7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
