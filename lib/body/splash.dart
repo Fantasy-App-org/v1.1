@@ -1,7 +1,7 @@
-import 'package:fantasy/body/signup.dart';
+import 'package:fantasy/auth/signup.dart';
 import 'package:flutter/material.dart';
 
-import 'login.dart';
+import '../auth/login.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -32,7 +32,7 @@ class _SplashScreenState extends State<SplashScreen> {
         width: MediaQuery.of(context).size.width,
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/images/background.jpg'), // Replace with your background image path
+            image: AssetImage('assets/images/background_2.jpeg'), // Replace with your background image path
             fit: BoxFit.cover,
           ),
         ),

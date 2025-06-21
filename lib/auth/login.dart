@@ -1,42 +1,28 @@
+import 'package:fantasy/auth/signup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'homescreen.dart';
-import 'login.dart';
+import '../body/homescreen.dart';
 
-class SignupPage extends StatefulWidget {
-  const SignupPage({Key? key}) : super(key: key);
+class Dream11LoginPage extends StatefulWidget {
+  const Dream11LoginPage({Key? key}) : super(key: key);
 
   @override
-  State<SignupPage> createState() => _SignupPageState();
+  State<Dream11LoginPage> createState() => _Dream11LoginPageState();
 }
 
-class _SignupPageState extends State<SignupPage> {
-  bool isEmailSignup = false;
+class _Dream11LoginPageState extends State<Dream11LoginPage> {
+  bool isEmailLogin = false;
   bool isAgeVerified = false;
-  final TextEditingController nameController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController referralController = TextEditingController();
 
   @override
   void dispose() {
-    nameController.dispose();
     mobileController.dispose();
     emailController.dispose();
     referralController.dispose();
     super.dispose();
-  }
-
-  bool isReferralValid() {
-    return referralController.text.isNotEmpty;
-  }
-
-  bool areFieldsValid() {
-    if (isEmailSignup) {
-      return emailController.text.isNotEmpty && nameController.text.isNotEmpty && isReferralValid() && isAgeVerified;
-    } else {
-      return mobileController.text.isNotEmpty && nameController.text.isNotEmpty && isReferralValid() && isAgeVerified;
-    }
   }
 
   @override
@@ -52,9 +38,9 @@ class _SignupPageState extends State<SignupPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Premium Header with Gradient
+              // Premium Header with Gradient - Using same colors as drawer
               Container(
-                height: screenHeight * 0.32,
+                height: screenHeight * 0.35,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -103,14 +89,14 @@ class _SignupPageState extends State<SignupPage> {
                           ),
                           Spacer(),
                           Text(
-                            'Create Account',
+                            'Welcome to',
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: isTablet ? 18 : 16,
                             ),
                           ),
                           Text(
-                            'Join Fantasy Cricket',
+                            'Fantasy Cricket',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: isTablet ? 36 : 32,
@@ -119,7 +105,7 @@ class _SignupPageState extends State<SignupPage> {
                           ),
                           SizedBox(height: screenHeight * 0.01),
                           Text(
-                            'Create, Compete & Win',
+                            'Play, Win & Celebrate',
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: isTablet ? 16 : 14,
@@ -133,7 +119,7 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
 
-              // Signup Form Container
+              // Login Form Container
               Container(
                 transform: Matrix4.translationValues(0, -30, 0),
                 decoration: BoxDecoration(
@@ -157,7 +143,7 @@ class _SignupPageState extends State<SignupPage> {
                     children: [
                       SizedBox(height: screenHeight * 0.02),
 
-                      // Mobile/Email Tabs
+                      // Login/Register Tabs
                       Center(
                         child: Container(
                           decoration: BoxDecoration(
@@ -168,20 +154,20 @@ class _SignupPageState extends State<SignupPage> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               GestureDetector(
-                                onTap: () => setState(() => isEmailSignup = false),
+                                onTap: () => setState(() => isEmailLogin = false),
                                 child: Container(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: screenWidth * 0.06,
                                     vertical: screenHeight * 0.015,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: !isEmailSignup ? Color(0xFF1E3A8A) : Colors.transparent,
+                                    color: !isEmailLogin ? Color(0xFF1E3A8A) : Colors.transparent,
                                     borderRadius: BorderRadius.circular(25),
                                   ),
                                   child: Text(
                                     'Mobile',
                                     style: TextStyle(
-                                      color: !isEmailSignup ? Colors.white : Colors.grey[600],
+                                      color: !isEmailLogin ? Colors.white : Colors.grey[600],
                                       fontWeight: FontWeight.w600,
                                       fontSize: isTablet ? 16 : 14,
                                     ),
@@ -189,20 +175,20 @@ class _SignupPageState extends State<SignupPage> {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: () => setState(() => isEmailSignup = true),
+                                onTap: () => setState(() => isEmailLogin = true),
                                 child: Container(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: screenWidth * 0.06,
                                     vertical: screenHeight * 0.015,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: isEmailSignup ? Color(0xFF1E3A8A) : Colors.transparent,
+                                    color: isEmailLogin ? Color(0xFF1E3A8A) : Colors.transparent,
                                     borderRadius: BorderRadius.circular(25),
                                   ),
                                   child: Text(
                                     'Email',
                                     style: TextStyle(
-                                      color: isEmailSignup ? Colors.white : Colors.grey[600],
+                                      color: isEmailLogin ? Colors.white : Colors.grey[600],
                                       fontWeight: FontWeight.w600,
                                       fontSize: isTablet ? 16 : 14,
                                     ),
@@ -216,7 +202,7 @@ class _SignupPageState extends State<SignupPage> {
 
                       SizedBox(height: screenHeight * 0.04),
 
-                      // Name Field
+                      // Input Field
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.grey[50],
@@ -224,16 +210,17 @@ class _SignupPageState extends State<SignupPage> {
                           border: Border.all(color: Colors.grey[200]!),
                         ),
                         child: TextField(
-                          controller: nameController,
+                          controller: isEmailLogin ? emailController : mobileController,
+                          keyboardType: isEmailLogin ? TextInputType.emailAddress : TextInputType.phone,
                           style: TextStyle(fontSize: isTablet ? 18 : 16),
                           decoration: InputDecoration(
-                            hintText: 'Full Name',
+                            hintText: isEmailLogin ? 'Email address' : 'Mobile number',
                             hintStyle: TextStyle(
                               color: Colors.grey[400],
                               fontSize: isTablet ? 18 : 16,
                             ),
                             prefixIcon: Icon(
-                              Icons.person_outline,
+                              isEmailLogin ? Icons.email_outlined : Icons.phone_outlined,
                               color: Colors.grey[400],
                             ),
                             border: InputBorder.none,
@@ -245,103 +232,11 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                       ),
 
-                      SizedBox(height: screenHeight * 0.02),
+                      SizedBox(height: screenHeight * 0.0),
 
-                      // Mobile/Email Field
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[200]!),
-                        ),
-                        child: TextField(
-                          controller: isEmailSignup ? emailController : mobileController,
-                          keyboardType: isEmailSignup ? TextInputType.emailAddress : TextInputType.phone,
-                          style: TextStyle(fontSize: isTablet ? 18 : 16),
-                          decoration: InputDecoration(
-                            hintText: isEmailSignup ? 'Email address' : 'Mobile number',
-                            hintStyle: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: isTablet ? 18 : 16,
-                            ),
-                            prefixIcon: Icon(
-                              isEmailSignup ? Icons.email_outlined : Icons.phone_outlined,
-                              color: Colors.grey[400],
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: screenWidth * 0.04,
-                              vertical: screenHeight * 0.02,
-                            ),
-                          ),
-                        ),
-                      ),
+                      // Referral Code Field
 
                       SizedBox(height: screenHeight * 0.02),
-
-                      // Referral Code Field (Mandatory)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Referral Code *',
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontSize: isTablet ? 16 : 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(height: screenHeight * 0.01),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey[50],
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: !isReferralValid() && referralController.text.isNotEmpty
-                                    ? Colors.red[400]!
-                                    : Colors.grey[200]!,
-                              ),
-                            ),
-                            child: TextField(
-                              controller: referralController,
-                              textCapitalization: TextCapitalization.characters,
-                              style: TextStyle(fontSize: isTablet ? 18 : 16),
-                              decoration: InputDecoration(
-                                hintText: 'Enter referral code',
-                                hintStyle: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: isTablet ? 18 : 16,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.card_giftcard_outlined,
-                                  color: Colors.grey[400],
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: screenWidth * 0.04,
-                                  vertical: screenHeight * 0.02,
-                                ),
-                              ),
-                              onChanged: (value) {
-                                setState(() {});
-                              },
-                            ),
-                          ),
-                          if (!isReferralValid() && referralController.text.isNotEmpty)
-                            Padding(
-                              padding: EdgeInsets.only(top: 5),
-                              child: Text(
-                                'Valid referral code is required',
-                                style: TextStyle(
-                                  color: Colors.red[400],
-                                  fontSize: isTablet ? 14 : 12,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-
-                      SizedBox(height: screenHeight * 0.03),
 
                       // Age Verification with Custom Checkbox
                       Row(
@@ -379,18 +274,17 @@ class _SignupPageState extends State<SignupPage> {
 
                       SizedBox(height: screenHeight * 0.04),
 
-                      // Sign Up Button
+                      // Continue Button
                       GestureDetector(
-                        onTap: areFieldsValid()
+                        onTap: isAgeVerified
                             ? () {
-                          String contact = isEmailSignup ? emailController.text : mobileController.text;
+                          String contact = isEmailLogin ? emailController.text : mobileController.text;
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => OTPVerificationScreen(
                                 contact: contact,
-                                isEmail: isEmailSignup,
-                                isSignup: true,
+                                isEmail: isEmailLogin,
                               ),
                             ),
                           );
@@ -400,16 +294,16 @@ class _SignupPageState extends State<SignupPage> {
                           width: double.infinity,
                           height: screenHeight * 0.07,
                           decoration: BoxDecoration(
-                            gradient: areFieldsValid()
+                            gradient: isAgeVerified
                                 ? LinearGradient(
                               colors: [Color(0xFF1E3A8A), Color(0xFF1E293B)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             )
                                 : null,
-                            color: areFieldsValid() ? null : Colors.grey[300],
+                            color: isAgeVerified ? null : Colors.grey[300],
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: areFieldsValid()
+                            boxShadow: isAgeVerified
                                 ? [
                               BoxShadow(
                                 color: Color(0xFF1E3A8A).withOpacity(0.3),
@@ -421,9 +315,9 @@ class _SignupPageState extends State<SignupPage> {
                           ),
                           child: Center(
                             child: Text(
-                              'SIGN UP',
+                              'CONTINUE',
                               style: TextStyle(
-                                color: areFieldsValid() ? Colors.white : Colors.grey[500],
+                                color: isAgeVerified ? Colors.white : Colors.grey[500],
                                 fontSize: isTablet ? 18 : 16,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.2,
@@ -440,7 +334,7 @@ class _SignupPageState extends State<SignupPage> {
                         child: RichText(
                           textAlign: TextAlign.center,
                           text: TextSpan(
-                            text: 'By signing up, you agree to our ',
+                            text: 'By continuing, you agree to our ',
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: isTablet ? 14 : 12,
@@ -493,7 +387,7 @@ class _SignupPageState extends State<SignupPage> {
                       Column(
                         children: [
                           _buildSocialButton(
-                            'Sign up with Google',
+                            'Continue with Google',
                             'assets/images/google_icon.png',
                             Colors.white,
                             screenWidth,
@@ -502,7 +396,7 @@ class _SignupPageState extends State<SignupPage> {
                           ),
                           SizedBox(height: screenHeight * 0.015),
                           _buildSocialButton(
-                            'Sign up with Facebook',
+                            'Continue with Facebook',
                             'assets/images/facebook_icon.png',
                             Color(0xFF1877F2),
                             screenWidth,
@@ -515,12 +409,12 @@ class _SignupPageState extends State<SignupPage> {
 
                       SizedBox(height: screenHeight * 0.03),
 
-                      // Already have an account
+                      // Register Now Option (replaced "Have an invite code?")
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Already have an account? ',
+                            "Don't have an account? ",
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: isTablet ? 16 : 14,
@@ -528,15 +422,16 @@ class _SignupPageState extends State<SignupPage> {
                           ),
                           GestureDetector(
                             onTap: () {
+                              // Navigate to SignUp page
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => Dream11LoginPage(),
+                                  builder: (context) => SignupPage()
                                 ),
                               );
                             },
                             child: Text(
-                              'Login',
+                              'Register Now',
                               style: TextStyle(
                                 color: Color(0xFF1E3A8A),
                                 fontSize: isTablet ? 16 : 14,
@@ -613,17 +508,15 @@ class _SignupPageState extends State<SignupPage> {
   }
 }
 
-// OTP Verification Screen for Signup
+// OTP Verification Screen
 class OTPVerificationScreen extends StatefulWidget {
   final String contact;
   final bool isEmail;
-  final bool isSignup;
 
   const OTPVerificationScreen({
     Key? key,
     required this.contact,
     required this.isEmail,
-    this.isSignup = false,
   }) : super(key: key);
 
   @override
@@ -844,7 +737,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      widget.isSignup ? 'CREATE ACCOUNT' : 'VERIFY OTP',
+                      'VERIFY OTP',
                       style: TextStyle(
                         color: isOTPComplete ? Colors.white : Colors.grey[500],
                         fontSize: isTablet ? 18 : 16,

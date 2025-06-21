@@ -1,12 +1,9 @@
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import 'body/homescreen.dart';
-
 import 'body/refral.dart';
-import 'body/signup.dart';
+import 'auth/signup.dart';
 import 'body/splash.dart';
 import 'body/welcome.dart';
 

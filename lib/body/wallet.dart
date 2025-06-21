@@ -223,11 +223,13 @@ class WalletScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _buildBalanceItem('Winnings', '₹ 0.0', screenWidth, isTablet),
-                    Divider(color: Colors.grey[200], thickness: 1),
                     _buildBalanceItem('Cash Deposit', '₹ 0.0', screenWidth, isTablet),
                     Divider(color: Colors.grey[200], thickness: 1),
-                    _buildBalanceItem('Level Bonus', '₹ 0.0', screenWidth, isTablet),
+                    _buildBalanceItem('Winnings', '₹ 0.0', screenWidth, isTablet),
+                    Divider(color: Colors.grey[200], thickness: 1),
+                    _buildBalanceItem('CashBack Bonus', '₹ 0.0', screenWidth, isTablet),
+                    Divider(color: Colors.grey[200], thickness: 1),
+                    _buildBalanceItem('Referal Bonus', '₹ 0.0', screenWidth, isTablet),
                     Divider(color: Colors.grey[200], thickness: 1),
                     _buildBalanceItem('Bonus', '₹ 0.0', screenWidth, isTablet),
                   ],
