@@ -1,3 +1,4 @@
+import 'package:fantasy/drawe_pages/about_us.dart';
 import 'package:fantasy/drawe_pages/profile.dart';
 import 'package:fantasy/body/refral.dart';
 import 'package:fantasy/body/tree.dart';
@@ -7,6 +8,11 @@ import 'package:fantasy/service/fixture_service.dart';
 import 'package:fantasy/service/user_service.dart';
 import 'package:fantasy/drawe_pages/fantasy point system.dart';
 import 'package:fantasy/drawe_pages/transection_history.dart';
+import 'package:fantasy/drawe_pages/FAQ.dart';
+import 'package:fantasy/drawe_pages/Legality_pages.dart';
+import 'package:fantasy/drawe_pages/how_to_play.dart';
+import 'package:fantasy/team_creation/contest_all_pages.dart';
+import 'package:fantasy/team_creation/creat team.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -324,6 +330,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  // Handle upcoming match tap - Enhanced from second file
+  void _handleUpcomingMatchTap(String team1, String team2, String matchId) {
+    // Navigate to team creation page
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => FantasyCricketPage()),
+    );
+  }
+
   Future<void> _testApiConnection() async {
     if (!DebugConfig.enableNetworkFeatures) {
       _showTestResult('⚠️ Network features disabled in debug mode.\n\nThis is expected behavior when running on desktop during development.');
@@ -465,7 +480,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'FANTASY XI',
+                'STAR 25 PRO',
                 style: TextStyle(
                   color: Color(0xFF0F172A),
                   fontWeight: FontWeight.w800,
@@ -661,7 +676,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             _buildQuickActions(),
             _buildLiveMatches(),
             _buildUpcomingMatches(),
-            // _buildPerformanceStats(),
+            _buildPerformanceStats(),
             SizedBox(height: 100),
           ],
         ),
@@ -976,7 +991,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             MaterialPageRoute(builder: (context) => AllLiveMatchesPage()),
           );
         }),
-        if (_liveMatches.isEmpty)
+        if (_liveMatches.isEmpty && !_isLoading)
           Container(
             margin: EdgeInsets.symmetric(horizontal: 20),
             padding: EdgeInsets.all(40),
@@ -1002,7 +1017,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
           )
-        else
+        else if (_liveMatches.isNotEmpty)
           SizedBox(
             height: screenHeight * 0.25,
             child: ListView.builder(
@@ -1264,7 +1279,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             MaterialPageRoute(builder: (context) => AllUpcomingMatchesPage()),
           );
         }),
-        if (_upcomingMatches.isEmpty)
+        if (_upcomingMatches.isEmpty && !_isLoading)
           Container(
             margin: EdgeInsets.symmetric(horizontal: 20),
             padding: EdgeInsets.all(40),
@@ -1290,7 +1305,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
           )
-        else
+        else if (_upcomingMatches.isNotEmpty)
           ListView.builder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
@@ -1299,17 +1314,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             itemBuilder: (context, index) {
               final match = _upcomingMatches[index];
               final timeLeft = FixtureService.formatTimeLeft(match.matchDate);
-              return _buildUpcomingMatchCard(
-                team1: match.teamA,
-                team2: match.teamB,
-                team1Short: match.teamAShort,
-                team2Short: match.teamBShort,
-                time: timeLeft,
-                contests: '${match.totalContest} Contests',
-                prize: match.matchContest,
-                team1Color: Color(0xFF3B82F6),
-                team2Color: Color(0xFFEF4444),
-                match: match,
+              return GestureDetector(
+                onTap: () => _handleUpcomingMatchTap(
+                  match.teamA,
+                  match.teamB,
+                  'match_${match.id}',
+                ),
+                child: _buildUpcomingMatchCard(
+                  team1: match.teamA,
+                  team2: match.teamB,
+                  team1Short: match.teamAShort,
+                  team2Short: match.teamBShort,
+                  time: timeLeft,
+                  contests: '${match.totalContest} Contests',
+                  prize: match.matchContest,
+                  team1Color: Color(0xFF3B82F6),
+                  team2Color: Color(0xFFEF4444),
+                  match: match,
+                ),
               );
             },
           ),
@@ -1574,101 +1596,101 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // Widget _buildPerformanceStats() {
-  //   return Container(
-  //     margin: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-  //     padding: EdgeInsets.all(20),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(20),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Color(0xFF1E293B).withOpacity(0.08),
-  //           blurRadius: 20,
-  //           offset: Offset(0, 4),
-  //         ),
-  //       ],
-  //       border: Border.all(color: Color(0xFFF1F5F9)),
-  //     ),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Row(
-  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //           children: [
-  //             Text(
-  //               'Your Performance',
-  //               style: TextStyle(
-  //                 color: Color(0xFF0F172A),
-  //                 fontSize: 18,
-  //                 fontWeight: FontWeight.w700,
-  //               ),
-  //             ),
-  //             Container(
-  //               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-  //               decoration: BoxDecoration(
-  //                 color: Color(0xFF10B981).withOpacity(0.1),
-  //                 borderRadius: BorderRadius.circular(8),
-  //               ),
-  //               child: Text(
-  //                 'This Month',
-  //                 style: TextStyle(
-  //                   color: Color(0xFF10B981),
-  //                   fontSize: 12,
-  //                   fontWeight: FontWeight.w600,
-  //                 ),
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //         SizedBox(height: 20),
-  //         Row(
-  //           children: [
-  //             Expanded(
-  //               child: _buildStatCard(
-  //                 'Contests Joined',
-  //                 _userStats['contestsJoined'].toString(),
-  //                 Icons.emoji_events_rounded,
-  //                 Color(0xFF3B82F6),
-  //               ),
-  //             ),
-  //             SizedBox(width: 12),
-  //             Expanded(
-  //               child: _buildStatCard(
-  //                 'Total Winnings',
-  //                 '₹${_userStats['totalWon'].toStringAsFixed(0)}',
-  //                 Icons.account_balance_wallet_rounded,
-  //                 Color(0xFF10B981),
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //         SizedBox(height: 12),
-  //         Row(
-  //           children: [
-  //             Expanded(
-  //               child: _buildStatCard(
-  //                 'Win Rate',
-  //                 '${_userStats['winRate'].toStringAsFixed(1)}%',
-  //                 Icons.trending_up_rounded,
-  //                 Color(0xFFF59E0B),
-  //               ),
-  //             ),
-  //             SizedBox(width: 12),
-  //             Expanded(
-  //               child: _buildStatCard(
-  //                 'Best Rank',
-  //                 _userStats['bestRank'] > 0 ? '#${_userStats['bestRank']}' : 'N/A',
-  //                 Icons.military_tech_rounded,
-  //                 Color(0xFF8B5CF6),
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+  Widget _buildPerformanceStats() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF1E293B).withOpacity(0.08),
+            blurRadius: 20,
+            offset: Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Color(0xFFF1F5F9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Your Performance',
+                style: TextStyle(
+                  color: Color(0xFF0F172A),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Color(0xFF10B981).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'This Month',
+                  style: TextStyle(
+                    color: Color(0xFF10B981),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Contests Joined',
+                  _userStats['contestsJoined'].toString(),
+                  Icons.emoji_events_rounded,
+                  Color(0xFF3B82F6),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Total Winnings',
+                  '₹${_userStats['totalWon'].toStringAsFixed(0)}',
+                  Icons.account_balance_wallet_rounded,
+                  Color(0xFF10B981),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Win Rate',
+                  '${_userStats['winRate'].toStringAsFixed(1)}%',
+                  Icons.trending_up_rounded,
+                  Color(0xFFF59E0B),
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Best Rank',
+                  _userStats['bestRank'] > 0 ? '#${_userStats['bestRank']}' : 'N/A',
+                  Icons.military_tech_rounded,
+                  Color(0xFF8B5CF6),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
@@ -1747,67 +1769,190 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       backgroundColor: Colors.white,
       child: Column(
         children: [
-          Container(
-            height: 200,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF1E40AF), Color(0xFF3730A3)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          GestureDetector(
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfilePage()),
+              );
+            },
+            child: Container(
+              height: 280,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF667eea),
+                    Color(0xFF764ba2),
+                    Color(0xFF667eea),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  stops: [0.0, 0.5, 1.0],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ],
               ),
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.white.withOpacity(0.2),
-                          child: Icon(Icons.person, color: Colors.white, size: 32),
-                        ),
-                        if (_isPremiumUser)
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              width: 20,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [Colors.amber[600]!, Colors.amber[800]!],
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: -50,
+                    right: -50,
+                    child: Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.1),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 30,
+                    right: 20,
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.05),
+                      ),
+                    ),
+                  ),
+                  SafeArea(
+                    child: Padding(
+                      padding: EdgeInsets.all(15),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Stack(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 15,
+                                      offset: Offset(0, 8),
+                                    ),
+                                  ],
                                 ),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
+                                child: CircleAvatar(
+                                  radius: 35,
+                                  backgroundColor: Colors.white,
+                                  child: CircleAvatar(
+                                    radius: 32,
+                                    backgroundColor: Color(0xFF4F46E5),
+                                    child: Text(
+                                      _userName.isNotEmpty ? _userName.substring(0, 1).toUpperCase() : 'U',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                              child: Icon(Icons.star, size: 12, color: Colors.white),
+                              if (_isPremiumUser)
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Container(
+                                    width: 20,
+                                    height: 20,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [Colors.amber[600]!, Colors.amber[800]!],
+                                      ),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.white, width: 2),
+                                    ),
+                                    child: Icon(Icons.star, size: 12, color: Colors.white),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Welcome $_userName!',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Welcome $_userName!',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                          Text(
+                            _isPremiumUser ? 'Premium Player' : 'Fantasy Cricket Player',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          if (_isPremiumUser)
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.amber.withOpacity(0.5),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.star,
+                                    color: Colors.amber,
+                                    size: 14,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Pro Player',
+                                    style: TextStyle(
+                                      color: Colors.amber,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Text(
+                                'Tap to view profile',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                              SizedBox(width: 6),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.white.withOpacity(0.7),
+                                size: 12,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      _isPremiumUser ? 'Premium Player' : 'Fantasy Cricket Player',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -1819,6 +1964,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => ProfilePage()),
+                  );
+                }),
+                _buildDrawerItem(Icons.share_rounded, 'Referral', () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ReferralScreen()),
                   );
                 }),
                 _buildDrawerItem(
@@ -1851,16 +2002,68 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   );
                 }),
-                _buildDrawerItem(Icons.share_rounded, 'Referral', () {
+                _buildDrawerItem(Icons.help_outline_rounded, 'How To Play', () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => ReferralScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => HowToPlayPage(),
+                    ),
                   );
                 }),
-                _buildDrawerItem(Icons.support_agent_rounded, 'Support', () {}),
-                _buildDrawerItem(Icons.info_rounded, 'About', () {}),
+                _buildDrawerItem(Icons.info_rounded, 'About us', () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AboutUsPage(),
+                    ),
+                  );
+                }),
+                _buildDrawerItem(Icons.gavel_rounded, 'Legality', () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LegalityPage(),
+                    ),
+                  );
+                }),
+                _buildDrawerItem(Icons.question_answer_rounded, 'FAQ', () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Start25ProFAQPage(),
+                    ),
+                  );
+                }),
                 Divider(height: 32),
-                _buildDrawerItem(Icons.logout_rounded, 'Logout', _handleLogout, isDestructive: true),
+                _buildDrawerItem(Icons.logout_rounded, 'Logout', () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('Logout'),
+                        content: Text('Are you sure you want to logout?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              _handleLogout();
+                            },
+                            child: Text(
+                              'Logout',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }, isDestructive: true),
               ],
             ),
           ),
