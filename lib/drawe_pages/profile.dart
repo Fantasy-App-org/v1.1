@@ -1,35 +1,56 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
+import '../service/profile_service.dart';
+import '../service/user_service.dart';
+import '../model/user.dart';
+import '../config/debug_config.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+// Import the debug helper
+class DebugProfileHelper {
+  static final UserService _userService = UserService();
+  static const String baseUrl = 'http://13.232.147.237:3000';
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  static Future<void> debugProfileResponse() async {
+    try {
+      print('🔍 DEBUG: Starting profile API debug...');
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Profile Page',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
-        fontFamily: 'Poppins',
-        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-      ),
-      home: const ProfilePage(),
-    );
+      if (!_userService.isLoggedIn || _userService.authToken == null) {
+        print('❌ DEBUG: Not authenticated');
+        return;
+      }
+
+      print('✅ DEBUG: User is authenticated');
+      final response = await _userService.makeAuthenticatedRequest(
+        endpoint: '/web-services/profile',
+        method: 'GET',
+      );
+
+      print('📡 DEBUG: Response status: ${response.statusCode}');
+      print('📡 DEBUG: Raw response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        try {
+          final jsonData = json.decode(response.body);
+          print('✅ DEBUG: JSON parsed successfully');
+          print('📄 DEBUG: Top-level keys: ${jsonData.keys.toList()}');
+
+          if (jsonData['data'] != null) {
+            print('📄 DEBUG: Data keys: ${jsonData['data'].keys.toList()}');
+            print('📄 DEBUG: Data values:');
+
+            jsonData['data'].forEach((key, value) {
+              print('   $key: $value (${value.runtimeType})');
+            });
+          }
+        } catch (e) {
+          print('❌ DEBUG: Error parsing JSON: $e');
+        }
+      }
+    } catch (e) {
+      print('❌ DEBUG: Network error: $e');
+    }
   }
 }
 
@@ -46,6 +67,15 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   late AnimationController _animationController;
   late Animation<double> _animation;
 
+  final ProfileService _profileService = ProfileService();
+  final UserService _userService = UserService();
+
+  User? _currentUser;
+  bool _isLoading = true;
+  String? _errorMessage;
+  Map<String, double> _walletBalances = {};
+  Map<String, dynamic> _verificationStatus = {};
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +88,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       curve: Curves.easeInOut,
     );
     _animationController.forward();
+    _loadProfileData();
   }
 
   @override
@@ -66,9 +97,142 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _loadProfileData() async {
     try {
-      // Show a dialog to choose between camera and gallery
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+
+      // Check if we should use mock data (debug mode + desktop)
+      if (DebugConfig.isDebugMode && DebugConfig.isDesktop) {
+        DebugConfig.debugPrint('Using mock profile data for desktop debugging');
+        await DebugConfig.mockDelay();
+
+        // Use mock data
+        _currentUser = User.fromJson(DebugConfig.mockUserData);
+        _walletBalances = {
+          'cashBalance': 850.75,
+          'winningAmount': 1250.50,
+        };
+        _verificationStatus = {
+          'isVerified': false,
+          'completionPercentage': 75,
+        };
+
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Only make real API calls if enabled
+      if (DebugConfig.enableApiCalls) {
+        await DebugProfileHelper.debugProfileResponse();
+        _currentUser = await _profileService.loadProfile(forceRefresh: true);
+
+        if (_currentUser != null) {
+          _walletBalances = _profileService.getWalletBalances();
+          _verificationStatus = _profileService.getVerificationStatus();
+        }
+      } else {
+        throw Exception('API calls disabled in debug mode');
+      }
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      DebugConfig.debugPrint('Profile loading error: $e');
+      // Rest of error handling remains the same
+    }
+  }
+
+  void _showDetailedErrorDialog(String error) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Profile Loading Error'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Error details:'),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    error,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'This error has been logged for debugging. Please try again or contact support if the issue persists.',
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _loadProfileData();
+              },
+              child: const Text('Retry'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showAuthenticationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Authentication Required'),
+          content: const Text('Please login again to access your profile.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.of(context).pushReplacementNamed('/login');
+              },
+              child: const Text('Login'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage() async {
+    if (!DebugConfig.enableImagePicker) {
+      DebugConfig.debugPrint('Image picker disabled on this platform');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Image picker not available on desktop in debug mode'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    try {
       final source = await showDialog<ImageSource>(
         context: context,
         builder: (BuildContext context) {
@@ -109,13 +273,72 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           setState(() {
             _profileImage = File(image.path);
           });
+
+          // Upload the image
+          await _uploadProfileImage(image.path);
         }
       }
     } catch (e) {
-      // Handle any exceptions
       debugPrint('Error picking image: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to pick image')),
+        SnackBar(content: Text('Failed to pick image: $e')),
+      );
+    }
+  }
+
+  Future<void> _uploadProfileImage(String imagePath) async {
+    if (!DebugConfig.enableNetworkFeatures) {
+      DebugConfig.debugPrint('Network features disabled - simulating upload');
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      await DebugConfig.mockDelay();
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mock upload completed (debug mode)'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      return;
+    }
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final success = await _profileService.uploadProfileImage(imagePath);
+
+      Navigator.pop(context); // Close loading dialog
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile image updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Reload profile data
+        await _loadProfileData();
+      } else {
+        throw Exception('Upload failed');
+      }
+    } catch (e) {
+      Navigator.pop(context); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to upload image: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -133,12 +356,16 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
-                // Add your logout logic here
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Logged out successfully')),
-                );
+                try {
+                  await _userService.logout();
+                  Navigator.of(context).pushReplacementNamed('/login');
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Logout failed: $e')),
+                  );
+                }
               },
               child: const Text('Logout', style: TextStyle(color: Colors.red)),
             ),
@@ -148,8 +375,121 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     );
   }
 
+  String _getProfileImageUrl() {
+    if (_currentUser?.image != null && _currentUser!.image!.isNotEmpty) {
+      // If it's a relative URL, prepend the base URL
+      if (!_currentUser!.image!.startsWith('http')) {
+        return 'http://13.232.147.237:3000${_currentUser!.image}';
+      }
+      return _currentUser!.image!;
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: const Text(
+            'My Profile',
+            style: TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading profile...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: const Text(
+            'My Profile',
+            style: TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+              const SizedBox(height: 16),
+              const Text(
+                'Error loading profile',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadProfileData,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_currentUser == null) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: const Text(
+            'My Profile',
+            style: TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: const Center(
+          child: Text('No profile data available'),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -168,8 +508,19 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.black87),
-            onPressed: () {},
+            icon: const Icon(Icons.refresh, color: Colors.black87),
+            onPressed: _loadProfileData,
+          ),
+          IconButton(
+            icon: const Icon(Icons.bug_report, color: Colors.black87),
+            onPressed: () async {
+              await DebugProfileHelper.debugProfileResponse();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Debug info printed to console'),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -213,6 +564,20 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                 ? Image.file(
                               _profileImage!,
                               fit: BoxFit.cover,
+                            )
+                                : _getProfileImageUrl().isNotEmpty
+                                ? Image.network(
+                              _getProfileImageUrl(),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Center(
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 65,
+                                    color: Colors.white.withOpacity(0.9),
+                                  ),
+                                );
+                              },
                             )
                                 : Center(
                               child: Icon(
@@ -265,9 +630,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'JohnDoe123',
-                      style: TextStyle(
+                    Text(
+                      _currentUser?.displayName ?? 'User',
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
@@ -280,7 +645,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
+                            color: Colors.grey.withValues(alpha: 0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -289,7 +654,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       child: IconButton(
                         icon: const Icon(Icons.edit_outlined, size: 18),
                         color: Colors.teal.shade700,
-                        onPressed: () {},
+                        onPressed: () {
+                          // TODO: Implement edit profile functionality
+                        },
                       ),
                     ),
                   ],
@@ -298,24 +665,34 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.teal.withOpacity(0.1),
+                    color: _verificationStatus['isVerified'] == true
+                        ? Colors.teal.withOpacity(0.1)
+                        : Colors.orange.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.verified,
+                        _verificationStatus['isVerified'] == true
+                            ? Icons.verified
+                            : Icons.pending,
                         size: 16,
-                        color: Colors.teal.shade600,
+                        color: _verificationStatus['isVerified'] == true
+                            ? Colors.teal.shade600
+                            : Colors.orange.shade600,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Verified Player',
+                        _verificationStatus['isVerified'] == true
+                            ? 'Verified Player'
+                            : 'Verification Pending',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Colors.teal.shade700,
+                          color: _verificationStatus['isVerified'] == true
+                              ? Colors.teal.shade700
+                              : Colors.orange.shade700,
                         ),
                       ),
                     ],
@@ -359,9 +736,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                '₹ 2,000.00',
-                                style: TextStyle(
+                              Text(
+                                '₹ ${_walletBalances['cashBalance']?.toStringAsFixed(2) ?? '0.00'}',
+                                style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -426,9 +803,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                '₹ 5,000.75',
-                                style: TextStyle(
+                              Text(
+                                '₹ ${_walletBalances['winningAmount']?.toStringAsFixed(2) ?? '0.00'}',
+                                style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -489,93 +866,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 ),
                 const SizedBox(height: 24),
 
-                // Friends Section
-                _buildCardContainer(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  Icons.people,
-                                  color: Colors.blue.shade700,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'Friends',
-                                style: TextStyle(
-                                  color: Colors.blue,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const FriendsListPage(),
-                                ),
-                              );
-                            },
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.blue.shade600,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'View All',
-                                  style: TextStyle(
-                                    color: Colors.blue.shade600,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 12,
-                                  color: Colors.blue.shade600,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        child: Row(
-                          children: [
-                            _buildFriendItem('Sarah', 'Ref: 5', Colors.purple),
-                            const SizedBox(width: 16),
-                            _buildFriendItem('Mike', 'Ref: 3', Colors.orange),
-                            const SizedBox(width: 16),
-                            _buildFriendItem('Priya', 'Ref: 7', Colors.pink),
-                            const SizedBox(width: 16),
-                            _buildFriendItem('David', 'Ref: 2', Colors.green),
-                            const SizedBox(width: 16),
-                            _buildFriendItem('Emma', 'Ref: 9', Colors.blue),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
                 // Personal Details Section
                 _buildCardContainer(
                   child: Column(
@@ -616,9 +906,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       ),
                       const SizedBox(height: 8),
                       _buildInfoContainer(
-                        '9876543210',
-                        Icons.check_circle,
-                        Colors.green,
+                        _currentUser!.mobileNo ?? 'Not provided',
+                        _currentUser!.mobileNo != null ? Icons.check_circle : Icons.pending,
+                        _currentUser!.mobileNo != null ? Colors.green : Colors.orange,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -631,9 +921,9 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       ),
                       const SizedBox(height: 8),
                       _buildInfoContainer(
-                        'user@example.com',
-                        Icons.check_circle,
-                        Colors.green,
+                        _currentUser!.email ?? 'Not provided',
+                        _currentUser!.email != null ? Icons.check_circle : Icons.pending,
+                        _currentUser!.email != null ? Colors.green : Colors.orange,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -646,9 +936,115 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       ),
                       const SizedBox(height: 8),
                       _buildInfoContainer(
-                        '15 Jan 1990',
-                        Icons.check_circle,
-                        Colors.green,
+                        _currentUser!.dateOfBirth ?? 'Not provided',
+                        _currentUser!.dateOfBirth != null ? Icons.check_circle : Icons.pending,
+                        _currentUser!.dateOfBirth != null ? Colors.green : Colors.orange,
+                      ),
+                      if (_currentUser!.address != null) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          'Address',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildInfoContainer(
+                          _currentUser!.address!,
+                          Icons.check_circle,
+                          Colors.green,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Additional Info Section
+                _buildCardContainer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.info_outline,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Additional Information',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Current Level',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              'Level ${_currentUser!.currentLevel}',
+                              style: TextStyle(
+                                color: Colors.blue.shade700,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Profile Completion',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            '${_verificationStatus['completionPercentage'] ?? 0}%',
+                            style: TextStyle(
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(
+                        value: (_verificationStatus['completionPercentage'] ?? 0) / 100,
+                        backgroundColor: Colors.grey.shade200,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade600),
                       ),
                     ],
                   ),
@@ -732,263 +1128,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
             size: 18,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFriendItem(String name, String ref, MaterialColor color) {
-    return Column(
-      children: [
-        Container(
-          width: 70,
-          height: 70,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [color.shade300, color.shade600],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              name.substring(0, 1),
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          name,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
-        Text(
-          ref,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class FriendsListPage extends StatelessWidget {
-  const FriendsListPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    // Sample friends data
-    final List<Map<String, dynamic>> friends = [
-      {'name': 'Sarah Johnson', 'ref': 5, 'color': Colors.purple},
-      {'name': 'Michael Brown', 'ref': 3, 'color': Colors.orange},
-      {'name': 'Priya Sharma', 'ref': 7, 'color': Colors.pink},
-      {'name': 'David Wilson', 'ref': 2, 'color': Colors.green},
-      {'name': 'Emma Taylor', 'ref': 9, 'color': Colors.blue},
-      {'name': 'Jason Lee', 'ref': 4, 'color': Colors.teal},
-      {'name': 'Sophia Garcia', 'ref': 6, 'color': Colors.red},
-      {'name': 'Alex Wang', 'ref': 8, 'color': Colors.amber},
-      {'name': 'Lisa Chen', 'ref': 1, 'color': Colors.indigo},
-      {'name': 'Ryan Martin', 'ref': 3, 'color': Colors.brown},
-    ];
-
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'My Friends',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.black87),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${friends.length} Friends',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade700,
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.person_add, size: 16),
-                  label: const Text('Invite'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade50,
-                    foregroundColor: Colors.blue.shade700,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: friends.length,
-              itemBuilder: (context, index) {
-                final friend = friends[index];
-                return _buildFriendListItem(
-                  friend['name'],
-                  'Ref: ${friend['ref']}',
-                  friend['color'],
-                  context,
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFriendListItem(String name, String ref, MaterialColor color, BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade100,
-            blurRadius: 10,
-            spreadRadius: 0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [color.shade300, color.shade600],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.2),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              name.substring(0, 1),
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-        title: Text(
-          name,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
-        ),
-        subtitle: Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: color.shade400,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              ref,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Active',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey.shade700,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.message_outlined, size: 20),
-              color: Colors.blue.shade600,
-              onPressed: () {},
-            ),
-            IconButton(
-              icon: const Icon(Icons.more_vert, size: 20),
-              color: Colors.grey.shade600,
-              onPressed: () {},
-            ),
-          ],
-        ),
       ),
     );
   }

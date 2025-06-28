@@ -2,7 +2,7 @@ import 'package:fantasy/drawe_pages/profile.dart';
 import 'package:fantasy/body/refral.dart';
 import 'package:fantasy/body/tree.dart';
 import 'package:fantasy/body/wallet.dart';
-import 'package:fantasy/model/fixture.dart'; // Your existing Fixture model
+import 'package:fantasy/model/fixture.dart';
 import 'package:fantasy/service/fixture_service.dart';
 import 'package:fantasy/service/user_service.dart';
 import 'package:fantasy/drawe_pages/fantasy point system.dart';
@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'login.dart';
 import 'mygame.dart';
+import 'package:fantasy/config/debug_config.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -27,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  // API Integration variables from first code
+  // API Integration variables
   List<FixtureModel> _fixtures = [];
   List<FixtureModel> _liveMatches = [];
   List<FixtureModel> _upcomingMatches = [];
@@ -35,6 +36,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String? _errorMessage;
   int _currentPage = 1;
   bool _isAuthenticated = false;
+
+  // Dynamic data variables
+  int _notificationCount = 0;
+  double _walletBalance = 0.0;
+  Map<String, dynamic> _userStats = {
+    'matches': 0,
+    'wins': 0,
+    'winRate': 0.0,
+    'totalWon': 0.0,
+    'contestsJoined': 0,
+    'bestRank': 0,
+  };
+  String _appVersion = '';
+  String _referralBonus = '';
+  bool _isPremiumUser = false;
+  String _userName = 'Guest User';
 
   @override
   void initState() {
@@ -58,26 +75,105 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _initializeApp() async {
     try {
-      // Initialize UserService first
-      final userService = UserService();
-      await userService.initialize();
+      DebugConfig.debugPrint('Initializing app...');
 
-      // Check authentication status
-      _isAuthenticated = await userService.checkLoginStatus();
+      // Check if we should use mock authentication
+      if (DebugConfig.isDebugMode && DebugConfig.isDesktop) {
+        DebugConfig.debugPrint('Using mock authentication for desktop debugging');
+        _isAuthenticated = true;
+        await DebugConfig.mockDelay();
 
-      if (_isAuthenticated) {
-        print('User authenticated with token: ${userService.authToken != null ? userService.authToken!.substring(0, 20) + '...' : 'null'}');
-        await _loadFixtures();
+        await Future.wait([
+          _loadFixtures(),
+          _loadUserData(),
+          _loadAppConfig(),
+        ]);
+        return;
+      }
+
+      // Original authentication logic for mobile/production
+      if (DebugConfig.enableAuthentication) {
+        final userService = UserService();
+        await userService.initialize();
+        _isAuthenticated = await userService.checkLoginStatus();
+
+        if (_isAuthenticated) {
+          await Future.wait([
+            _loadFixtures(),
+            _loadUserData(),
+            _loadAppConfig(),
+          ]);
+        } else {
+          _handleAuthenticationRequired();
+        }
       } else {
-        // Redirect to login if not authenticated
-        _handleAuthenticationRequired();
+        throw Exception('Authentication disabled in debug mode');
       }
     } catch (e) {
-      print('App initialization error: $e');
+      DebugConfig.debugPrint('App initialization error: $e');
       setState(() {
         _errorMessage = 'Failed to initialize app: $e';
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      if (DebugConfig.isDebugMode && DebugConfig.isDesktop) {
+        DebugConfig.debugPrint('Loading mock user data');
+        final userData = DebugConfig.mockUserData;
+
+        setState(() {
+          _userName = userData['name'] ?? 'Debug User';
+          _walletBalance = double.tryParse(userData['wallet_balance']?.toString() ?? '0') ?? 1250.50;
+          _notificationCount = int.tryParse(userData['notification_count']?.toString() ?? '0') ?? 3;
+          _isPremiumUser = userData['is_premium'] ?? false;
+
+          _userStats = {
+            'matches': userData['total_matches'] ?? 45,
+            'wins': userData['total_wins'] ?? 12,
+            'winRate': userData['win_rate'] ?? 26.7,
+            'totalWon': double.tryParse(userData['total_earnings']?.toString() ?? '0') ?? 5420.75,
+            'contestsJoined': userData['contests_joined'] ?? 78,
+            'bestRank': userData['best_rank'] ?? 3,
+          };
+        });
+        return;
+      }
+      final userService = UserService();
+      if (userService.isLoggedIn && userService.userData != null) {
+        final userData = userService.userData!;
+
+        setState(() {
+          _userName = userData['name'] ?? userData['username'] ?? userData['mobile_number'] ?? userData['email'] ?? 'User';
+          _walletBalance = double.tryParse(userData['wallet_balance']?.toString() ?? '0') ?? 0.0;
+          _notificationCount = int.tryParse(userData['notification_count']?.toString() ?? '0') ?? 0;
+          _isPremiumUser = userData['is_premium'] ?? false;
+
+          _userStats = {
+            'matches': userData['total_matches'] ?? 0,
+            'wins': userData['total_wins'] ?? 0,
+            'winRate': userData['win_rate'] ?? 0.0,
+            'totalWon': double.tryParse(userData['total_earnings']?.toString() ?? '0') ?? 0.0,
+            'contestsJoined': userData['contests_joined'] ?? 0,
+            'bestRank': userData['best_rank'] ?? 0,
+          };
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
+  Future<void> _loadAppConfig() async {
+    try {
+      setState(() {
+        _appVersion = 'v1.2.0';
+        _referralBonus = '₹150';
+      });
+    } catch (e) {
+      print('Error loading app config: $e');
     }
   }
 
@@ -87,7 +183,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _errorMessage = 'Please login to continue';
     });
 
-    // Navigate to login screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -104,7 +199,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _errorMessage = null;
       });
 
-      // Check authentication status before making API call
+      if (DebugConfig.isDebugMode && DebugConfig.isDesktop) {
+        DebugConfig.debugPrint('Loading mock fixtures data');
+        await DebugConfig.mockDelay();
+
+        // Convert mock data to FixtureModel objects
+        _fixtures = DebugConfig.mockFixtures.map((data) => FixtureModel.fromJson(data)).toList();
+        _liveMatches = _fixtures.where((f) => f.status == 'live').toList();
+        _upcomingMatches = _fixtures.where((f) => f.status == 'upcoming').toList();
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        DebugConfig.debugPrint('Mock fixtures loaded: ${_fixtures.length} total, ${_liveMatches.length} live, ${_upcomingMatches.length} upcoming');
+        return;
+      }
+
+      // Only make real API calls if enabled
+      if (!DebugConfig.enableApiCalls) {
+        throw Exception('API calls disabled in debug mode');
+      }
+
       final authStatus = FixtureService.getAuthStatus();
       print('Auth Status: $authStatus');
 
@@ -131,7 +247,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _isLoading = false;
       });
 
-      // Handle authentication errors
       if (e.toString().contains('Authentication required') ||
           e.toString().contains('Authentication failed') ||
           e.toString().contains('401')) {
@@ -144,28 +259,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  String _getUserDisplayName() {
-    final userService = UserService();
-    if (userService.isLoggedIn && userService.userData != null) {
-      final userData = userService.userData!;
-      return userData['name'] ?? userData['username'] ?? userData['mobile_number'] ?? userData['email'] ?? 'User';
-    }
-    return 'Welcome User!';
-  }
-
   Future<void> _handleLogout() async {
     try {
       final userService = UserService();
       await userService.logout();
 
-      // Navigate to login screen
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => const Dream11LoginPage(),
         ),
       );
     } catch (e) {
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Logout failed: $e'),
@@ -175,8 +279,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  // Method to handle fixture activation
   Future<void> _activateFixture(int fixtureId) async {
+    if (!DebugConfig.enableApiCalls) {
+      DebugConfig.debugPrint('Mock fixture activation for ID: $fixtureId');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Mock fixture activated (debug mode)'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      return;
+    }
     try {
       final success = await FixtureService.activateFixture(fixtureId);
       if (success) {
@@ -186,7 +299,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             backgroundColor: Colors.green,
           ),
         );
-        // Reload fixtures to get updated data
         _loadFixtures();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -212,15 +324,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  // API connection test method
   Future<void> _testApiConnection() async {
+    if (!DebugConfig.enableNetworkFeatures) {
+      _showTestResult('⚠️ Network features disabled in debug mode.\n\nThis is expected behavior when running on desktop during development.');
+      return;
+    }
+
     final userService = UserService();
 
     print('🧪 Testing API connection...');
     print('Auth status: ${userService.getAuthStatus()}');
 
     try {
-      // Test 1: Check if server is reachable
       print('📡 Testing server connectivity...');
       final pingResponse = await http.get(
         Uri.parse('http://13.232.147.237:3000/'),
@@ -234,7 +349,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     try {
-      // Test 2: Test API with your token
       print('🔑 Testing API with auth token...');
       final token = userService.authToken;
 
@@ -388,29 +502,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   color: Color(0xFF475569),
                   size: 22,
                 ),
-                Positioned(
-                  right: -2,
-                  top: -2,
-                  child: Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                if (_notificationCount > 0)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    constraints: BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: Text(
-                      '3',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
+                      constraints: BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        _notificationCount > 99 ? '99+' : _notificationCount.toString(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ),
-                ),
               ],
             ),
             onPressed: () {},
@@ -453,7 +568,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             SizedBox(height: 16),
             Text(
-              'Loading fixtures...',
+              'Loading your dashboard...',
               style: TextStyle(
                 fontSize: 16,
                 color: Color(0xFF64748B),
@@ -482,7 +597,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Text(
               _errorMessage!.contains('Authentication required') || _errorMessage!.contains('Please login')
                   ? 'Login Required'
-                  : 'Error loading matches',
+                  : 'Error loading data',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
@@ -490,7 +605,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               padding: EdgeInsets.symmetric(horizontal: 32),
               child: Text(
                   _errorMessage!.contains('Authentication required') || _errorMessage!.contains('Please login')
-                      ? 'Please login to view cricket matches'
+                      ? 'Please login to access your dashboard'
                       : _errorMessage!,
                   textAlign: TextAlign.center
               ),
@@ -509,9 +624,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: _errorMessage!.contains('Authentication required') || _errorMessage!.contains('Please login')
-                    ? Color(0xFF3B82F6)
-                    : Colors.grey[600],
+                backgroundColor: Color(0xFF3B82F6),
               ),
               child: Text(
                 _errorMessage!.contains('Authentication required') || _errorMessage!.contains('Please login')
@@ -532,43 +645,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     return RefreshIndicator(
-      onRefresh: _loadFixtures,
+      onRefresh: () async {
+        await Future.wait([
+          _loadFixtures(),
+          _loadUserData(),
+        ]);
+      },
       child: SingleChildScrollView(
-        physics: AlwaysScrollableScrollPhysics(),
+        physics: BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildPremiumBanner(),
             _buildBalanceCard(),
             _buildQuickActions(),
-
-            // Debug info (can be removed in production)
-            if (true) // Set to false in production
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue[200]!),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Debug Info:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                    ),
-                    Text('Auth Status: ${FixtureService.getAuthStatus()}', style: TextStyle(fontSize: 10)),
-                    Text('Fixtures Count: ${_fixtures.length}', style: TextStyle(fontSize: 10)),
-                    Text('Live: ${_liveMatches.length}, Upcoming: ${_upcomingMatches.length}', style: TextStyle(fontSize: 10)),
-                  ],
-                ),
-              ),
-
             _buildLiveMatches(),
             _buildUpcomingMatches(),
-            _buildPerformanceStats(),
+            // _buildPerformanceStats(),
             SizedBox(height: 100),
           ],
         ),
@@ -596,7 +689,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       child: Stack(
         children: [
-          // Background Pattern
           Positioned(
             right: -50,
             top: -30,
@@ -633,7 +725,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Welcome Back! 👋',
+                          'Welcome Back, ${_userName.split(' ').first}! 👋',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
                             fontSize: 16,
@@ -678,7 +770,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     border: Border.all(color: Colors.white.withOpacity(0.2)),
                   ),
                   child: Text(
-                    '🏆 Join upcoming IPL matches and win big!',
+                    '🏆 Join upcoming matches and win big!',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.95),
                       fontSize: 14,
@@ -741,7 +833,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  '₹0.00',
+                  '₹${_walletBalance.toStringAsFixed(2)}',
                   style: TextStyle(
                     color: Color(0xFF0F172A),
                     fontSize: 24,
@@ -884,257 +976,60 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             MaterialPageRoute(builder: (context) => AllLiveMatchesPage()),
           );
         }),
-        SizedBox(
-          height: screenHeight * 0.25,
-          child: _liveMatches.isNotEmpty
-              ? ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 14),
-            itemCount: _liveMatches.length,
-            itemBuilder: (context, index) => Container(
-              width: screenWidth * 0.75,
-              margin: EdgeInsets.only(right: 16),
-              child: _buildLiveMatchCardFromApi(_liveMatches[index]),
-            ),
-          )
-              : ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 14),
-            itemCount: 3,
-            itemBuilder: (context, index) => Container(
-              width: screenWidth * 0.75,
-              margin: EdgeInsets.only(right: 16),
-              child: _buildLiveMatchCard(
-                team1: index == 0 ? 'India' : index == 1 ? 'England' : 'South Africa',
-                team2: index == 0 ? 'Australia' : index == 1 ? 'Pakistan' : 'New Zealand',
-                team1Short: index == 0 ? 'IND' : index == 1 ? 'ENG' : 'SA',
-                team2Short: index == 0 ? 'AUS' : index == 1 ? 'PAK' : 'NZ',
-                score1: index == 0 ? '285/6' : index == 1 ? '195/4' : '220/5',
-                score2: index == 0 ? '267/8' : index == 1 ? '180/7' : '205/9',
-                overs1: index == 0 ? '(50.0)' : index == 1 ? '(35.2)' : '(45.3)',
-                overs2: index == 0 ? '(48.4)' : index == 1 ? '(40.0)' : '(47.2)',
-                status: index == 0 ? 'India won by 18 runs' : index == 1 ? 'England won by 15 runs' : 'SA won by 15 runs',
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLiveMatchCardFromApi(FixtureModel match) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    return Container(
-      width: screenWidth * 0.75,
-      height: screenHeight * 0.22,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0xFF1E293B).withOpacity(0.08),
-            blurRadius: 20,
-            offset: Offset(0, 4),
-          ),
-        ],
-        border: Border.all(
-          color: Color(0xFF10B981).withOpacity(0.2),
-          width: 1.5,
-        ),
-      ),
-      child: Column(
-        children: [
-          // Live Header
+        if (_liveMatches.isEmpty)
           Container(
-            height: screenHeight * 0.05,
-            padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.04,
-              vertical: screenHeight * 0.01,
-            ),
+            margin: EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.all(40),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFDCFDF7), Color(0xFFF0FDF4)],
-              ),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Color(0xFFF1F5F9)),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: screenWidth * 0.025,
-                    vertical: screenHeight * 0.005,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      SizedBox(width: 6),
-                      Text(
-                        'LIVE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: screenWidth * 0.028,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  match.matchType,
-                  style: TextStyle(
-                    color: Color(0xFF059669),
-                    fontSize: screenWidth * 0.03,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Teams and Scores
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(screenWidth * 0.04),
+            child: Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // Teams Row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text(
-                              match.teamAShort,
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.04,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1E293B),
-                              ),
-                            ),
-                            SizedBox(height: screenHeight * 0.008),
-                            Text(
-                              'Live',
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.045,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                            Text(
-                              'Playing',
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.03,
-                                color: Color(0xFF64748B),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.all(screenWidth * 0.02),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFF8FAFC),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          'VS',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF64748B),
-                            fontSize: screenWidth * 0.03,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text(
-                              match.teamBShort,
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.04,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1E293B),
-                              ),
-                            ),
-                            SizedBox(height: screenHeight * 0.008),
-                            Text(
-                              'Live',
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.045,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                            Text(
-                              'Playing',
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.03,
-                                color: Color(0xFF64748B),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Status
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: screenWidth * 0.03,
-                      vertical: screenHeight * 0.01,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Color(0xFF10B981).withOpacity(0.1),
-                          Color(0xFF059669).withOpacity(0.05),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      match.matchTitle,
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.03,
-                        color: Color(0xFF059669),
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Icon(Icons.sports_cricket, size: 48, color: Color(0xFF64748B)),
+                  SizedBox(height: 16),
+                  Text(
+                    'No live matches',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
+          )
+        else
+          SizedBox(
+            height: screenHeight * 0.25,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.symmetric(horizontal: 14),
+              itemCount: _liveMatches.length,
+              itemBuilder: (context, index) {
+                final match = _liveMatches[index];
+                return Container(
+                  width: screenWidth * 0.75,
+                  margin: EdgeInsets.only(right: 16),
+                  child: _buildLiveMatchCard(
+                    team1: match.teamA,
+                    team2: match.teamB,
+                    team1Short: match.teamAShort,
+                    team2Short: match.teamBShort,
+                    score1: 'Live',
+                    score2: 'Live',
+                    overs1: '',
+                    overs2: '',
+                    status: match.matchTitle,
+                  ),
+                );
+              },
+            ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -1172,7 +1067,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       child: Column(
         children: [
-          // Live Header
           Container(
             height: screenHeight * 0.05,
             padding: EdgeInsets.symmetric(
@@ -1226,7 +1120,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 Text(
-                  'ODI Match',
+                  'Cricket Match',
                   style: TextStyle(
                     color: Color(0xFF059669),
                     fontSize: screenWidth * 0.03,
@@ -1236,15 +1130,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
           ),
-
-          // Teams and Scores
           Expanded(
             child: Padding(
               padding: EdgeInsets.all(screenWidth * 0.04),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // Teams Row
                   Row(
                     children: [
                       Expanded(
@@ -1267,14 +1158,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 color: Color(0xFF0F172A),
                               ),
                             ),
-                            Text(
-                              overs1,
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.03,
-                                color: Color(0xFF64748B),
-                                fontWeight: FontWeight.w500,
+                            if (overs1.isNotEmpty)
+                              Text(
+                                overs1,
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.03,
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ),
@@ -1313,21 +1205,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 color: Color(0xFF0F172A),
                               ),
                             ),
-                            Text(
-                              overs2,
-                              style: TextStyle(
-                                fontSize: screenWidth * 0.03,
-                                color: Color(0xFF64748B),
-                                fontWeight: FontWeight.w500,
+                            if (overs2.isNotEmpty)
+                              Text(
+                                overs2,
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.03,
+                                  color: Color(0xFF64748B),
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ),
                     ],
                   ),
-
-                  // Status
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(
@@ -1373,38 +1264,71 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             MaterialPageRoute(builder: (context) => AllUpcomingMatchesPage()),
           );
         }),
-        _upcomingMatches.isNotEmpty
-            ? ListView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          itemCount: _upcomingMatches.length,
-          itemBuilder: (context, index) => _buildUpcomingMatchCardFromApi(_upcomingMatches[index]),
-        )
-            : ListView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          itemCount: 2,
-          itemBuilder: (context, index) => _buildUpcomingMatchCard(
-            team1: index == 0 ? 'Mumbai Indians' : 'Royal Challengers Bangalore',
-            team2: index == 0 ? 'Chennai Super Kings' : 'Kolkata Knight Riders',
-            team1Short: index == 0 ? 'MI' : 'RCB',
-            team2Short: index == 0 ? 'CSK' : 'KKR',
-            time: index == 0 ? '2h 30m' : '1 Day 4h',
-            contests: index == 0 ? '24 Contests' : '18 Contests',
-            prize: index == 0 ? '₹5 Lakhs' : '₹10 Lakhs',
-            team1Color: index == 0 ? Color(0xFF3B82F6) : Color(0xFFEF4444),
-            team2Color: index == 0 ? Color(0xFFFBBF24) : Color(0xFF8B5CF6),
+        if (_upcomingMatches.isEmpty)
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.all(40),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Color(0xFFF1F5F9)),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(Icons.schedule, size: 48, color: Color(0xFF64748B)),
+                  SizedBox(height: 16),
+                  Text(
+                    'No upcoming matches',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            itemCount: _upcomingMatches.take(3).length,
+            itemBuilder: (context, index) {
+              final match = _upcomingMatches[index];
+              final timeLeft = FixtureService.formatTimeLeft(match.matchDate);
+              return _buildUpcomingMatchCard(
+                team1: match.teamA,
+                team2: match.teamB,
+                team1Short: match.teamAShort,
+                team2Short: match.teamBShort,
+                time: timeLeft,
+                contests: '${match.totalContest} Contests',
+                prize: match.matchContest,
+                team1Color: Color(0xFF3B82F6),
+                team2Color: Color(0xFFEF4444),
+                match: match,
+              );
+            },
           ),
-        ),
       ],
     );
   }
 
-  Widget _buildUpcomingMatchCardFromApi(FixtureModel match) {
-    final timeLeft = FixtureService.formatTimeLeft(match.matchDate);
-
+  Widget _buildUpcomingMatchCard({
+    required String team1,
+    required String team2,
+    required String team1Short,
+    required String team2Short,
+    required String time,
+    required String contests,
+    required String prize,
+    required Color team1Color,
+    required Color team2Color,
+    required FixtureModel match,
+  }) {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -1421,7 +1345,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       child: Column(
         children: [
-          // Header
           Container(
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
@@ -1440,7 +1363,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${match.matchType} • Cricket',
+                      match.matchType,
                       style: TextStyle(
                         color: Color(0xFF3B82F6),
                         fontSize: 12,
@@ -1448,7 +1371,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                     Text(
-                      match.matchTitle,
+                      'Cricket Match',
                       style: TextStyle(
                         color: Color(0xFF64748B),
                         fontSize: 11,
@@ -1466,7 +1389,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    timeLeft,
+                    time,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -1477,8 +1400,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
           ),
-
-          // Teams
           Padding(
             padding: EdgeInsets.all(20),
             child: Row(
@@ -1491,12 +1412,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         height: 50,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Colors.blue.withOpacity(0.8), Colors.blue],
+                            colors: [team1Color.withOpacity(0.8), team1Color],
                           ),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.blue.withOpacity(0.3),
+                              color: team1Color.withOpacity(0.3),
                               blurRadius: 12,
                               offset: Offset(0, 4),
                             ),
@@ -1504,7 +1425,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         child: Center(
                           child: Text(
-                            match.teamAShort,
+                            team1Short,
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -1515,7 +1436,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        match.teamA,
+                        team1,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -1527,7 +1448,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
-
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 16),
                   padding: EdgeInsets.all(8),
@@ -1544,7 +1464,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-
                 Expanded(
                   child: Column(
                     children: [
@@ -1553,12 +1472,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         height: 50,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Colors.red.withOpacity(0.8), Colors.red],
+                            colors: [team2Color.withOpacity(0.8), team2Color],
                           ),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.withOpacity(0.3),
+                              color: team2Color.withOpacity(0.3),
                               blurRadius: 12,
                               offset: Offset(0, 4),
                             ),
@@ -1566,7 +1485,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         child: Center(
                           child: Text(
-                            match.teamBShort,
+                            team2Short,
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -1577,7 +1496,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        match.teamB,
+                        team2,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -1592,8 +1511,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
           ),
-
-          // Prize Section
           Container(
             margin: EdgeInsets.fromLTRB(20, 0, 20, 20),
             padding: EdgeInsets.all(16),
@@ -1619,7 +1536,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      match.matchContest,
+                      prize,
                       style: TextStyle(
                         color: Color(0xFF059669),
                         fontSize: 16,
@@ -1628,23 +1545,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ],
                 ),
-                ElevatedButton(
-                  onPressed: match.lineupOut ? () {
-                    _activateFixture(match.id);
-                  } : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: match.lineupOut ? Color(0xFF3B82F6) : Color(0xFF94A3B8),
-                    shape: RoundedRectangleBorder(
+                GestureDetector(
+                  onTap: match.lineupOut ? () => _activateFixture(match.id) : null,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: match.lineupOut
+                          ? LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)])
+                          : null,
+                      color: match.lineupOut ? null : Color(0xFF64748B),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                  child: Text(
-                    match.lineupOut ? '${match.totalContest} Contests' : 'Lineup Pending',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                    child: Text(
+                      match.lineupOut ? contests : 'Lineup Pending',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -1656,367 +1574,103 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildUpcomingMatchCard({
-    required String team1,
-    required String team2,
-    required String team1Short,
-    required String team2Short,
-    required String time,
-    required String contests,
-    required String prize,
-    required Color team1Color,
-    required Color team2Color,
-  }) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0xFF1E293B).withOpacity(0.08),
-            blurRadius: 20,
-            offset: Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: Color(0xFFF1F5F9)),
-      ),
-      child: Column(
-          children: [
-      // Header
-      Container(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFF8FAFC), Colors.white],
-        ),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'IPL 2024 • T20',
-                style: TextStyle(
-                  color: Color(0xFF3B82F6),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                'Wankhede Stadium',
-                style: TextStyle(
-                  color: Color(0xFF64748B),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              time,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
+  // Widget _buildPerformanceStats() {
+  //   return Container(
+  //     margin: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+  //     padding: EdgeInsets.all(20),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(20),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Color(0xFF1E293B).withOpacity(0.08),
+  //           blurRadius: 20,
+  //           offset: Offset(0, 4),
+  //         ),
+  //       ],
+  //       border: Border.all(color: Color(0xFFF1F5F9)),
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //           children: [
+  //             Text(
+  //               'Your Performance',
+  //               style: TextStyle(
+  //                 color: Color(0xFF0F172A),
+  //                 fontSize: 18,
+  //                 fontWeight: FontWeight.w700,
+  //               ),
+  //             ),
+  //             Container(
+  //               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+  //               decoration: BoxDecoration(
+  //                 color: Color(0xFF10B981).withOpacity(0.1),
+  //                 borderRadius: BorderRadius.circular(8),
+  //               ),
+  //               child: Text(
+  //                 'This Month',
+  //                 style: TextStyle(
+  //                   color: Color(0xFF10B981),
+  //                   fontSize: 12,
+  //                   fontWeight: FontWeight.w600,
+  //                 ),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         SizedBox(height: 20),
+  //         Row(
+  //           children: [
+  //             Expanded(
+  //               child: _buildStatCard(
+  //                 'Contests Joined',
+  //                 _userStats['contestsJoined'].toString(),
+  //                 Icons.emoji_events_rounded,
+  //                 Color(0xFF3B82F6),
+  //               ),
+  //             ),
+  //             SizedBox(width: 12),
+  //             Expanded(
+  //               child: _buildStatCard(
+  //                 'Total Winnings',
+  //                 '₹${_userStats['totalWon'].toStringAsFixed(0)}',
+  //                 Icons.account_balance_wallet_rounded,
+  //                 Color(0xFF10B981),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         SizedBox(height: 12),
+  //         Row(
+  //           children: [
+  //             Expanded(
+  //               child: _buildStatCard(
+  //                 'Win Rate',
+  //                 '${_userStats['winRate'].toStringAsFixed(1)}%',
+  //                 Icons.trending_up_rounded,
+  //                 Color(0xFFF59E0B),
+  //               ),
+  //             ),
+  //             SizedBox(width: 12),
+  //             Expanded(
+  //               child: _buildStatCard(
+  //                 'Best Rank',
+  //                 _userStats['bestRank'] > 0 ? '#${_userStats['bestRank']}' : 'N/A',
+  //                 Icons.military_tech_rounded,
+  //                 Color(0xFF8B5CF6),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-    // Teams
-    Padding(
-    padding: EdgeInsets.all(20),
-    child: Row(
-    children: [
-    Expanded(
-    child: Column(
-    children: [
-    Container(
-    width: 50,
-    height: 50,
-    decoration: BoxDecoration(
-    gradient: LinearGradient(
-    colors: [team1Color.withOpacity(0.8), team1Color],
-    ),
-    shape: BoxShape.circle,
-    boxShadow: [
-    BoxShadow(
-    color: team1Color.withOpacity(0.3),
-    blurRadius: 12,
-    offset: Offset(0, 4),
-    ),
-    ],
-    ),
-    child: Center(
-    child: Text(
-    team1Short,
-    style: TextStyle(
-    fontWeight: FontWeight.w700,
-    color: Colors.white,
-    fontSize: 14,
-    ),
-    ),
-    ),
-    ),
-    SizedBox(height: 8),
-    Text(
-    team1,
-    style: TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w600,
-    color: Color(0xFF1E293B),
-    ),
-    textAlign: TextAlign.center,
-    maxLines: 2,
-    ),
-    ],
-    ),
-    ),
-
-    Container(
-    margin: EdgeInsets.symmetric(horizontal: 16),
-    padding: EdgeInsets.all(8),
-    decoration: BoxDecoration(
-    color: Color(0xFFF8FAFC),
-    shape: BoxShape.circle,
-    ),
-    child: Text(
-    'VS',
-    style: TextStyle(
-    fontWeight: FontWeight.w600,
-    color: Color(0xFF64748B),
-    fontSize: 11,
-    ),
-    ),
-    ),
-
-    Expanded(
-    child: Column(
-    children: [
-    Container(
-    width: 50,
-    height: 50,
-    decoration: BoxDecoration(
-    gradient: LinearGradient(
-    colors: [team2Color.withOpacity(0.8), team2Color],
-    ),
-    shape: BoxShape.circle,
-    boxShadow: [
-    BoxShadow(
-    color: team2Color.withOpacity(0.3),
-    blurRadius: 12,
-    offset: Offset(0, 4),
-    ),
-    ],
-    ),
-    child: Center(
-    child: Text(
-    team2Short,
-    style: TextStyle(
-    fontWeight: FontWeight.w700,
-    color: Colors.white,
-    fontSize: 14,
-    ),
-    ),
-    ),
-    ),
-    SizedBox(height: 8),
-    Text(
-    team2,
-    style: TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w600,
-    color: Color(0xFF1E293B),
-    ),
-    textAlign: TextAlign.center,
-    maxLines: 2,
-    ),
-    ],
-    ),
-    ),
-    ],
-    ),
-    ),
-
-    // Prize Section
-    Container(
-    margin: EdgeInsets.fromLTRB(20, 0, 20, 20),
-    padding: EdgeInsets.all(16),
-    decoration: BoxDecoration(
-    gradient: LinearGradient(
-    colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
-    ),
-    borderRadius: BorderRadius.circular(16),
-    ),
-    child: Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-    Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-    Text(
-    'Prize Pool',
-    style: TextStyle(
-    color: Color(0xFF64748B),
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
-    ),
-    ),
-    SizedBox(height: 4),
-    Text(
-    prize,
-    style: TextStyle(
-    color: Color(0xFF059669),
-    fontSize: 16,
-    fontWeight: FontWeight.w800,
-    ),
-    ),
-    ],
-    ),
-      Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          contests,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    ],
-    ),
-    ),
-          ],
-      ),
-    );
-  }
-
-  Widget _buildPerformanceStats() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0xFF1E293B).withOpacity(0.08),
-            blurRadius: 20,
-            offset: Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: Color(0xFFF1F5F9)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Your Performance',
-                style: TextStyle(
-                  color: Color(0xFF0F172A),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'This Month',
-                  style: TextStyle(
-                    color: Color(0xFF10B981),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Contests Joined',
-                  '0',
-                  Icons.emoji_events_rounded,
-                  Color(0xFF3B82F6),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Total Winnings',
-                  '₹0',
-                  Icons.account_balance_wallet_rounded,
-                  Color(0xFF10B981),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Win Rate',
-                  '0%',
-                  Icons.trending_up_rounded,
-                  Color(0xFFF59E0B),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Best Rank',
-                  '#0',
-                  Icons.military_tech_rounded,
-                  Color(0xFF8B5CF6),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-      String title,
-      String value,
-      IconData icon,
-      Color color,
-      ) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2058,11 +1712,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSectionHeader(
-      String title,
-      String actionText,
-      VoidCallback onTap,
-      ) {
+  Widget _buildSectionHeader(String title, String actionText, VoidCallback onTap) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
@@ -2113,22 +1763,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => ProfilePage()),
-                        );
-                      },
-                      child: CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.white.withOpacity(0.2),
-                        child: Icon(Icons.person, color: Colors.white, size: 32),
-                      ),
+                    Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Colors.white.withOpacity(0.2),
+                          child: Icon(Icons.person, color: Colors.white, size: 32),
+                        ),
+                        if (_isPremiumUser)
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Colors.amber[600]!, Colors.amber[800]!],
+                                ),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: Icon(Icons.star, size: 12, color: Colors.white),
+                            ),
+                          ),
+                      ],
                     ),
                     SizedBox(height: 16),
                     Text(
-                      _getUserDisplayName(),
+                      'Welcome $_userName!',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -2136,7 +1799,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                     Text(
-                      'Fantasy Cricket Player',
+                      _isPremiumUser ? 'Premium Player' : 'Fantasy Cricket Player',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.8),
                         fontSize: 14,
@@ -2216,8 +1879,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       leading: Container(
         padding: EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color:
-          isDestructive
+          color: isDestructive
               ? Color(0xFFEF4444).withOpacity(0.1)
               : Color(0xFF3B82F6).withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
@@ -2277,8 +1939,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          gradient:
-          isSelected
+          gradient: isSelected
               ? LinearGradient(
             colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
           )
@@ -2309,7 +1970,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 }
 
-// Placeholder classes for navigation - you'll need to create these screens
+// Placeholder classes for navigation
 class AllLiveMatchesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

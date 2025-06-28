@@ -98,10 +98,10 @@ class _SignupPageState extends State<SignupPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          IconButton(
-                            icon: Icon(Icons.arrow_back_ios, color: Colors.white),
-                            onPressed: () => Navigator.pop(context),
-                          ),
+                          // IconButton(
+                          //   icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+                          //   onPressed: () => Navigator.pop(context),
+                          // ),
                           Spacer(),
                           Text(
                             'Create Account',

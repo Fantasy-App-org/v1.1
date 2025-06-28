@@ -163,10 +163,10 @@ class _Dream11LoginPageState extends State<Dream11LoginPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          IconButton(
-                            icon: Icon(Icons.arrow_back_ios, color: Colors.white),
-                            onPressed: () => Navigator.pop(context),
-                          ),
+                          // IconButton(
+                          //   icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+                          //   onPressed: () => Navigator.pop(context),
+                          // ),
                           Spacer(),
                           Text(
                             'Welcome to',
