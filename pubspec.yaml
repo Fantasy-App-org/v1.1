@@ -53,9 +53,9 @@ dev_dependencies:
 flutter_launcher_icons:
     android: "launcher_icon"
     ios: true
-    image_path: "assets/images/icon_fabtasy.jpeg"
+    image_path: "assets/images/star 20 pro logo - blue.png"
     adaptive_icon_background: "#ffffff"
-    adaptive_icon_foreground: "assets/images/icon_fabtasy.jpeg"
+    adaptive_icon_foreground: "assets/images/star 20 pro logo - blue.png"
 
 
 

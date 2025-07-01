@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'completed_match.dart';
+
 class MyMatchesScreen extends StatefulWidget {
   const MyMatchesScreen({Key? key}) : super(key: key);
 
@@ -7,7 +9,23 @@ class MyMatchesScreen extends StatefulWidget {
   State<MyMatchesScreen> createState() => _MyMatchesScreenState();
 }
 
-class _MyMatchesScreenState extends State<MyMatchesScreen> {
+class _MyMatchesScreenState extends State<MyMatchesScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    // Removed all navigation logic - we'll show content directly in tabs
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
@@ -15,57 +33,61 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
     final double screenHeight = screenSize.height;
     final bool isTablet = screenWidth > 600;
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          title: const Text(
-            'My Matches',
-            style: TextStyle(
-              color: Colors.black87,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          bottom: const TabBar(
-            indicatorColor: Colors.blue,
-            indicatorWeight: 3,
-            labelColor: Colors.blue,
-            unselectedLabelColor: Colors.grey,
-            tabs: [
-              Tab(text: 'Upcoming'),
-              Tab(text: 'Live'),
-              Tab(text: 'Completed'),
-            ],
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'My Matches',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        body: Container(
-          decoration: const BoxDecoration(
-            // White background
-            color: Colors.white,
-            // Cricket illustration background - made darker
-            image: DecorationImage(
-              image: AssetImage('assets/images/no_upcoming_fixtures_found.png'),
-              fit: BoxFit.contain,
-              alignment: Alignment.center,
-              opacity: 0.3, // Changed from 0.1 to 0.3 to make it darker
-            ),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.blue,
+          indicatorWeight: 3,
+          labelColor: Colors.blue,
+          unselectedLabelColor: Colors.grey,
+          tabs: const [
+            Tab(text: 'Upcoming'),
+            Tab(text: 'Live'),
+            Tab(text: 'Completed'),
+          ],
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          image: DecorationImage(
+            image: AssetImage('assets/images/no_upcoming_fixtures_found.png'),
+            fit: BoxFit.contain,
+            alignment: Alignment.center,
+            opacity: 0.3,
           ),
-          child: TabBarView(
-            children: [
-              _buildUpcomingContent(screenWidth, screenHeight, isTablet),
-              _buildEmptyState(screenWidth, screenHeight, isTablet, 'Live'),
-              _buildEmptyState(screenWidth, screenHeight, isTablet, 'Completed'),
-            ],
-          ),
+        ),
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildUpcomingContent(screenWidth, screenHeight, isTablet),
+            _buildEmptyState(screenWidth, screenHeight, isTablet, 'Live'),
+            const CompletedMatchesPage(), // Show your completed matches page directly
+          ],
         ),
       ),
     );
   }
+
+  // This method is no longer needed
+  // Widget _buildPlaceholderForCompleted() {
+  //   return const Center(
+  //     child: CircularProgressIndicator(),
+  //   );
+  // }
 
   Widget _buildUpcomingContent(double screenWidth, double screenHeight, bool isTablet) {
     return ListView(
@@ -341,13 +363,10 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-
           const SizedBox(height: 70),
           Text(
             type == 'Live'
                 ? 'No live matches'
-                : type == 'Completed'
-                ? 'No completed matches'
                 : 'You haven\'t joined any upcoming matches!',
             style: TextStyle(
               fontSize: 18,
@@ -360,8 +379,6 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
           Text(
             type == 'Live'
                 ? 'Check back when matches are live'
-                : type == 'Completed'
-                ? 'Your completed matches will appear here'
                 : 'Find any upcoming matches to join and start winning.',
             style: TextStyle(
               fontSize: 14,
@@ -406,6 +423,5 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> {
         ],
       ),
     );
-
   }
 }
