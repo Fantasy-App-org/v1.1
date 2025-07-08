@@ -3,7 +3,9 @@ import 'package:fantasy/model/fixture.dart';
 import 'package:fantasy/service/fixture_service.dart';
 import 'package:fantasy/service/user_service.dart';
 import 'package:http/http.dart' as http;
-import 'login.dart';
+import 'package:fantasy/auth/login.dart';
+
+import 'package:fantasy/body/completed_match_details.dart';
 
 class MyMatchesScreen extends StatefulWidget {
   const MyMatchesScreen({Key? key}) : super(key: key);
@@ -19,10 +21,8 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
   List<FixtureModel> _allFixtures = [];
   List<FixtureModel> _upcomingMatches = [];
   List<FixtureModel> _liveMatches = [];
-  List<FixtureModel> _completedMatches = [];
   List<FixtureModel> _myUpcomingMatches = [];
   List<FixtureModel> _myLiveMatches = [];
-  List<FixtureModel> _myCompletedMatches = [];
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -94,7 +94,6 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
         // In real implementation, you'd have user's joined matches
         _myUpcomingMatches = _upcomingMatches.take(2).toList();
         _myLiveMatches = _liveMatches.take(1).toList();
-        _myCompletedMatches = _completedMatches.take(3).toList();
 
         _isLoading = false;
       });
@@ -102,7 +101,6 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
       print('Successfully loaded matches');
       print('My Upcoming: ${_myUpcomingMatches.length}');
       print('My Live: ${_myLiveMatches.length}');
-      print('My Completed: ${_myCompletedMatches.length}');
 
     } catch (e) {
       print('Error loading matches: $e');
@@ -197,25 +195,25 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
     final bool isTablet = screenWidth > 600;
 
     return Scaffold(
-      backgroundColor: Color(0xFFF8FAFC),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Text(
+        title: const Text(
           'My Matches',
           style: TextStyle(
-            color: Color(0xFF0F172A),
+            color: Colors.black87,
             fontSize: 20,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
           ),
         ),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Color(0xFF3B82F6),
+          indicatorColor: Colors.blue,
           indicatorWeight: 3,
-          labelColor: Color(0xFF3B82F6),
-          unselectedLabelColor: Color(0xFF64748B),
+          labelColor: Colors.blue,
+          unselectedLabelColor: Colors.grey,
           labelStyle: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 16,
@@ -241,14 +239,14 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
           ),
           SizedBox(height: 16),
           Text(
             'Loading your matches...',
             style: TextStyle(
               fontSize: 16,
-              color: Color(0xFF64748B),
+              color: Colors.grey[600],
             ),
           ),
         ],
@@ -277,7 +275,7 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
             child: Text(
               _errorMessage!,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF64748B)),
+              style: TextStyle(color: Colors.grey[600]),
             ),
           ),
           SizedBox(height: 16),
@@ -292,7 +290,7 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFF3B82F6),
+              backgroundColor: Colors.blue,
             ),
             child: Text(
               _errorMessage!.contains('Please login') ? 'Go to Login' : 'Retry',
@@ -312,13 +310,13 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
 
   Widget _buildContent(double screenWidth, double screenHeight, bool isTablet) {
     return Container(
-      decoration: BoxDecoration(
-        color: Color(0xFFF8FAFC),
+      decoration: const BoxDecoration(
+        color: Colors.white,
         image: DecorationImage(
           image: AssetImage('assets/images/no_upcoming_fixtures_found.png'),
           fit: BoxFit.contain,
           alignment: Alignment.center,
-          opacity: 0.1,
+          opacity: 0.3,
         ),
       ),
       child: RefreshIndicator(
@@ -328,7 +326,7 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
           children: [
             _buildUpcomingContent(screenWidth, screenHeight, isTablet),
             _buildLiveContent(screenWidth, screenHeight, isTablet),
-            _buildCompletedContent(screenWidth, screenHeight, isTablet),
+            const CompletedMatchesPage(),
           ],
         ),
       ),
@@ -381,36 +379,12 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
     );
   }
 
-  Widget _buildCompletedContent(double screenWidth, double screenHeight, bool isTablet) {
-    if (_myCompletedMatches.isEmpty) {
-      return _buildEmptyState(screenWidth, screenHeight, isTablet, 'Completed');
-    }
-
-    return ListView.builder(
-      padding: EdgeInsets.all(16),
-      itemCount: _myCompletedMatches.length,
-      itemBuilder: (context, index) {
-        final match = _myCompletedMatches[index];
-        return Padding(
-          padding: EdgeInsets.only(bottom: 16),
-          child: _buildApiMatchCard(
-            match: match,
-            screenWidth: screenWidth,
-            isTablet: isTablet,
-            isCompleted: true,
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildApiMatchCard({
     required FixtureModel match,
     required double screenWidth,
     required bool isTablet,
     bool isUpcoming = false,
     bool isLive = false,
-    bool isCompleted = false,
   }) {
     Color statusColor = Colors.blue;
     String statusText = 'Upcoming';
@@ -420,24 +394,20 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
       statusColor = Colors.red;
       statusText = 'LIVE';
       statusIcon = Icons.circle;
-    } else if (isCompleted) {
-      statusColor = Colors.green;
-      statusText = 'Completed';
-      statusIcon = Icons.check_circle;
     }
 
     final timeLeft = isUpcoming ? FixtureService.formatTimeLeft(match.matchDate) : statusText;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xFFF1F5F9)),
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFF1E293B).withOpacity(0.08),
-            blurRadius: 20,
-            offset: Offset(0, 4),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -445,18 +415,18 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
         children: [
           // Header with gradient background
           Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [statusColor.withOpacity(0.1), Colors.white],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
               ),
-              border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+              border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -467,10 +437,10 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
                     children: [
                       Text(
                         match.matchType,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
                       ),
                       SizedBox(height: 4),
@@ -478,7 +448,7 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
                         match.matchTitle,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF64748B),
+                          color: Colors.grey[600],
                           fontWeight: FontWeight.w500,
                         ),
                         maxLines: 1,
@@ -488,7 +458,7 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [statusColor.withOpacity(0.8), statusColor],
@@ -497,8 +467,8 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
                     boxShadow: [
                       BoxShadow(
                         color: statusColor.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
@@ -511,7 +481,7 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
                       ],
                       Text(
                         timeLeft,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -526,7 +496,10 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
 
           // Teams section
           Container(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.8),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -534,28 +507,28 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
                   child: Column(
                     children: [
                       Container(
-                        width: 50,
-                        height: 50,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.blue.withOpacity(0.8), Colors.blue],
-                          ),
                           shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [Colors.blue[100]!, Colors.blue[50]!],
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.blue.withOpacity(0.3),
-                              blurRadius: 12,
-                              offset: Offset(0, 4),
+                              color: Colors.blue.withOpacity(0.2),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                        child: Center(
+                        child: CircleAvatar(
+                          radius: 25,
+                          backgroundColor: Colors.transparent,
                           child: Text(
                             match.teamAShort,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
                               fontSize: 14,
-                              color: Colors.white,
+                              color: Colors.blue,
                             ),
                           ),
                         ),
@@ -563,10 +536,10 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
                       SizedBox(height: 8),
                       Text(
                         match.teamA,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E293B),
+                          color: Colors.black87,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 1,
@@ -576,19 +549,17 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
                   ),
                 ),
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: 16),
-                  padding: EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Color(0xFFF8FAFC),
+                    color: Colors.grey[100],
                     shape: BoxShape.circle,
-                    border: Border.all(color: Color(0xFFE2E8F0)),
                   ),
-                  child: Text(
+                  child: const Text(
                     'VS',
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
                     ),
                   ),
                 ),
@@ -596,28 +567,28 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
                   child: Column(
                     children: [
                       Container(
-                        width: 50,
-                        height: 50,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.red.withOpacity(0.8), Colors.red],
-                          ),
                           shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [Colors.orange[100]!, Colors.orange[50]!],
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.withOpacity(0.3),
-                              blurRadius: 12,
-                              offset: Offset(0, 4),
+                              color: Colors.orange.withOpacity(0.2),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                        child: Center(
+                        child: CircleAvatar(
+                          radius: 25,
+                          backgroundColor: Colors.transparent,
                           child: Text(
                             match.teamBShort,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
                               fontSize: 14,
-                              color: Colors.white,
+                              color: Colors.orange,
                             ),
                           ),
                         ),
@@ -625,10 +596,10 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
                       SizedBox(height: 8),
                       Text(
                         match.teamB,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E293B),
+                          color: Colors.black87,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 1,
@@ -643,32 +614,32 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
 
           // Stats section
           Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
+                colors: [Colors.grey[50]!, Colors.grey[100]!],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(12),
+                bottomRight: Radius.circular(12),
               ),
-              border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+              border: Border(top: BorderSide(color: Colors.grey[300]!)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.emoji_events_rounded, size: 16, color: Color(0xFFF59E0B)),
-                    SizedBox(width: 4),
+                    Icon(Icons.emoji_events, size: 16, color: Colors.amber[600]),
+                    const SizedBox(width: 4),
                     Text(
                       '${match.totalContest} Contests',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1E293B),
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
                       ),
                     ),
                   ],
@@ -676,43 +647,22 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
                 Container(
                   width: 1,
                   height: 20,
-                  color: Color(0xFFE2E8F0),
+                  color: Colors.grey[300],
                 ),
                 Row(
                   children: [
-                    Icon(Icons.people_rounded, size: 16, color: Color(0xFF10B981)),
-                    SizedBox(width: 4),
+                    Icon(Icons.groups, size: 16, color: Colors.green[600]),
+                    const SizedBox(width: 4),
                     Text(
-                      'My Teams: 2', // This would come from user data
-                      style: TextStyle(
+                      'My Teams: 2',
+                      style: const TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1E293B),
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
                       ),
                     ),
                   ],
                 ),
-                if (isCompleted) ...[
-                  Container(
-                    width: 1,
-                    height: 20,
-                    color: Color(0xFFE2E8F0),
-                  ),
-                  Row(
-                    children: [
-                      Icon(Icons.star_rounded, size: 16, color: Color(0xFF8B5CF6)),
-                      SizedBox(width: 4),
-                      Text(
-                        'Rank: #45', // This would come from user data
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E293B),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ],
             ),
           ),
@@ -724,115 +674,86 @@ class _MyMatchesScreenState extends State<MyMatchesScreen> with TickerProviderSt
   Widget _buildEmptyState(double screenWidth, double screenHeight, bool isTablet, String type) {
     String title = '';
     String subtitle = '';
-    IconData icon = Icons.sports_cricket;
 
     switch (type) {
       case 'Live':
         title = 'No live matches';
         subtitle = 'Check back when matches are live';
-        icon = Icons.live_tv;
-        break;
-      case 'Completed':
-        title = 'No completed matches';
-        subtitle = 'Your completed matches will appear here';
-        icon = Icons.history;
         break;
       default:
         title = 'You haven\'t joined any upcoming matches!';
         subtitle = 'Find any upcoming matches to join and start winning.';
-        icon = Icons.schedule;
         break;
     }
 
-    return SingleChildScrollView(
-      child: Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(height: screenHeight * 0.1),
-              Container(
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF3B82F6).withOpacity(0.1), Color(0xFF1D4ED8).withOpacity(0.05)],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  size: 64,
-                  color: Color(0xFF3B82F6),
-                ),
-              ),
-              SizedBox(height: 24),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 8),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF64748B),
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 32),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0xFF3B82F6).withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: TextButton(
-                  onPressed: () {
-                    // Navigate back to home screen
-                    DefaultTabController.of(context)?.animateTo(0);
-                  },
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.search, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'VIEW MATCHES',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 70),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+            textAlign: TextAlign.center,
           ),
-        ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue[400]!, Colors.blue[600]!],
+              ),
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: TextButton(
+              onPressed: () {
+                // Navigate back to home screen
+                DefaultTabController.of(context)?.animateTo(0);
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.search, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'VIEW MATCHES',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

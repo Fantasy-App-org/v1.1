@@ -1,4 +1,7 @@
+// pages/transaction_history_page.dart
 import 'package:flutter/material.dart';
+import 'package:fantasy/model/transaction_model.dart';
+import 'package:fantasy/service/transaction_service.dart';
 
 class TransactionHistoryPage extends StatefulWidget {
   @override
@@ -12,6 +15,17 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  // API related variables
+  List<Transaction> allTransactions = []; // Store ALL loaded transactions
+  List<Transaction> currentPageTransactions = []; // Current page display
+  Set<int> loadedPages = {}; // Track which pages we've loaded
+  bool isLoading = true;
+  String errorMessage = '';
+  int currentPage = 1;
+  int totalPages = 1;
+  int totalTransactions = 0;
+  ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -22,334 +36,699 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+
+    _loadTransactions();
     _animationController.forward();
+  }
+
+  Future<void> _loadTransactions({bool refresh = false}) async {
+    if (refresh) {
+      setState(() {
+        currentPage = 1;
+        allTransactions.clear();
+        currentPageTransactions.clear();
+        loadedPages.clear();
+        isLoading = true;
+        errorMessage = '';
+        totalTransactions = 0;
+      });
+    } else {
+      setState(() {
+        isLoading = true;
+      });
+    }
+
+    try {
+      final response = await TransactionService.getTransactionHistory(
+        page: currentPage,
+      );
+
+      if (response.status) {
+        setState(() {
+          // Set current page transactions for display
+          currentPageTransactions = response.data.transactions;
+
+          // Add to all transactions if this page hasn't been loaded before
+          if (!loadedPages.contains(currentPage)) {
+            allTransactions.addAll(response.data.transactions);
+            loadedPages.add(currentPage);
+          }
+
+          totalPages = response.data.totalPages;
+          totalTransactions = totalPages * 20; // Assuming 20 per page
+          isLoading = false;
+          errorMessage = '';
+        });
+      } else {
+        setState(() {
+          errorMessage = response.message;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to load transactions: $e';
+        isLoading = false;
+      });
+    }
+  }
+
+  void _goToPage(int page) {
+    if (page >= 1 && page <= totalPages && page != currentPage) {
+      setState(() {
+        currentPage = page;
+      });
+      _loadTransactions();
+    }
+  }
+
+  Future<void> _searchTransactions() async {
+    if (searchController.text.isEmpty) {
+      await _loadTransactions(refresh: true);
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      currentPage = 1;
+      allTransactions.clear();
+      currentPageTransactions.clear();
+      loadedPages.clear();
+      totalTransactions = 0;
+    });
+
+    try {
+      final response = await TransactionService.searchTransactions(
+        query: searchController.text,
+        page: currentPage,
+      );
+
+      if (response.status) {
+        setState(() {
+          currentPageTransactions = response.data.transactions;
+          allTransactions = response.data.transactions; // For search, reset all transactions
+          loadedPages.add(currentPage);
+          totalPages = response.data.totalPages;
+          totalTransactions = totalPages * 20; // Approximate
+          isLoading = false;
+          errorMessage = '';
+        });
+      } else {
+        setState(() {
+          errorMessage = response.message;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to search transactions: $e';
+        isLoading = false;
+      });
+    }
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  List<Transaction> transactions = [
-    Transaction(
-      id: 1,
-      type: 'Contest Entry',
-      game: 'IND vs AUS T20',
-      amount: -100,
-      status: 'Completed',
-      date: '2024-05-20',
-      time: '14:30',
-      result: 'Won',
-      winAmount: 250,
-    ),
-    Transaction(
-      id: 2,
-      type: 'Contest Entry',
-      game: 'MI vs CSK IPL',
-      amount: -50,
-      status: 'Completed',
-      date: '2024-05-19',
-      time: '19:45',
-      result: 'Lost',
-      winAmount: 0,
-    ),
-    Transaction(
-      id: 3,
-      type: 'Wallet Add',
-      game: 'UPI Payment',
-      amount: 500,
-      status: 'Completed',
-      date: '2024-05-18',
-      time: '16:20',
-      result: 'Success',
-      winAmount: 0,
-    ),
-    Transaction(
-      id: 4,
-      type: 'Contest Entry',
-      game: 'RCB vs KKR IPL',
-      amount: -75,
-      status: 'Completed',
-      date: '2024-05-17',
-      time: '20:00',
-      result: 'Won',
-      winAmount: 150,
-    ),
-    Transaction(
-      id: 5,
-      type: 'Withdrawal',
-      game: 'Bank Transfer',
-      amount: -200,
-      status: 'Pending',
-      date: '2024-05-16',
-      time: '11:15',
-      result: 'Processing',
-      winAmount: 0,
-    ),
-    Transaction(
-      id: 6,
-      type: 'Contest Entry',
-      game: 'ENG vs PAK ODI',
-      amount: -120,
-      status: 'Completed',
-      date: '2024-05-15',
-      time: '13:30',
-      result: 'Lost',
-      winAmount: 0,
-    ),
-    Transaction(
-      id: 7,
-      type: 'Contest Entry',
-      game: 'GT vs LSG IPL',
-      amount: -25,
-      status: 'Completed',
-      date: '2024-05-14',
-      time: '15:45',
-      result: 'Won',
-      winAmount: 45,
-    ),
-    Transaction(
-      id: 8,
-      type: 'Bonus Added',
-      game: 'Welcome Bonus',
-      amount: 100,
-      status: 'Completed',
-      date: '2024-05-13',
-      time: '10:00',
-      result: 'Success',
-      winAmount: 0,
-    ),
-  ];
+  // Portfolio calculations work on ALL loaded transactions (accumulated data)
+  double get totalBetAmount {
+    return allTransactions
+        .where((t) => t.type == 'Contest Entry' && t.amount < 0)
+        .fold(0.0, (sum, t) => sum + t.amount.abs());
+  }
 
+  double get totalWinnings {
+    return allTransactions
+        .where((t) => t.amount > 0)
+        .fold(0.0, (sum, t) => sum + t.amount);
+  }
+
+  // Filtered transactions for display (only current page)
   List<Transaction> get filteredTransactions {
-    List<Transaction> filtered = transactions;
+    List<Transaction> filtered = currentPageTransactions;
 
     if (selectedFilter != 'All') {
-      filtered =
-          filtered.where((transaction) {
-            switch (selectedFilter) {
-              case 'Won':
-                return transaction.result == 'Won';
-              case 'Lost':
-                return transaction.result == 'Lost';
-              case 'Deposits':
-                return transaction.type == 'Wallet Add';
-              case 'Withdrawals':
-                return transaction.type == 'Withdrawal';
-              default:
-                return true;
-            }
-          }).toList();
-    }
-
-    if (searchController.text.isNotEmpty) {
-      filtered =
-          filtered
-              .where(
-                (transaction) =>
-                    transaction.game.toLowerCase().contains(
-                      searchController.text.toLowerCase(),
-                    ) ||
-                    transaction.type.toLowerCase().contains(
-                      searchController.text.toLowerCase(),
-                    ),
-              )
-              .toList();
+      filtered = filtered.where((transaction) {
+        switch (selectedFilter) {
+          case 'Won':
+            return transaction.txnType.contains('Won');
+          case 'Deposited':
+            return transaction.txnType.contains('Joined') || transaction.amount < 0;
+          case 'Refunded':
+            return transaction.txnType.contains('Refunded');
+          default:
+            return true;
+        }
+      }).toList();
     }
 
     return filtered;
   }
 
-  double get totalBetAmount {
-    return transactions
-        .where((t) => t.type == 'Contest Entry')
-        .fold(0.0, (sum, t) => sum + t.amount.abs());
-  }
-
-  double get totalWinnings {
-    return transactions.fold(0.0, (sum, t) => sum + t.winAmount);
-  }
-
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen =
-        screenWidth < 375; // iPhone SE or similar small devices
+    final isSmallScreen = screenWidth < 375;
 
     return Scaffold(
       backgroundColor: Color(0xFFF8FAFC),
-      body: CustomScrollView(
-        slivers: [
-          // Modern App Bar
-      SliverAppBar(
-      expandedHeight: isSmallScreen ? 100 : 120,
-        floating: false,
-        pinned: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Color(0xFF1E293B),
-        elevation: 0,
-        // Add this to make the back button clearly visible
-        iconTheme: IconThemeData(
-          color: Colors.black, // Makes back button black
-          size: 24,
+      body: RefreshIndicator(
+        onRefresh: () => _loadTransactions(refresh: true),
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverAppBar(
+              expandedHeight: isSmallScreen ? 100 : 120,
+              floating: false,
+              pinned: true,
+              backgroundColor: Colors.white,
+              foregroundColor: Color(0xFF1E293B),
+              elevation: 0,
+              iconTheme: IconThemeData(
+                color: Colors.black,
+                size: 24,
+              ),
+              actionsIconTheme: IconThemeData(
+                color: Colors.black,
+                size: 24,
+              ),
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(
+                  'Transaction History',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: isSmallScreen ? 20 : 24,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                centerTitle: false,
+                titlePadding: EdgeInsets.only(
+                  left: isSmallScreen ? 16 : 20,
+                  bottom: isSmallScreen ? 12 : 16,
+                ),
+              ),
+              bottom: PreferredSize(
+                preferredSize: Size.fromHeight(1),
+                child: Container(
+                  height: 1,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        Color(0xFFE2E8F0),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Column(
+                  children: [
+                    SizedBox(height: isSmallScreen ? 12 : 20),
+
+                    // Stats Section
+                    Container(
+                      margin: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 12 : 20,
+                      ),
+                      child: _buildStatsSection(context),
+                    ),
+
+                    SizedBox(height: isSmallScreen ? 16 : 24),
+
+                    // Search and Filter Section
+                    Container(
+                      margin: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 12 : 20,
+                      ),
+                      child: _buildSearchAndFilter(context),
+                    ),
+
+                    SizedBox(height: isSmallScreen ? 16 : 24),
+                  ],
+                ),
+              ),
+            ),
+
+            // Transaction List or Loading/Error States
+            _buildTransactionList(isSmallScreen),
+
+            // Pagination Section
+            SliverToBoxAdapter(
+              child: _buildPagination(isSmallScreen),
+            ),
+
+            SliverToBoxAdapter(child: SizedBox(height: 32)),
+          ],
         ),
-        actionsIconTheme: IconThemeData(
-          color: Colors.black,
-          size: 24,
-        ),
-        flexibleSpace: FlexibleSpaceBar(
-          title: Text(
-            'Transaction History',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: isSmallScreen ? 20 : 24,
-              color: Color(0xFF1E293B),
+      ),
+    );
+  }
+
+  Widget _buildTransactionList(bool isSmallScreen) {
+    if (isLoading) {
+      return SliverToBoxAdapter(
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 20),
+          padding: EdgeInsets.all(40),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0xFF64748B).withOpacity(0.06),
+                spreadRadius: 0,
+                blurRadius: 20,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Column(
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Loading transactions...',
+                  style: TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 16,
+                  ),
+                ),
+              ],
             ),
           ),
-          centerTitle: false,
-          titlePadding: EdgeInsets.only(
-            left: isSmallScreen ? 16 : 20,
-            bottom: isSmallScreen ? 12 : 16,
+        ),
+      );
+    }
+
+    if (errorMessage.isNotEmpty) {
+      return SliverToBoxAdapter(
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 20),
+          padding: EdgeInsets.all(40),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0xFF64748B).withOpacity(0.06),
+                spreadRadius: 0,
+                blurRadius: 20,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: Color(0xFFEF4444),
+                  size: 48,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Error',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  errorMessage,
+                  style: TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => _loadTransactions(refresh: true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF3B82F6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text('Retry', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
           ),
         ),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  Color(0xFFE2E8F0),
-                  Colors.transparent,
+      );
+    }
+
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0xFF64748B).withOpacity(0.06),
+              spreadRadius: 0,
+              blurRadius: 20,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                isSmallScreen ? 16 : 24,
+                isSmallScreen ? 16 : 24,
+                isSmallScreen ? 16 : 24,
+                16,
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.history, color: Color(0xFF475569), size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Transaction History',
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 16 : 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  Spacer(),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${filteredTransactions.length}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF475569),
+                      ),
+                    ),
+                  ),
                 ],
               ),
+            ),
+            if (filteredTransactions.isEmpty)
+              Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.receipt_long,
+                        color: Color(0xFF94A3B8),
+                        size: 48,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'No transactions found',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Try adjusting your filters or search terms',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: filteredTransactions.length,
+                separatorBuilder: (context, index) => Container(
+                  margin: EdgeInsets.symmetric(
+                    horizontal: isSmallScreen ? 16 : 24,
+                  ),
+                  height: 1,
+                  color: Color(0xFFF1F5F9),
+                ),
+                itemBuilder: (context, index) {
+                  return _buildTransactionItem(
+                    filteredTransactions[index],
+                    index,
+                    context,
+                  );
+                },
+              ),
+            SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPagination(bool isSmallScreen) {
+    if (totalPages <= 1) return SizedBox.shrink();
+
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 12 : 20,
+        vertical: 20,
+      ),
+      padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF64748B).withOpacity(0.06),
+            spreadRadius: 0,
+            blurRadius: 20,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Page info and accumulated data indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Page $currentPage of $totalPages',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 14 : 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF475569),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Color(0xFF3B82F6).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${allTransactions.length} total loaded',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF3B82F6),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+
+          // Pagination controls - Fixed overflow
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Previous button
+                _buildPaginationButton(
+                  icon: Icons.chevron_left,
+                  enabled: currentPage > 1,
+                  onTap: () => _goToPage(currentPage - 1),
+                  isSmallScreen: isSmallScreen,
+                ),
+
+                SizedBox(width: 12),
+
+                // Page numbers
+                ..._buildPageNumbers(isSmallScreen),
+
+                SizedBox(width: 12),
+
+                // Next button
+                _buildPaginationButton(
+                  icon: Icons.chevron_right,
+                  enabled: currentPage < totalPages,
+                  onTap: () => _goToPage(currentPage + 1),
+                  isSmallScreen: isSmallScreen,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildPageNumbers(bool isSmallScreen) {
+    List<Widget> pages = [];
+    int start = (currentPage - 2).clamp(1, totalPages);
+    int end = (currentPage + 2).clamp(1, totalPages);
+
+    // Adjust range to show 5 pages when possible
+    if (end - start < 4) {
+      if (start == 1) {
+        end = (start + 4).clamp(1, totalPages);
+      } else if (end == totalPages) {
+        start = (end - 4).clamp(1, totalPages);
+      }
+    }
+
+    // First page + ellipsis
+    if (start > 1) {
+      pages.add(_buildPageNumberButton(1, isSmallScreen));
+      if (start > 2) {
+        pages.add(SizedBox(width: 8));
+        pages.add(_buildEllipsis(isSmallScreen));
+      }
+      pages.add(SizedBox(width: 8));
+    }
+
+    // Page range
+    for (int i = start; i <= end; i++) {
+      pages.add(_buildPageNumberButton(i, isSmallScreen));
+      if (i < end) pages.add(SizedBox(width: 8));
+    }
+
+    // Ellipsis + last page
+    if (end < totalPages) {
+      pages.add(SizedBox(width: 8));
+      if (end < totalPages - 1) {
+        pages.add(_buildEllipsis(isSmallScreen));
+        pages.add(SizedBox(width: 8));
+      }
+      pages.add(_buildPageNumberButton(totalPages, isSmallScreen));
+    }
+
+    return pages;
+  }
+
+  Widget _buildPaginationButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onTap,
+    required bool isSmallScreen,
+  }) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: isSmallScreen ? 40 : 44,
+        height: isSmallScreen ? 40 : 44,
+        decoration: BoxDecoration(
+          color: enabled ? Color(0xFF3B82F6) : Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: enabled ? [
+            BoxShadow(
+              color: Color(0xFF3B82F6).withOpacity(0.25),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ] : null,
+        ),
+        child: Icon(
+          icon,
+          color: enabled ? Colors.white : Color(0xFF94A3B8),
+          size: isSmallScreen ? 20 : 24,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPageNumberButton(int pageNumber, bool isSmallScreen) {
+    bool isActive = pageNumber == currentPage;
+    bool isLoaded = loadedPages.contains(pageNumber);
+
+    return GestureDetector(
+      onTap: () => _goToPage(pageNumber),
+      child: Container(
+        width: isSmallScreen ? 36 : 40,
+        height: isSmallScreen ? 36 : 40,
+        decoration: BoxDecoration(
+          gradient: isActive ? LinearGradient(
+            colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+          ) : null,
+          color: isActive ? null : (isLoaded ? Color(0xFFE0F2FE) : Colors.transparent),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isActive ? Colors.transparent :
+            isLoaded ? Color(0xFF3B82F6).withOpacity(0.3) : Color(0xFFE2E8F0),
+          ),
+          boxShadow: isActive ? [
+            BoxShadow(
+              color: Color(0xFF3B82F6).withOpacity(0.25),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ] : null,
+        ),
+        child: Center(
+          child: Text(
+            pageNumber.toString(),
+            style: TextStyle(
+              color: isActive ? Colors.white :
+              isLoaded ? Color(0xFF3B82F6) : Color(0xFF475569),
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              fontSize: isSmallScreen ? 14 : 16,
             ),
           ),
         ),
       ),
+    );
+  }
 
-          SliverToBoxAdapter(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  SizedBox(height: isSmallScreen ? 12 : 20),
-
-                  // Enhanced Stats Section
-                  Container(
-                    margin: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 12 : 20,
-                    ),
-                    child: _buildStatsSection(context),
-                  ),
-
-                  SizedBox(height: isSmallScreen ? 16 : 24),
-
-                  // Modern Search and Filter Section
-                  Container(
-                    margin: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 12 : 20,
-                    ),
-                    child: _buildSearchAndFilter(context),
-                  ),
-
-                  SizedBox(height: isSmallScreen ? 16 : 24),
-                ],
-              ),
-            ),
+  Widget _buildEllipsis(bool isSmallScreen) {
+    return Container(
+      width: isSmallScreen ? 36 : 40,
+      height: isSmallScreen ? 36 : 40,
+      child: Center(
+        child: Text(
+          '...',
+          style: TextStyle(
+            color: Color(0xFF94A3B8),
+            fontSize: isSmallScreen ? 14 : 16,
+            fontWeight: FontWeight.w500,
           ),
-
-          // Transaction List
-          SliverToBoxAdapter(
-            child: Container(
-              margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0xFF64748B).withOpacity(0.06),
-                    spreadRadius: 0,
-                    blurRadius: 20,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      isSmallScreen ? 16 : 24,
-                      isSmallScreen ? 16 : 24,
-                      isSmallScreen ? 16 : 24,
-                      16,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.history, color: Color(0xFF475569), size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Recent Transactions',
-                          style: TextStyle(
-                            fontSize: isSmallScreen ? 16 : 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E293B),
-                          ),
-                        ),
-                        Spacer(),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '${filteredTransactions.length}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF475569),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: filteredTransactions.length,
-                    separatorBuilder:
-                        (context, index) => Container(
-                          margin: EdgeInsets.symmetric(
-                            horizontal: isSmallScreen ? 16 : 24,
-                          ),
-                          height: 1,
-                          color: Color(0xFFF1F5F9),
-                        ),
-                    itemBuilder: (context, index) {
-                      return _buildTransactionItem(
-                        filteredTransactions[index],
-                        index,
-                        context,
-                      );
-                    },
-                  ),
-                  SizedBox(height: 8),
-                ],
-              ),
-            ),
-          ),
-
-          SliverToBoxAdapter(child: SizedBox(height: 32)),
-        ],
+        ),
       ),
     );
   }
@@ -391,6 +770,23 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
                   fontSize: isSmallScreen ? 16 : 18,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
+                ),
+              ),
+              Spacer(),
+              // Show loaded data indicator
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${loadedPages.length}/${totalPages} pages',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -438,6 +834,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
     );
   }
 
+  // Keep all your existing UI methods unchanged
   Widget _buildSearchAndFilter(BuildContext context) {
     final isSmallScreen = MediaQuery.of(context).size.width < 375;
 
@@ -457,8 +854,6 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
       ),
       child: Column(
         children: [
-          // Enhanced Search Bar
-          // Corrected version of the search bar container
           Container(
             decoration: BoxDecoration(
               color: Color(0xFFF8FAFC),
@@ -481,27 +876,30 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
                   vertical: isSmallScreen ? 12.0 : 16.0,
                 ),
               ),
-              onChanged: (value) => setState(() {}),
+              onSubmitted: (value) => _searchTransactions(),
+              onChanged: (value) {
+                if (value.isEmpty) {
+                  _loadTransactions(refresh: true);
+                }
+              },
             ),
           ),
 
           SizedBox(height: isSmallScreen ? 12.0 : 16.0),
 
-          // Modern Filter Chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children:
-                  ['All', 'Won', 'Lost', 'Deposits', 'Withdrawals']
-                      .map(
-                        (filter) => Padding(
-                          padding: EdgeInsets.only(
-                            right: isSmallScreen ? 8.0 : 12.0,
-                          ),
-                          child: _buildFilterChip(filter, context),
-                        ),
-                      )
-                      .toList(),
+              children: ['All', 'Won', 'Deposited', 'Refunded']
+                  .map(
+                    (filter) => Padding(
+                  padding: EdgeInsets.only(
+                    right: isSmallScreen ? 8.0 : 12.0,
+                  ),
+                  child: _buildFilterChip(filter, context),
+                ),
+              )
+                  .toList(),
             ),
           ),
         ],
@@ -513,69 +911,108 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
     final isSmallScreen = MediaQuery.of(context).size.width < 375;
     bool isSelected = selectedFilter == filter;
 
+    // Get filter-specific colors
+    Color getFilterColor(String filter) {
+      switch (filter) {
+        case 'Won':
+          return Color(0xFF10B981); // Green
+        case 'Deposited':
+          return Color(0xFFEF4444); // Red
+        case 'Refunded':
+          return Color(0xFF3B82F6); // Blue
+        default:
+          return Color(0xFF3B82F6); // Default blue for "All"
+      }
+    }
+
+    IconData? getFilterIcon(String filter) {
+      switch (filter) {
+        case 'Won':
+          return Icons.trending_up;
+        case 'Deposited':
+          return Icons.remove_circle_outline;
+        case 'Refunded':
+          return Icons.undo;
+        default:
+          return null;
+      }
+    }
+
     return GestureDetector(
       onTap: () => setState(() => selectedFilter = filter),
       child: AnimatedContainer(
         duration: Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 16 : 20,
+          horizontal: isSmallScreen ? 14 : 18,
           vertical: isSmallScreen ? 8 : 12,
         ),
         decoration: BoxDecoration(
-          gradient:
-              isSelected
-                  ? LinearGradient(
-                    colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-                  )
-                  : null,
+          gradient: isSelected
+              ? LinearGradient(
+            colors: [
+              getFilterColor(filter),
+              getFilterColor(filter).withOpacity(0.8),
+            ],
+          )
+              : null,
           color: isSelected ? null : Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(25),
           border: Border.all(
-            color: isSelected ? Colors.transparent : Color(0xFFE2E8F0),
+            color: isSelected ? Colors.transparent : getFilterColor(filter).withOpacity(0.3),
           ),
-          boxShadow:
-              isSelected
-                  ? [
-                    BoxShadow(
-                      color: Color(0xFF3B82F6).withOpacity(0.25),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ]
-                  : null,
+          boxShadow: isSelected
+              ? [
+            BoxShadow(
+              color: getFilterColor(filter).withOpacity(0.25),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ]
+              : null,
         ),
-        child: Text(
-          filter,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Color(0xFF475569),
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            fontSize: isSmallScreen ? 12 : 13,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (getFilterIcon(filter) != null) ...[
+              Icon(
+                getFilterIcon(filter),
+                color: isSelected ? Colors.white : getFilterColor(filter),
+                size: isSmallScreen ? 14 : 16,
+              ),
+              SizedBox(width: 6),
+            ],
+            Text(
+              filter,
+              style: TextStyle(
+                color: isSelected ? Colors.white : getFilterColor(filter),
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: isSmallScreen ? 12 : 13,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-    bool isWhite,
-    BuildContext context, {
-    bool isNetPL = false,
-  }) {
+      String title,
+      String value,
+      IconData icon,
+      Color color,
+      bool isWhite,
+      BuildContext context, {
+        bool isNetPL = false,
+      }) {
     final isSmallScreen = MediaQuery.of(context).size.width < 375;
     double netValue = totalWinnings - totalBetAmount;
 
     return Container(
       padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
       decoration: BoxDecoration(
-        color:
-            isWhite ? Colors.white.withOpacity(0.15) : color.withOpacity(0.1),
+        color: isWhite ? Colors.white.withOpacity(0.15) : color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border:
-            isWhite ? Border.all(color: Colors.white.withOpacity(0.2)) : null,
+        border: isWhite ? Border.all(color: Colors.white.withOpacity(0.2)) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -584,10 +1021,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
             children: [
               Icon(
                 icon,
-                color:
-                    isWhite
-                        ? Colors.white
-                        : (isNetPL && netValue < 0 ? Colors.red : color),
+                color: isWhite
+                    ? Colors.white
+                    : (isNetPL && netValue < 0 ? Colors.red : color),
                 size: isSmallScreen ? 16 : 20,
               ),
               SizedBox(width: isSmallScreen ? 4 : 8),
@@ -596,10 +1032,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
                   title,
                   style: TextStyle(
                     fontSize: isSmallScreen ? 10 : 12,
-                    color:
-                        isWhite
-                            ? Colors.white.withOpacity(0.8)
-                            : Color(0xFF64748B),
+                    color: isWhite
+                        ? Colors.white.withOpacity(0.8)
+                        : Color(0xFF64748B),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -612,12 +1047,11 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
             style: TextStyle(
               fontSize: isSmallScreen ? 16 : 18,
               fontWeight: FontWeight.w700,
-              color:
-                  isWhite
-                      ? Colors.white
-                      : (isNetPL && netValue < 0
-                          ? Colors.red
-                          : Color(0xFF1E293B)),
+              color: isWhite
+                  ? Colors.white
+                  : (isNetPL && netValue < 0
+                  ? Colors.red
+                  : Color(0xFF1E293B)),
             ),
           ),
         ],
@@ -626,10 +1060,10 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
   }
 
   Widget _buildTransactionItem(
-    Transaction transaction,
-    int index,
-    BuildContext context,
-  ) {
+      Transaction transaction,
+      int index,
+      BuildContext context,
+      ) {
     final isSmallScreen = MediaQuery.of(context).size.width < 375;
 
     return Container(
@@ -637,7 +1071,6 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Enhanced Transaction Icon
           Container(
             width: isSmallScreen ? 40 : 48,
             height: isSmallScreen ? 40 : 48,
@@ -651,9 +1084,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: _getTransactionColor(
-                    transaction.type,
-                  ).withOpacity(0.25),
+                  color: _getTransactionColor(transaction.type).withOpacity(0.25),
                   blurRadius: 8,
                   offset: Offset(0, 2),
                 ),
@@ -668,7 +1099,6 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
 
           SizedBox(width: isSmallScreen ? 12 : 16),
 
-          // Transaction Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -689,7 +1119,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
                   runSpacing: 4,
                   children: [
                     Text(
-                      transaction.type,
+                      transaction.txnType,
                       style: TextStyle(
                         color: Color(0xFF64748B),
                         fontSize: isSmallScreen ? 11 : 12,
@@ -716,7 +1146,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
                 if (transaction.winAmount > 0) ...[
                   SizedBox(height: 4),
                   Text(
-                    '+₹${transaction.winAmount} won',
+                    '+₹${transaction.winAmount.toStringAsFixed(0)} won',
                     style: TextStyle(
                       color: Color(0xFF10B981),
                       fontSize: isSmallScreen ? 11 : 12,
@@ -728,19 +1158,17 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
             ),
           ),
 
-          // Amount and Status
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${transaction.amount >= 0 ? '+' : ''}₹${transaction.amount.abs()}',
+                '${transaction.amount >= 0 ? '+' : ''}₹${transaction.amount.abs().toStringAsFixed(0)}',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: isSmallScreen ? 14 : 16,
-                  color:
-                      transaction.amount >= 0
-                          ? Color(0xFF10B981)
-                          : Color(0xFFEF4444),
+                  color: transaction.amount >= 0
+                      ? Color(0xFF10B981)
+                      : Color(0xFFEF4444),
                 ),
               ),
               SizedBox(height: isSmallScreen ? 4 : 6),
@@ -755,9 +1183,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
                       vertical: isSmallScreen ? 2 : 4,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(
-                        transaction.status,
-                      ).withOpacity(0.1),
+                      color: _getStatusColor(transaction.status).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -777,9 +1203,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
                         vertical: isSmallScreen ? 2 : 2,
                       ),
                       decoration: BoxDecoration(
-                        color: _getResultColor(
-                          transaction.result,
-                        ).withOpacity(0.1),
+                        color: _getResultColor(transaction.result).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -801,6 +1225,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
     );
   }
 
+  // Keep all your existing helper methods for colors and icons
   IconData _getTransactionIcon(String type) {
     switch (type) {
       case 'Contest Entry':
@@ -856,28 +1281,4 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
         return Color(0xFF6B7280);
     }
   }
-}
-
-class Transaction {
-  final int id;
-  final String type;
-  final String game;
-  final double amount;
-  final String status;
-  final String date;
-  final String time;
-  final String result;
-  final double winAmount;
-
-  Transaction({
-    required this.id,
-    required this.type,
-    required this.game,
-    required this.amount,
-    required this.status,
-    required this.date,
-    required this.time,
-    required this.result,
-    required this.winAmount,
-  });
 }

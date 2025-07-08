@@ -20,6 +20,31 @@ class UserService {
   static const String _deviceTokenKey = 'device_token';
   final String baseUrl = 'http://13.232.147.237:3000'; // Update with your localhost port
 
+  String? get inviteFriendCode => _userData?['invite_friend_code'];
+
+  int? get userId {
+    if (_userData != null && _userData!.containsKey('id')) {
+      // Handle both int and string types
+      final id = _userData!['id'];
+      if (id is int) {
+        return id;
+      } else if (id is String) {
+        return int.tryParse(id);
+      }
+      // Also check for 'user_id' key as backup
+      if (_userData != null && _userData!.containsKey('user_id')) {
+        final userId = _userData!['user_id'];
+        if (userId is int) {
+          return userId;
+        } else if (userId is String) {
+          return int.tryParse(userId);
+        }
+      }
+
+      return null;
+    }
+  }
+
   factory UserService() {
     return _instance;
   }
@@ -303,6 +328,46 @@ class UserService {
     } catch (e) {
       print('Error saving user data: $e');
       throw Exception('Failed to save user data');
+    }
+  }
+
+  // Add this method to your UserService class
+  Future<Map<String, dynamic>?> getReferralData() async {
+    try {
+      print('Fetching referral data...');
+
+      final response = await makeAuthenticatedRequest(
+        endpoint: '/web-services/getreferralcode',
+        method: 'GET',
+      );
+
+      print('Referral Data Response Status: ${response.statusCode}');
+      print('Referral Data Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        if (responseData['status'] == true && responseData['data'] != null) {
+          final data = responseData['data'];
+          print('Referral data fetched successfully');
+          print('Invite code: ${data['invite_code']}');
+          print('Referred count: ${data['referred_count']}');
+
+          return {
+            'invite_code': data['invite_code'],
+            'referred_count': data['referred_count'] ?? 0,
+          };
+        } else {
+          print('Referral data not found in response');
+          return null;
+        }
+      } else {
+        print('Failed to fetch referral data. Status code: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching referral data: $e');
+      return null;
     }
   }
 

@@ -12,13 +12,12 @@ import 'package:fantasy/drawe_pages/FAQ.dart';
 import 'package:fantasy/drawe_pages/Legality_pages.dart';
 import 'package:fantasy/drawe_pages/how_to_play.dart';
 import 'package:fantasy/team_creation/contest_all_pages.dart';
-import 'package:fantasy/team_creation/creat team.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'login.dart';
-import 'mygame.dart';
+import 'package:fantasy/auth/login.dart';
+import 'package:fantasy/body/mygame.dart';
 import 'package:fantasy/config/debug_config.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -330,12 +329,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  // Handle upcoming match tap - Enhanced from second file
-  void _handleUpcomingMatchTap(String team1, String team2, String matchId) {
-    // Navigate to team creation page
+  void _navigateToContests(FixtureModel fixture) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => FantasyCricketPage()),
+      MaterialPageRoute(
+        builder: (context) => ContestAllPage(fixture: fixture),
+      ),
     );
   }
 
@@ -673,7 +672,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           children: [
             _buildPremiumBanner(),
             _buildBalanceCard(),
-            _buildQuickActions(),
             _buildLiveMatches(),
             _buildUpcomingMatches(),
             _buildPerformanceStats(),
@@ -881,100 +879,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    final actions = [
-      {
-        'title': 'Create Team',
-        'icon': Icons.group_add_rounded,
-        'color': Color(0xFF8B5CF6),
-      },
-      {
-        'title': 'My Teams',
-        'icon': Icons.people_rounded,
-        'color': Color(0xFFf59E0B),
-      },
-      {
-        'title': 'Contests',
-        'icon': Icons.emoji_events_rounded,
-        'color': Color(0xFFEF4444),
-      },
-      {
-        'title': 'Leaderboard',
-        'icon': Icons.trending_up_rounded,
-        'color': Color(0xFF10B981),
-      },
-    ];
-
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.8,
-        ),
-        itemCount: actions.length,
-        itemBuilder: (context, index) {
-          final action = actions[index];
-          return Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Color(0xFF1E293B).withOpacity(0.06),
-                  blurRadius: 16,
-                  offset: Offset(0, 2),
-                ),
-              ],
-              border: Border.all(color: Color(0xFFF1F5F9)),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () {},
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: (action['color'] as Color).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          action['icon'] as IconData,
-                          color: action['color'] as Color,
-                          size: 20,
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          action['title'] as String,
-                          style: TextStyle(
-                            color: Color(0xFF1E293B),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
       ),
     );
   }
@@ -1315,11 +1219,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               final match = _upcomingMatches[index];
               final timeLeft = FixtureService.formatTimeLeft(match.matchDate);
               return GestureDetector(
-                onTap: () => _handleUpcomingMatchTap(
-                  match.teamA,
-                  match.teamB,
-                  'match_${match.id}',
-                ),
+                onTap: () => _navigateToContests(match),
                 child: _buildUpcomingMatchCard(
                   team1: match.teamA,
                   team2: match.teamB,
@@ -1568,18 +1468,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ],
                 ),
                 GestureDetector(
-                  onTap: match.lineupOut ? () => _activateFixture(match.id) : null,
+                  onTap: () => _navigateToContests(match),
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      gradient: match.lineupOut
-                          ? LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)])
-                          : null,
-                      color: match.lineupOut ? null : Color(0xFF64748B),
+                      gradient: LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)]),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      match.lineupOut ? contests : 'Lineup Pending',
+                      'View Contests',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,

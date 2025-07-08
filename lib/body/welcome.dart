@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'homescreen.dart';
-import 'login.dart';
+import '../auth/login.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({Key? key}) : super(key: key);

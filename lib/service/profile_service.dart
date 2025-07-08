@@ -7,6 +7,8 @@ class ProfileService {
   User? _currentProfile;
   bool _isLoading = false;
   String? _lastError;
+  List<Map<String, dynamic>> _referrals = []; // Store referrals separately
+  bool _referralsLoaded = false;
 
   factory ProfileService() {
     return _instance;
@@ -44,6 +46,10 @@ class ProfileService {
         await userService.setUserData(profileData, userService.authToken!);
 
         print('Profile loaded successfully: ${_currentProfile!.displayName}');
+
+        // Also load referrals data
+        await _loadReferrals(forceRefresh: forceRefresh);
+
         return _currentProfile;
       } else {
         throw Exception(response['message'] ?? 'Failed to load profile');
@@ -64,9 +70,42 @@ class ProfileService {
     }
   }
 
+  /// Load referrals data from separate API endpoint
+  Future<void> _loadReferrals({bool forceRefresh = false}) async {
+    if (_referralsLoaded && !forceRefresh) return;
+
+    try {
+      print('Loading referrals from separate endpoint...');
+      final response = await ProfileApi.getReferrals();
+
+      if (response['status'] == true && response['data'] != null) {
+        final referralsData = response['data']['data'] as List<dynamic>? ?? [];
+        _referrals = referralsData.map<Map<String, dynamic>>((item) => {
+          'name': item['name'] ?? 'Unknown',
+          'image': item['image'] ?? '',
+          'reffered_count': 0, // Default value since this API doesn't provide it
+        }).toList();
+
+        _referralsLoaded = true;
+        print('Referrals loaded successfully: ${_referrals.length} friends');
+      } else {
+        print('Failed to load referrals: ${response['message']}');
+        _referrals = [];
+      }
+    } catch (e) {
+      print('Error loading referrals: $e');
+      _referrals = [];
+    }
+  }
+
+  /// Public method to refresh referrals data
+  Future<void> refreshReferrals() async {
+    await _loadReferrals(forceRefresh: true);
+  }
+
   /// Update profile data
   Future<bool> updateProfile({
-    String? name,              // Fixed: was userName
+    String? name,
     String? email,
     String? dateOfBirth,
     int? gender,
@@ -85,7 +124,7 @@ class ProfileService {
       // Build update data - using correct API field names
       Map<String, dynamic> updateData = {};
 
-      if (name != null) updateData['name'] = name;              // Fixed field name
+      if (name != null) updateData['name'] = name;
       if (email != null) updateData['email'] = email;
       if (dateOfBirth != null) updateData['date_of_birth'] = dateOfBirth;
       if (gender != null) updateData['gender'] = gender;
@@ -93,7 +132,7 @@ class ProfileService {
       if (city != null) updateData['city'] = city;
       if (state != null) updateData['state'] = state;
       if (country != null) updateData['country'] = country;
-      if (pincode != null) updateData['pincode'] = pincode;    // Note: API uses 'pincode' not 'pinCode'
+      if (pincode != null) updateData['pincode'] = pincode;
 
       print('Updating profile with data: $updateData');
       final response = await ProfileApi.updateProfile(updateData);
@@ -125,6 +164,30 @@ class ProfileService {
     } finally {
       _isLoading = false;
     }
+  }
+
+  /// Get current user ID from profile data
+  int? get userId {
+    return _currentProfile?.userId;
+  }
+
+  /// Get user ID with automatic profile loading if not available
+  Future<int?> getUserId() async {
+    if (_currentProfile == null) {
+      try {
+        await loadProfile();
+      } catch (e) {
+        print('Error loading profile to get user ID: $e');
+        return null;
+      }
+    }
+
+    return _currentProfile?.userId;
+  }
+
+  /// Check if user ID is available
+  bool get hasUserId {
+    return _currentProfile?.userId != null;
   }
 
   /// Upload profile image
@@ -162,7 +225,7 @@ class ProfileService {
     }
   }
 
-  /// Get wallet balance information - Fixed field mappings
+  /// Get wallet balance information
   Map<String, double> getWalletBalances() {
     if (_currentProfile == null) {
       return {
@@ -177,9 +240,8 @@ class ProfileService {
       };
     }
 
-    // Using correct field names from API response
-    final cashBalance = _currentProfile!.cashDeposit ?? 0.0;        // Fixed: was cashBalance
-    final winningAmount = _currentProfile!.winnings ?? 0.0;         // Fixed: was winningAmount
+    final cashBalance = _currentProfile!.cashDeposit ?? 0.0;
+    final winningAmount = _currentProfile!.winnings ?? 0.0;
     final bonusAmount = _currentProfile!.bonus ?? 0.0;
     final levelIncome = _currentProfile!.levelIncome ?? 0.0;
     final cashback = _currentProfile!.cashback ?? 0.0;
@@ -199,7 +261,7 @@ class ProfileService {
     };
   }
 
-  /// Get user verification status - Fixed field mappings
+  /// Get user verification status
   Map<String, dynamic> getVerificationStatus() {
     if (_currentProfile == null) {
       return {
@@ -212,18 +274,17 @@ class ProfileService {
       };
     }
 
-    // Using correct field names from API response
-    final isVerified = (_currentProfile!.accountVerified ?? 0) == 1;        // Fixed: was isVerified
-    final isProfileUpdated = _currentProfile!.teamNameUpdated ?? false;     // Fixed: was isUpdated
+    final isVerified = (_currentProfile!.accountVerified ?? 0) == 1;
+    final isProfileUpdated = _currentProfile!.teamNameUpdated ?? false;
     final hasProfileImage = _currentProfile!.image?.isNotEmpty == true;
-    final isPanVerified = (_currentProfile!.panVerify ?? 0) == 2;           // Added
-    final isBankVerified = (_currentProfile!.bankVerify ?? 0) == 2;         // Added
+    final isPanVerified = (_currentProfile!.panVerify ?? 0) == 2;
+    final isBankVerified = (_currentProfile!.bankVerify ?? 0) == 2;
 
-    // Calculate profile completion percentage - using correct field names
+    // Calculate profile completion percentage
     int completedFields = 0;
     int totalFields = 10;
 
-    if (_currentProfile!.name?.isNotEmpty == true) completedFields++;           // Fixed: was userName
+    if (_currentProfile!.name?.isNotEmpty == true) completedFields++;
     if (_currentProfile!.email?.isNotEmpty == true) completedFields++;
     if (_currentProfile!.dateOfBirth?.isNotEmpty == true) completedFields++;
     if (_currentProfile!.gender != null) completedFields++;
@@ -231,7 +292,7 @@ class ProfileService {
     if (_currentProfile!.city?.isNotEmpty == true) completedFields++;
     if (_currentProfile!.state?.isNotEmpty == true) completedFields++;
     if (_currentProfile!.country?.isNotEmpty == true) completedFields++;
-    if (_currentProfile!.pinCode?.isNotEmpty == true) completedFields++;      // Fixed: was pincode
+    if (_currentProfile!.pinCode?.isNotEmpty == true) completedFields++;
     if (hasProfileImage) completedFields++;
 
     final completionPercentage = (completedFields / totalFields * 100).round();
@@ -269,22 +330,13 @@ class ProfileService {
     };
   }
 
-  /// Get referral information
+  /// Get referral information - Updated to use separate API
   Map<String, dynamic> getReferralInfo() {
-    if (_currentProfile == null) {
-      return {
-        'inviteFriendCode': '',
-        'referredFriendsCount': 0,
-        'referredToFriend': [],
-        'referralBonus': '',
-      };
-    }
-
     return {
-      'inviteFriendCode': _currentProfile!.inviteFriendCode ?? '',
-      'referredFriendsCount': _currentProfile!.referredToFriend?.length ?? 0,
-      'referredToFriend': _currentProfile!.referredToFriend ?? [],
-      'referralBonus': _currentProfile!.referralBonus ?? '',
+      'inviteFriendCode': _currentProfile?.inviteFriendCode ?? '',
+      'referredFriendsCount': _referrals.length,
+      'referredToFriend': _referrals, // Use data from separate API
+      'referralBonus': _currentProfile?.referralBonus ?? '',
     };
   }
 
@@ -292,6 +344,8 @@ class ProfileService {
   void clearCache() {
     _currentProfile = null;
     _lastError = null;
+    _referrals = [];
+    _referralsLoaded = false;
   }
 
   /// Check if user needs to re-authenticate
@@ -300,19 +354,21 @@ class ProfileService {
     return !userService.isLoggedIn || userService.authToken == null;
   }
 
-  /// Get current profile status - Fixed field mappings
+  /// Get current profile status
   Map<String, dynamic> getProfileStatus() {
     return {
       'hasProfile': _currentProfile != null,
       'isLoading': _isLoading,
       'lastError': _lastError,
-      'userName': _currentProfile?.name,                          // Fixed: was userName
-      'teamName': _currentProfile?.teamName,                      // Added
+      'userName': _currentProfile?.name,
+      'teamName': _currentProfile?.teamName,
       'email': _currentProfile?.email,
-      'mobileNo': _currentProfile?.mobileNo,                      // Added
-      'isVerified': (_currentProfile?.accountVerified ?? 0) == 1, // Fixed: was isVerified
+      'mobileNo': _currentProfile?.mobileNo,
+      'isVerified': (_currentProfile?.accountVerified ?? 0) == 1,
       'currentLevel': _currentProfile?.currentLevel ?? 0,
-      'userId': _currentProfile?.userId,                          // Added
+      'userId': _currentProfile?.userId,
+      'referralsLoaded': _referralsLoaded,
+      'referralsCount': _referrals.length,
     };
   }
 

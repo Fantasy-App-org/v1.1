@@ -144,7 +144,17 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       });
     } catch (e) {
       DebugConfig.debugPrint('Profile loading error: $e');
-      // Rest of error handling remains the same
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
+
+      if (e.toString().contains('Authentication required') ||
+          e.toString().contains('Authentication failed')) {
+        _showAuthenticationDialog();
+      } else {
+        _showDetailedErrorDialog(e.toString());
+      }
     }
   }
 
@@ -384,6 +394,442 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       return _currentUser!.image!;
     }
     return '';
+  }
+
+  Widget _buildStatisticsSection() {
+    final contestStats = _profileService.getContestStats();
+
+    return _buildCardContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.bar_chart,
+                  color: Colors.orange.shade700,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Statistics',
+                style: TextStyle(
+                  color: Colors.orange,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Contests',
+                  contestStats['contestFinished'].toString(),
+                  Icons.emoji_events,
+                  Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Matches',
+                  contestStats['totalMatch'].toString(),
+                  Icons.sports_cricket,
+                  Colors.green,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Total Wins',
+                  '0', // You can derive this from your API data
+                  Icons.military_tech,
+                  Colors.purple,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Series',
+                  contestStats['totalSeries'].toString(),
+                  Icons.timeline,
+                  Colors.red,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 24,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFriendsSection() {
+    final referralInfo = _profileService.getReferralInfo();
+    final referredFriends = referralInfo['referredToFriend'] as List<dynamic>? ?? [];
+
+    return _buildCardContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.pink.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.people,
+                      color: Colors.pink.shade700,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Friends',
+                    style: TextStyle(
+                      color: Colors.pink,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              if (referredFriends.isNotEmpty)
+                GestureDetector(
+                  onTap: () {
+                    // Navigate to full friends list
+                    _showAllFriends(referredFriends);
+                  },
+                  child: Row(
+                    children: [
+                      Text(
+                        'View All',
+                        style: TextStyle(
+                          color: Colors.pink.shade600,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 14,
+                        color: Colors.pink.shade600,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (referredFriends.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.people_outline,
+                    size: 48,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No friends yet',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Invite friends to join and play together!',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(
+              height: 120,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: referredFriends.length > 5 ? 5 : referredFriends.length,
+                itemBuilder: (context, index) {
+                  final friend = referredFriends[index];
+                  return _buildFriendCard(friend);
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFriendCard(dynamic friend) {
+    final friendName = friend['name'] ?? 'Unknown';
+    final referredCount = friend['reffered_count'] ?? 0;
+    final friendImage = friend['image'] ?? '';
+
+    return Container(
+      width: 100,
+      margin: const EdgeInsets.only(right: 12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.pink.shade50, Colors.purple.shade50],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.pink.withOpacity(0.2)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Profile Image
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.pink.shade300, Colors.purple.shade300],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: ClipOval(
+                child: friendImage.isNotEmpty
+                    ? Image.network(
+                  friendImage.startsWith('http')
+                      ? friendImage
+                      : 'http://13.232.147.237:3000$friendImage',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.person,
+                      size: 25,
+                      color: Colors.white.withOpacity(0.9),
+                    );
+                  },
+                )
+                    : Icon(
+                  Icons.person,
+                  size: 25,
+                  color: Colors.white.withOpacity(0.9),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Friend Name
+            Text(
+              friendName.length > 8 ? '${friendName.substring(0, 8)}...' : friendName,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            // Ref Count
+            Text(
+              'Ref : $referredCount',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAllFriends(List<dynamic> friends) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'All Friends',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: friends.length,
+                itemBuilder: (context, index) {
+                  final friend = friends[index];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.pink.shade300, Colors.purple.shade300],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: ClipOval(
+                            child: friend['image']?.isNotEmpty == true
+                                ? Image.network(
+                              friend['image'].startsWith('http')
+                                  ? friend['image']
+                                  : 'http://13.232.147.237:3000${friend['image']}',
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.person,
+                                  size: 25,
+                                  color: Colors.white.withOpacity(0.9),
+                                );
+                              },
+                            )
+                                : Icon(
+                              Icons.person,
+                              size: 25,
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                friend['name'] ?? 'Unknown',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Referred: ${friend['reffered_count'] ?? 0} friends',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -1049,6 +1495,14 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     ],
                   ),
                 ),
+                const SizedBox(height: 24),
+
+                // Statistics Section
+                _buildStatisticsSection(),
+                const SizedBox(height: 24),
+
+                // Friends Section
+                _buildFriendsSection(),
                 const SizedBox(height: 24),
 
                 // Logout Button

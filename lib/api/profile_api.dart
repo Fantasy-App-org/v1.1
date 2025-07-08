@@ -157,4 +157,28 @@ class ProfileApi {
       throw Exception('Error updating profile: $e');
     }
   }
+
+  static Future<Map<String, dynamic>> getReferrals() async {
+    try {
+      print('🔍 API: Fetching referrals from separate endpoint...');
+
+      final response = await _userService.makeAuthenticatedRequest(
+        endpoint: '/web-services/referrals',
+        method: 'GET',
+      );
+
+      print('📡 Referrals API Response: ${response.statusCode}');
+      print('📡 Referrals API Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        return responseData;
+      } else {
+        throw Exception('Failed to fetch referrals: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Referrals API Error: $e');
+      throw Exception('Network error: $e');
+    }
+  }
 }
