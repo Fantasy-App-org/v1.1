@@ -17,8 +17,100 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:fantasy/auth/login.dart';
-import 'package:fantasy/body/mygame.dart';
+import 'mygame.dart';
 import 'package:fantasy/config/debug_config.dart';
+
+class TeamFlagWidget extends StatelessWidget {
+  final String? flagUrl;
+  final String teamShort;
+  final double size;
+  final Color fallbackColor;
+
+  const TeamFlagWidget({
+    Key? key,
+    required this.flagUrl,
+    required this.teamShort,
+    required this.size,
+    required this.fallbackColor,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: fallbackColor.withOpacity(0.3),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: flagUrl != null && flagUrl!.isNotEmpty
+            ? Image.network(
+          flagUrl!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [fallbackColor.withOpacity(0.8), fallbackColor],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: SizedBox(
+                  width: size * 0.4,
+                  height: size * 0.4,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return _buildFallbackFlag();
+          },
+        )
+            : _buildFallbackFlag(),
+      ),
+    );
+  }
+
+  Widget _buildFallbackFlag() {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [fallbackColor.withOpacity(0.8), fallbackColor],
+        ),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          teamShort,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            fontSize: size * 0.25,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -938,6 +1030,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     team2: match.teamB,
                     team1Short: match.teamAShort,
                     team2Short: match.teamBShort,
+                    team1Flag: match.teamAFlag,
+                    team2Flag: match.teamBFlag,
                     score1: 'Live',
                     score2: 'Live',
                     overs1: '',
@@ -962,6 +1056,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     required String overs1,
     required String overs2,
     required String status,
+    String? team1Flag,
+    String? team2Flag,
   }) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -1060,19 +1156,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Expanded(
                         child: Column(
                           children: [
+                            TeamFlagWidget(
+                              flagUrl: team1Flag,
+                              teamShort: team1Short,
+                              size: screenWidth * 0.12,
+                              fallbackColor: Color(0xFF3B82F6),
+                            ),
+                            SizedBox(height: screenHeight * 0.008),
                             Text(
                               team1Short,
                               style: TextStyle(
-                                fontSize: screenWidth * 0.04,
+                                fontSize: screenWidth * 0.035,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF1E293B),
                               ),
                             ),
-                            SizedBox(height: screenHeight * 0.008),
+                            SizedBox(height: screenHeight * 0.004),
                             Text(
                               score1,
                               style: TextStyle(
-                                fontSize: screenWidth * 0.045,
+                                fontSize: screenWidth * 0.04,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF0F172A),
                               ),
@@ -1081,7 +1184,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               Text(
                                 overs1,
                                 style: TextStyle(
-                                  fontSize: screenWidth * 0.03,
+                                  fontSize: screenWidth * 0.028,
                                   color: Color(0xFF64748B),
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1107,19 +1210,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Expanded(
                         child: Column(
                           children: [
+                            TeamFlagWidget(
+                              flagUrl: team2Flag,
+                              teamShort: team2Short,
+                              size: screenWidth * 0.12,
+                              fallbackColor: Color(0xFFEF4444),
+                            ),
+                            SizedBox(height: screenHeight * 0.008),
                             Text(
                               team2Short,
                               style: TextStyle(
-                                fontSize: screenWidth * 0.04,
+                                fontSize: screenWidth * 0.035,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF1E293B),
                               ),
                             ),
-                            SizedBox(height: screenHeight * 0.008),
+                            SizedBox(height: screenHeight * 0.004),
                             Text(
                               score2,
                               style: TextStyle(
-                                fontSize: screenWidth * 0.045,
+                                fontSize: screenWidth * 0.04,
                                 fontWeight: FontWeight.w800,
                                 color: Color(0xFF0F172A),
                               ),
@@ -1128,7 +1238,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               Text(
                                 overs2,
                                 style: TextStyle(
-                                  fontSize: screenWidth * 0.03,
+                                  fontSize: screenWidth * 0.028,
                                   color: Color(0xFF64748B),
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1329,32 +1439,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Expanded(
                   child: Column(
                     children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [team1Color.withOpacity(0.8), team1Color],
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: team1Color.withOpacity(0.3),
-                              blurRadius: 12,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            team1Short,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
+                      TeamFlagWidget(
+                        flagUrl: match.teamAFlag,
+                        teamShort: team1Short,
+                        size: 50,
+                        fallbackColor: team1Color,
                       ),
                       SizedBox(height: 8),
                       Text(
@@ -1389,32 +1478,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Expanded(
                   child: Column(
                     children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [team2Color.withOpacity(0.8), team2Color],
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: team2Color.withOpacity(0.3),
-                              blurRadius: 12,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            team2Short,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
+                      TeamFlagWidget(
+                        flagUrl: match.teamBFlag,
+                        teamShort: team2Short,
+                        size: 50,
+                        fallbackColor: team2Color,
                       ),
                       SizedBox(height: 8),
                       Text(
