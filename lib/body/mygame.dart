@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'completed_match.dart';
 
@@ -17,7 +18,6 @@ class _MyMatchesScreenState extends State<MyMatchesScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    // Removed all navigation logic - we'll show content directly in tabs
   }
 
   @override
@@ -28,101 +28,120 @@ class _MyMatchesScreenState extends State<MyMatchesScreen>
 
   @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
-    final double screenWidth = screenSize.width;
-    final double screenHeight = screenSize.height;
-    final bool isTablet = screenWidth > 600;
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xfff6f8fc),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 2,
         automaticallyImplyLeading: false,
-        title: const Text(
+        title: Text(
           'My Matches',
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.blue,
-          indicatorWeight: 3,
-          labelColor: Colors.blue,
-          unselectedLabelColor: Colors.grey,
-          tabs: const [
-            Tab(text: 'Upcoming'),
-            Tab(text: 'Live'),
-            Tab(text: 'Completed'),
-          ],
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xfff0f2f5),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF667eea).withOpacity(0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  )
+                ],
+              ),
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.black87,
+              labelStyle: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              unselectedLabelStyle: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              indicatorPadding: const EdgeInsets.all(4),
+              labelPadding: EdgeInsets.zero,
+              tabs: [
+                Container(
+                  height: 40,
+                  alignment: Alignment.center,
+                  child: const Text('Upcoming'),
+                ),
+                Container(
+                  height: 40,
+                  alignment: Alignment.center,
+                  child: const Text('Live'),
+                ),
+                Container(
+                  height: 40,
+                  alignment: Alignment.center,
+                  child: const Text('Completed'),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          image: DecorationImage(
-            image: AssetImage('assets/images/no_upcoming_fixtures_found.png'),
-            fit: BoxFit.contain,
-            alignment: Alignment.center,
-            opacity: 0.3,
-          ),
-        ),
-        child: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildUpcomingContent(screenWidth, screenHeight, isTablet),
-            _buildEmptyState(screenWidth, screenHeight, isTablet, 'Live'),
-            const CompletedMatchesPage(), // Show your completed matches page directly
-          ],
-        ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildUpcoming(size),
+          _buildEmptyState(size, 'Live'),
+          const CompletedMatchesPage(),
+        ],
       ),
     );
   }
 
-  // This method is no longer needed
-  // Widget _buildPlaceholderForCompleted() {
-  //   return const Center(
-  //     child: CircularProgressIndicator(),
-  //   );
-  // }
-
-  Widget _buildUpcomingContent(double screenWidth, double screenHeight, bool isTablet) {
+  Widget _buildUpcoming(Size size) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildSimpleMatchCard(
+        _matchCard(
           team1: 'India',
-          team1Logo: 'IND',
+          team1Logo: 'assets/images/Board_of_Control_for_Cricket_in_India_Logo_(2024).svg.png',
           team2: 'Australia',
-          team2Logo: 'AUS',
+          team2Logo: 'assets/images/australiya.jpeg',
           matchType: 'World Cup',
           timeLeft: '2h 30m',
           contests: '12',
           teams: '5',
-          screenWidth: screenWidth,
-          isTablet: isTablet,
         ),
         const SizedBox(height: 16),
-        _buildSimpleMatchCard(
+        _matchCard(
           team1: 'Mumbai',
-          team1Logo: 'MI',
+          team1Logo: 'assets/ipl/mi.png',
           team2: 'Chennai',
-          team2Logo: 'CSK',
+          team2Logo: 'assets/ipl/csk.png',
           matchType: 'IPL',
           timeLeft: '5h 15m',
           contests: '8',
           teams: '3',
-          screenWidth: screenWidth,
-          isTablet: isTablet,
         ),
       ],
     );
   }
 
-  Widget _buildSimpleMatchCard({
+  Widget _matchCard({
     required String team1,
     required String team1Logo,
     required String team2,
@@ -131,225 +150,96 @@ class _MyMatchesScreenState extends State<MyMatchesScreen>
     required String timeLeft,
     required String contests,
     required String teams,
-    required double screenWidth,
-    required bool isTablet,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Colors.white, Color(0xfffef6f6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+            offset: const Offset(0, 3),
+          )
         ],
       ),
       child: Column(
         children: [
-          // Header with gradient background
+          // Header
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.blue[50]!, Colors.white],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                colors: [Color(0xFF667eea), Color(0xFF764ba2)],
               ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-              border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   matchType,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
                     fontWeight: FontWeight.w600,
+                    fontSize: 12,
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.red[400]!, Colors.red[600]!],
-                    ),
+                    color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.withOpacity(0.3),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                   child: Text(
                     timeLeft,
-                    style: const TextStyle(
+                    style: GoogleFonts.poppins(
                       color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Teams section with subtle background
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Column(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Colors.blue[100]!, Colors.blue[50]!],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.blue.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 25,
-                        backgroundColor: Colors.transparent,
-                        child: Text(
-                          team1Logo,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      team1,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text(
-                    'VS',
-                    style: TextStyle(
-                      fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey,
+                      fontSize: 11,
                     ),
                   ),
-                ),
-                Column(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Colors.orange[100]!, Colors.orange[50]!],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.orange.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 25,
-                        backgroundColor: Colors.transparent,
-                        child: Text(
-                          team2Logo,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: Colors.orange,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      team2,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
           ),
 
-          // Stats section with gradient
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.grey[50]!, Colors.grey[100]!],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(12),
-                bottomRight: Radius.circular(12),
-              ),
-              border: Border(top: BorderSide(color: Colors.grey[300]!)),
-            ),
+          // Teams Row
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.emoji_events, size: 16, color: Colors.amber[600]),
-                    const SizedBox(width: 4),
-                    Text('$contests Contests',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                _teamColumn(team1, team1Logo),
+                Text(
+                  'VS',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
                 ),
-                Row(
-                  children: [
-                    Icon(Icons.groups, size: 16, color: Colors.green[600]),
-                    const SizedBox(width: 4),
-                    Text('$teams Teams',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
+                _teamColumn(team2, team2Logo),
+              ],
+            ),
+          ),
+
+          // Stats
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xfff9f9f9),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _statBadge(Icons.emoji_events, Colors.amber, '$contests Contests'),
+                _statBadge(Icons.groups, Colors.green, '$teams Teams'),
               ],
             ),
           ),
@@ -358,69 +248,91 @@ class _MyMatchesScreenState extends State<MyMatchesScreen>
     );
   }
 
-  Widget _buildEmptyState(double screenWidth, double screenHeight, bool isTablet, String type) {
+  Widget _teamColumn(String name, String logo) {
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 28,
+          backgroundColor: Colors.white,
+          backgroundImage: AssetImage(logo),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          name,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _statBadge(IconData icon, Color color, String text) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 14,
+          backgroundColor: color.withOpacity(0.15),
+          child: Icon(icon, size: 16, color: color),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          text,
+          style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(Size size, String type) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 70),
-          Text(
-            type == 'Live'
-                ? 'No live matches'
-                : 'You haven\'t joined any upcoming matches!',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/images/no_upcoming_fixtures_found.png',
+              width: size.width * 0.6,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            type == 'Live'
-                ? 'Check back when matches are live'
-                : 'Find any upcoming matches to join and start winning.',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue[400]!, Colors.blue[600]!],
+            const SizedBox(height: 20),
+            Text(
+              type == 'Live' ? 'No Live Matches' : 'No Upcoming Matches',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
               ),
-              borderRadius: BorderRadius.circular(25),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
-            child: TextButton(
+            const SizedBox(height: 8),
+            Text(
+              type == 'Live'
+                  ? 'Come back when matches are live!'
+                  : 'Join upcoming matches to start playing.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
               onPressed: () {},
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
+                  borderRadius: BorderRadius.circular(30),
                 ),
+                backgroundColor: const Color(0xFF667eea),
               ),
-              child: const Text(
+              child: Text(
                 'VIEW MATCHES',
-                style: TextStyle(
+                style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
-                  fontSize: 16,
+                  fontSize: 13,
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

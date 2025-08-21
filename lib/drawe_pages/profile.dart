@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
+import '../body/edit profile page.dart';
+
 
 
 
@@ -261,7 +263,14 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       child: IconButton(
                         icon: const Icon(Icons.edit_outlined, size: 18),
                         color: Colors.teal.shade700,
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const EditProfilePage(),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],

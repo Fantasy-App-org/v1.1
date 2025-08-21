@@ -1,4 +1,7 @@
+import 'package:fantasy/wallet/whidrawl_page.dart';
 import 'package:flutter/material.dart';
+
+import 'kyc_page.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({Key? key}) : super(key: key);
@@ -245,7 +248,12 @@ class WalletScreen extends StatelessWidget {
                     'Withdraw Amount',
                     'Withdrawable Cash Amount = ₹ 0.00',
                     Icons.arrow_forward_ios,
-                        () {},
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) =>  WithdrawalPage()),
+                          );
+                        },
                     screenWidth,
                     isTablet,
                   ),
@@ -263,7 +271,12 @@ class WalletScreen extends StatelessWidget {
                     'KYC Details',
                     null,
                     Icons.arrow_forward_ios,
-                        () {},
+                        () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const KYCPage()),
+                      );
+                    },
                     screenWidth,
                     isTablet,
                   ),

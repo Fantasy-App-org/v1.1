@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'body/homescreen.dart';
-import 'body/refral.dart';
+import 'body/refral /refral.dart';
 import 'auth/signup.dart';
 import 'body/splash.dart';
 import 'body/welcome.dart';
@@ -114,7 +114,7 @@ class StarFantasyApp extends StatelessWidget {
          '/welcome': (context) => const WelcomeScreen(),
         '/signup': (context) => const SignupPage(),
         '/home': (context) => const HomeScreen(),
-        '/referral': (context) => const ReferralScreen(),
+        '/referral': (context) => const NewReferralScreen(),
       },
     );
   }

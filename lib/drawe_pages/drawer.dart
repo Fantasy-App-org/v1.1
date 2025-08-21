@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../auth/login.dart';
 import '../drawe_pages/about_us.dart';
 import '../drawe_pages/profile.dart';
-import '../body/refral.dart';
-import '../body/wallet.dart';
+import '../body/refral /refral.dart';
+import '../wallet/wallet.dart';
 import '../drawe_pages/Legality_pages.dart';
 import '../drawe_pages/fantasy point system.dart';
 import '../drawe_pages/how_to_play.dart';
@@ -42,7 +42,7 @@ class CustomDrawer extends StatelessWidget {
                       () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => ReferralScreen()),
+                      MaterialPageRoute(builder: (context) =>NewReferralScreen()),
                     );
                   },
                 ),

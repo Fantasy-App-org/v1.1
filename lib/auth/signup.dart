@@ -19,18 +19,12 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
   final TextEditingController referralController = TextEditingController();
 
   late AnimationController _fadeController;
-  late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    _slideController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
@@ -39,15 +33,8 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
-    );
 
     _fadeController.forward();
-    _slideController.forward();
   }
 
   @override
@@ -57,24 +44,19 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
     emailController.dispose();
     referralController.dispose();
     _fadeController.dispose();
-    _slideController.dispose();
     super.dispose();
-  }
-
-  bool isReferralValid() {
-    return referralController.text.isNotEmpty;
   }
 
   bool areFieldsValid() {
     if (isEmailSignup) {
       return emailController.text.isNotEmpty &&
           nameController.text.isNotEmpty &&
-          isReferralValid() &&
+          referralController.text.isNotEmpty &&
           isAgeVerified;
     } else {
       return mobileController.text.isNotEmpty &&
           nameController.text.isNotEmpty &&
-          isReferralValid() &&
+          referralController.text.isNotEmpty &&
           isAgeVerified;
     }
   }
@@ -85,282 +67,413 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
     final double screenHeight = screenSize.height;
     final double screenWidth = screenSize.width;
     final bool isTablet = screenWidth > 600;
+    final bool isSmallScreen = screenHeight < 700;
 
     return Scaffold(
+      backgroundColor: Color(0xFF0f1419),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1a1c2e), Color(0xFF16213e), Color(0xFF0f3460)],
+            colors: [
+              Color(0xFF1a1c2e),
+              Color(0xFF16213e),
+              Color(0xFF0f3460),
+              Color(0xFF0a2744),
+            ],
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: Column(
-                  children: [
-                    // Header Section
-                    Container(
-                      height:
-                          screenHeight * 0.25, // Reduced height for smaller box
-                      width: screenWidth * 0.9, // Added width constraint
-                      margin: EdgeInsets.symmetric(
-                        horizontal: screenWidth * 0.05,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF1a1a2e),
-                            Color(0xFF16213e),
-                            Color(0xFF0f3460),
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 15,
-                            offset: Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        children: [
-                          // Animated background circles
-                          Positioned(
-                            top: -60,
-                            right: -60,
-                            child: Container(
-                              width: 150,
-                              height: 150,
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SingleChildScrollView(
+              physics: isSmallScreen ? AlwaysScrollableScrollPhysics() : NeverScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: screenHeight - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom,
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.06,
+                    vertical: isSmallScreen ? 16 : screenHeight * 0.03,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Header Section
+                      Container(
+                        width: double.infinity,
+                        child: Column(
+                          children: [
+                            SizedBox(height: isSmallScreen ? 20 : screenHeight * 0.02),
+
+                            // Logo with animated glow - UPDATED TO USE ASSET IMAGE
+                            Container(
+                              width: isTablet ? 100 : 80,
+                              height: isTablet ? 100 : 80,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
                                     Colors.orange.withOpacity(0.3),
-                                    Colors.orange.withOpacity(0.0),
+                                    Colors.orange.withOpacity(0.1),
+                                    Colors.transparent,
                                   ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.orange.withOpacity(0.4),
+                                    blurRadius: 30,
+                                    spreadRadius: 5,
+                                  ),
+                                ],
+                              ),
+                              child: Container(
+                                padding: EdgeInsets.all(0), // Add padding around the logo
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    colors: [Colors.white, Colors.amber],
+                                  ),
+                                ),
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/images/star 20 pro logo mark blue (1).png', // REPLACE with your actual logo path
+                                    width: isTablet ? 60 : 40,
+                                    height: isTablet ? 60 : 50,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      // Fallback to star icon if logo fails to load
+                                      return Icon(
+                                        Icons.star_rounded,
+                                        size: isTablet ? 60 : 50,
+                                        color: Colors.white,
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          Positioned(
-                            top: 30,
-                            left: -30,
-                            child: Container(
-                              width: 100,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(
-                                  colors: [
-                                    Colors.amber.withOpacity(0.2),
-                                    Colors.amber.withOpacity(0.0),
-                                  ],
+
+                            SizedBox(height: isSmallScreen ? 16 : screenHeight * 0.025),
+
+                            // Title with gradient
+                            ShaderMask(
+                              shaderCallback: (bounds) => LinearGradient(
+                                colors: [Colors.orange, Colors.amber, Colors.orange],
+                              ).createShader(bounds),
+                              child: Text(
+                                'Star 25 Pro',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: isTablet ? 32 : (isSmallScreen ? 24 : 28),
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.5,
                                 ),
                               ),
                             ),
-                          ),
 
-                          // Content
-                          Padding(
-                            padding: EdgeInsets.all(screenWidth * 0.05),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Logo and back button row
-                                Center(
-                                  child: Container(
-                                    width: 80,
-                                    height: 80,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(0.0),
-                                      child: Image.asset(
-                                        'assets/images/star 20 pro logo mark blue (1).png',
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                            SizedBox(height: 8),
 
-                                Spacer(),
-
-                                // Title section
-                                Text(
-                                  'Join the Elite',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.8),
-                                    fontSize: isTablet ? 16 : 14,
-                                    fontWeight: FontWeight.w300,
-                                  ),
-                                ),
-                                SizedBox(height: 6),
-                                ShaderMask(
-                                  shaderCallback:
-                                      (bounds) => LinearGradient(
-                                        colors: [Colors.orange, Colors.amber],
-                                      ).createShader(bounds),
-                                  child: Text(
-                                    'Star 25 Pro',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: isTablet ? 28 : 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 6),
-                                Text(
-                                  'Create • Compete • Conquer',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.7),
-                                    fontSize: isTablet ? 14 : 12,
-                                    letterSpacing: 1.0,
-                                  ),
-                                ),
-                                SizedBox(height: screenHeight * 0.02),
-                              ],
+                            Text(
+                              'Create • Compete • Conquer',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
+                                letterSpacing: 2.0,
+                                fontWeight: FontWeight.w300,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Glassmorphism Form Container
-                    Container(
-                      margin: EdgeInsets.symmetric(
-                        horizontal: screenWidth * 0.05,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Colors.white.withOpacity(0.25),
-                            Colors.white.withOpacity(0.1),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: Offset(0, 10),
-                          ),
-                        ],
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(30),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
-                          ),
-                          padding: EdgeInsets.all(screenWidth * 0.06),
-                          child: Column(
-                            children: [
-                              SizedBox(height: 20),
 
-                              // Mobile/Email Toggle
-                              _buildToggleButtons(
-                                screenWidth,
-                                screenHeight,
-                                isTablet,
+                      // Form Section
+                      Container(
+                        width: double.infinity,
+                        margin: EdgeInsets.symmetric(vertical: isSmallScreen ? 20 : screenHeight * 0.03),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withOpacity(0.12),
+                              Colors.white.withOpacity(0.08),
+                              Colors.white.withOpacity(0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.15),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 20,
+                              offset: Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(isTablet ? 32 : 24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Toggle Buttons
+                              Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(25),
+                                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildToggleButton(
+                                        'Mobile',
+                                        !isEmailSignup,
+                                            () => setState(() => isEmailSignup = false),
+                                        isTablet,
+                                        isSmallScreen,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: _buildToggleButton(
+                                        'Email',
+                                        isEmailSignup,
+                                            () => setState(() => isEmailSignup = true),
+                                        isTablet,
+                                        isSmallScreen,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
 
-                              SizedBox(height: screenHeight * 0.04),
+                              SizedBox(height: isSmallScreen ? 20 : 24),
 
-                              // Input Fields
+                              // Input Fields with improved text visibility
                               _buildInputField(
                                 controller: nameController,
                                 hint: 'Full Name',
-                                icon: Icons.person_outline,
+                                icon: Icons.person_outline_rounded,
                                 isTablet: isTablet,
-                                screenWidth: screenWidth,
-                                screenHeight: screenHeight,
+                                isSmallScreen: isSmallScreen,
                               ),
 
-                              SizedBox(height: screenHeight * 0.025),
+                              SizedBox(height: isSmallScreen ? 12 : 16),
 
                               _buildInputField(
-                                controller:
-                                    isEmailSignup
-                                        ? emailController
-                                        : mobileController,
-                                hint:
-                                    isEmailSignup
-                                        ? 'Email address'
-                                        : 'Mobile number',
-                                icon:
-                                    isEmailSignup
-                                        ? Icons.email_outlined
-                                        : Icons.phone_outlined,
-                                keyboardType:
-                                    isEmailSignup
-                                        ? TextInputType.emailAddress
-                                        : TextInputType.phone,
+                                controller: isEmailSignup ? emailController : mobileController,
+                                hint: isEmailSignup ? 'Email address' : 'Mobile number',
+                                icon: isEmailSignup ? Icons.email_outlined : Icons.phone_outlined,
+                                keyboardType: isEmailSignup ? TextInputType.emailAddress : TextInputType.phone,
                                 isTablet: isTablet,
-                                screenWidth: screenWidth,
-                                screenHeight: screenHeight,
+                                isSmallScreen: isSmallScreen,
                               ),
 
-                              SizedBox(height: screenHeight * 0.025),
+                              SizedBox(height: isSmallScreen ? 12 : 16),
 
-                              // Referral Code Field
-                              _buildReferralField(
-                                screenWidth,
-                                screenHeight,
-                                isTablet,
+                              _buildInputField(
+                                controller: referralController,
+                                hint: 'Referral Code *',
+                                icon: Icons.card_giftcard_outlined,
+                                isTablet: isTablet,
+                                isSmallScreen: isSmallScreen,
                               ),
 
-                              SizedBox(height: screenHeight * 0.03),
+                              SizedBox(height: isSmallScreen ? 16 : 20),
 
-                              // Age Verification Checkbox
-                              _buildAgeVerification(screenWidth, isTablet),
-
-                              SizedBox(height: screenHeight * 0.04),
-
-                              // Sign Up Button
-                              _buildSignUpButton(
-                                screenWidth,
-                                screenHeight,
-                                isTablet,
+                              // Age Verification
+                              GestureDetector(
+                                onTap: () => setState(() => isAgeVerified = !isAgeVerified),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    AnimatedContainer(
+                                      duration: Duration(milliseconds: 200),
+                                      width: isTablet ? 26 : 24,
+                                      height: isTablet ? 26 : 24,
+                                      decoration: BoxDecoration(
+                                        gradient: isAgeVerified
+                                            ? LinearGradient(colors: [Colors.orange, Colors.amber])
+                                            : null,
+                                        color: isAgeVerified ? null : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: isAgeVerified
+                                              ? Colors.transparent
+                                              : Colors.white.withOpacity(0.4),
+                                          width: 2,
+                                        ),
+                                        boxShadow: isAgeVerified ? [
+                                          BoxShadow(
+                                            color: Colors.orange.withOpacity(0.3),
+                                            blurRadius: 8,
+                                            offset: Offset(0, 2),
+                                          ),
+                                        ] : null,
+                                      ),
+                                      child: isAgeVerified
+                                          ? Icon(Icons.check_rounded, color: Colors.white, size: 16)
+                                          : null,
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'I certify that I am above 18 years',
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.9),
+                                          fontSize: isTablet ? 16 : (isSmallScreen ? 13 : 14),
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-
-                              SizedBox(height: screenHeight * 0.025),
-
-                              // Terms Text
-                              _buildTermsText(isTablet),
-
-                              SizedBox(height: screenHeight * 0.03),
-
-                              // Divider
-                              _buildDivider(screenWidth, isTablet),
-
-                              SizedBox(height: screenHeight * 0.03),
-
-                              // Social Login
-                              SizedBox(height: screenHeight * 0.03),
-
-                              // Login Link
-                              _buildLoginLink(isTablet),
-
-                              SizedBox(height: 20),
                             ],
                           ),
                         ),
                       ),
-                    ),
 
-                    SizedBox(height: screenHeight * 0.05),
-                  ],
+                      // Bottom Section
+                      Column(
+                        children: [
+                          // Sign Up Button
+                          GestureDetector(
+                            onTap: areFieldsValid()
+                                ? () {
+                              HapticFeedback.lightImpact();
+                              String contact = isEmailSignup ? emailController.text : mobileController.text;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => OTPVerificationScreen(
+                                    contact: contact,
+                                    isEmail: isEmailSignup,
+                                    isSignup: true,
+                                  ),
+                                ),
+                              );
+                            }
+                                : null,
+                            child: AnimatedContainer(
+                              duration: Duration(milliseconds: 200),
+                              width: double.infinity,
+                              height: isTablet ? 60 : (isSmallScreen ? 50 : 56),
+                              decoration: BoxDecoration(
+                                gradient: areFieldsValid()
+                                    ? LinearGradient(
+                                  colors: [Colors.orange, Colors.amber, Colors.orange.shade600],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                )
+                                    : null,
+                                color: areFieldsValid() ? null : Colors.grey.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: areFieldsValid()
+                                    ? [
+                                  BoxShadow(
+                                    color: Colors.orange.withOpacity(0.5),
+                                    blurRadius: 20,
+                                    offset: Offset(0, 8),
+                                  ),
+                                ]
+                                    : null,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'CREATE ACCOUNT',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: isTablet ? 18 : (isSmallScreen ? 14 : 16),
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(height: isSmallScreen ? 12 : 16),
+
+                          // Terms Text
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8),
+                            child: RichText(
+                              textAlign: TextAlign.center,
+                              text: TextSpan(
+                                text: 'By signing up, you agree to our ',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: isTablet ? 14 : (isSmallScreen ? 11 : 12),
+                                  height: 1.4,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: 'Terms & Conditions',
+                                    style: TextStyle(
+                                      color: Colors.orange,
+                                      fontWeight: FontWeight.w600,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                  TextSpan(text: ' and '),
+                                  TextSpan(
+                                    text: 'Privacy Policy',
+                                    style: TextStyle(
+                                      color: Colors.orange,
+                                      fontWeight: FontWeight.w600,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(height: isSmallScreen ? 16 : 20),
+
+                          // Login Link
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Already have an account? ',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: isTablet ? 16 : (isSmallScreen ? 13 : 14),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => Dream11LoginPage()),
+                                  );
+                                },
+                                child: Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    color: Colors.orange,
+                                    fontSize: isTablet ? 16 : (isSmallScreen ? 13 : 14),
+                                    fontWeight: FontWeight.w600,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          SizedBox(height: isSmallScreen ? 16 : 20),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -370,454 +483,118 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildToggleButtons(
-    double screenWidth,
-    double screenHeight,
-    bool isTablet,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildToggleButton(
-            'Mobile',
-            !isEmailSignup,
-            () {
-              setState(() => isEmailSignup = false);
-            },
-            screenWidth,
-            screenHeight,
-            isTablet,
-          ),
-          _buildToggleButton(
-            'Email',
-            isEmailSignup,
-            () {
-              setState(() => isEmailSignup = true);
-            },
-            screenWidth,
-            screenHeight,
-            isTablet,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildToggleButton(
-    String text,
-    bool isSelected,
-    VoidCallback onTap,
-    double screenWidth,
-    double screenHeight,
-    bool isTablet,
-  ) {
+  Widget _buildToggleButton(String text, bool isSelected, VoidCallback onTap, bool isTablet, bool isSmallScreen) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: Duration(milliseconds: 300),
         padding: EdgeInsets.symmetric(
-          horizontal: screenWidth * 0.08,
-          vertical: screenHeight * 0.015,
+          vertical: isTablet ? 16 : (isSmallScreen ? 12 : 14),
         ),
         decoration: BoxDecoration(
-          gradient:
-              isSelected
-                  ? LinearGradient(colors: [Colors.orange, Colors.amber])
-                  : null,
+          gradient: isSelected
+              ? LinearGradient(
+            colors: [Colors.orange, Colors.amber],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          )
+              : null,
           borderRadius: BorderRadius.circular(25),
-          boxShadow:
-              isSelected
-                  ? [
-                    BoxShadow(
-                      color: Colors.orange.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
-                  ]
-                  : null,
+          boxShadow: isSelected
+              ? [
+            BoxShadow(
+              color: Colors.orange.withOpacity(0.4),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ]
+              : null,
         ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: isTablet ? 16 : 14,
+        child: Center(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              fontSize: isTablet ? 16 : (isSmallScreen ? 13 : 14),
+            ),
           ),
         ),
       ),
     );
   }
 
+  // UPDATED INPUT FIELD WITH BETTER TEXT VISIBILITY
   Widget _buildInputField({
     required TextEditingController controller,
     required String hint,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     required bool isTablet,
-    required double screenWidth,
-    required double screenHeight,
+    required bool isSmallScreen,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.1),
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.15), // Increased opacity for better background
+            Colors.white.withOpacity(0.10), // Increased opacity
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.3)),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3), // Increased border opacity
+          width: 1.5, // Slightly thicker border
+        ),
       ),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        style: TextStyle(color: Colors.black, fontSize: isTablet ? 18 : 16),
+        style: TextStyle(
+          color: Colors.white, // Keep white but we'll add text shadow
+          fontSize: isTablet ? 18 : (isSmallScreen ? 14 : 16),
+          fontWeight: FontWeight.w500, // Slightly bolder text
+          shadows: [
+            // Add text shadow for better visibility
+            Shadow(
+              color: Colors.black.withOpacity(0.8),
+              offset: Offset(1, 1),
+              blurRadius: 2,
+            ),
+          ],
+        ),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(
-            color: Colors.black.withOpacity(0.6),
-            fontSize: isTablet ? 18 : 16,
+            color: Colors.white.withOpacity(0.6), // Increased hint opacity
+            fontSize: isTablet ? 18 : (isSmallScreen ? 14 : 16),
+            fontWeight: FontWeight.w400,
+            shadows: [
+              Shadow(
+                color: Colors.black.withOpacity(0.6),
+                offset: Offset(1, 1),
+                blurRadius: 2,
+              ),
+            ],
           ),
           prefixIcon: Icon(
             icon,
-            color: Colors.black.withOpacity(0.7),
+            color: Colors.white.withOpacity(0.8), // Increased icon opacity
             size: isTablet ? 24 : 20,
           ),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(
-            horizontal: screenWidth * 0.04,
-            vertical: screenHeight * 0.02,
+            horizontal: 16,
+            vertical: isTablet ? 20 : (isSmallScreen ? 14 : 16),
           ),
         ),
         onChanged: (value) => setState(() {}),
       ),
     );
   }
-
-  Widget _buildReferralField(
-    double screenWidth,
-    double screenHeight,
-    bool isTablet,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Referral Code *',
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: isTablet ? 16 : 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color:
-                  !isReferralValid() && referralController.text.isNotEmpty
-                      ? Colors.red.withOpacity(0.6)
-                      : Colors.white.withOpacity(0.3),
-            ),
-          ),
-          child: TextField(
-            controller: referralController,
-            textCapitalization: TextCapitalization.characters,
-            style: TextStyle(color: Colors.black, fontSize: isTablet ? 18 : 16),
-            decoration: InputDecoration(
-              hintText: 'Enter referral code',
-              hintStyle: TextStyle(
-                color: Colors.black.withOpacity(0.6),
-                fontSize: isTablet ? 18 : 16,
-              ),
-              prefixIcon: Icon(
-                Icons.card_giftcard_outlined,
-                color: Colors.black.withOpacity(0.7),
-                size: isTablet ? 24 : 20,
-              ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: screenWidth * 0.04,
-                vertical: screenHeight * 0.02,
-              ),
-            ),
-            onChanged: (value) => setState(() {}),
-          ),
-        ),
-        if (!isReferralValid() && referralController.text.isNotEmpty)
-          Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Text(
-              'Valid referral code is required',
-              style: TextStyle(
-                color: Colors.red.withOpacity(0.8),
-                fontSize: isTablet ? 14 : 12,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildAgeVerification(double screenWidth, bool isTablet) {
-    return GestureDetector(
-      onTap: () => setState(() => isAgeVerified = !isAgeVerified),
-      child: Row(
-        children: [
-          AnimatedContainer(
-            duration: Duration(milliseconds: 200),
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              gradient:
-                  isAgeVerified
-                      ? LinearGradient(colors: [Colors.orange, Colors.amber])
-                      : null,
-              color: isAgeVerified ? null : Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color:
-                    isAgeVerified
-                        ? Colors.transparent
-                        : Colors.white.withOpacity(0.3),
-                width: 2,
-              ),
-            ),
-            child:
-                isAgeVerified
-                    ? Icon(Icons.check, color: Colors.white, size: 16)
-                    : null,
-          ),
-          SizedBox(width: screenWidth * 0.03),
-          Expanded(
-            child: Text(
-              'I certify that I am above 18 years',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: isTablet ? 16 : 14,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSignUpButton(
-    double screenWidth,
-    double screenHeight,
-    bool isTablet,
-  ) {
-    return GestureDetector(
-      onTap:
-          areFieldsValid()
-              ? () {
-                HapticFeedback.lightImpact();
-                String contact =
-                    isEmailSignup
-                        ? emailController.text
-                        : mobileController.text;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) => OTPVerificationScreen(
-                          contact: contact,
-                          isEmail: isEmailSignup,
-                          isSignup: true,
-                        ),
-                  ),
-                );
-              }
-              : null,
-      child: AnimatedContainer(
-        duration: Duration(milliseconds: 200),
-        width: double.infinity,
-        height: screenHeight * 0.07,
-        decoration: BoxDecoration(
-          gradient:
-              areFieldsValid()
-                  ? LinearGradient(
-                    colors: [Colors.orange, Colors.amber],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                  : null,
-          color: areFieldsValid() ? null : Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow:
-              areFieldsValid()
-                  ? [
-                    BoxShadow(
-                      color: Colors.orange.withOpacity(0.4),
-                      blurRadius: 15,
-                      offset: Offset(0, 8),
-                    ),
-                  ]
-                  : null,
-        ),
-        child: Center(
-          child: Text(
-            'CREATE ACCOUNT',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isTablet ? 18 : 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTermsText(bool isTablet) {
-    return RichText(
-      textAlign: TextAlign.center,
-      text: TextSpan(
-        text: 'By signing up, you agree to our ',
-        style: TextStyle(
-          color: Colors.white.withOpacity(0.6),
-          fontSize: isTablet ? 14 : 12,
-        ),
-        children: [
-          TextSpan(
-            text: 'Terms & Conditions',
-            style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
-          ),
-          TextSpan(text: ' and '),
-          TextSpan(
-            text: 'Privacy Policy',
-            style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDivider(double screenWidth, bool isTablet) {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  Colors.white.withOpacity(0.3),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
-          child: Text(
-            'OR',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: isTablet ? 14 : 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  Colors.white.withOpacity(0.3),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSocialButton(
-    String text,
-    IconData icon,
-    Color bgColor,
-    Color textColor,
-    double screenWidth,
-    double screenHeight,
-    bool isTablet,
-  ) {
-    return Container(
-      width: double.infinity,
-      height: screenHeight * 0.06,
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: textColor, size: 20),
-          SizedBox(width: screenWidth * 0.03),
-          Text(
-            text,
-            style: TextStyle(
-              color: textColor,
-              fontSize: isTablet ? 16 : 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoginLink(bool isTablet) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'Already have an account? ',
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.6),
-            fontSize: isTablet ? 16 : 14,
-          ),
-        ),
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => Dream11LoginPage()),
-            );
-          },
-          child: Text(
-            'Login',
-            style: TextStyle(
-              color: Colors.orange,
-              fontSize: isTablet ? 16 : 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 }
 
-// Enhanced OTP Verification Screen
+// OTP Verification Screen remains the same
 class OTPVerificationScreen extends StatefulWidget {
   final String contact;
   final bool isEmail;
@@ -836,10 +613,7 @@ class OTPVerificationScreen extends StatefulWidget {
 
 class _OTPVerificationScreenState extends State<OTPVerificationScreen>
     with TickerProviderStateMixin {
-  final List<TextEditingController> otpControllers = List.generate(
-    6,
-    (index) => TextEditingController(),
-  );
+  final List<TextEditingController> otpControllers = List.generate(6, (index) => TextEditingController());
   final List<FocusNode> focusNodes = List.generate(6, (index) => FocusNode());
 
   bool isOTPComplete = false;
@@ -869,21 +643,15 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
 
   void _checkOTPComplete() {
     setState(() {
-      isOTPComplete = otpControllers.every(
-        (controller) => controller.text.isNotEmpty,
-      );
+      isOTPComplete = otpControllers.every((controller) => controller.text.isNotEmpty);
     });
   }
 
   void startResendTimer() {
     Future.delayed(Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() {
-          if (resendTimer > 0) {
-            resendTimer--;
-            startResendTimer();
-          }
-        });
+      if (mounted && resendTimer > 0) {
+        setState(() => resendTimer--);
+        startResendTimer();
       }
     });
   }
@@ -906,8 +674,10 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
     final double screenHeight = screenSize.height;
     final double screenWidth = screenSize.width;
     final bool isTablet = screenWidth > 600;
+    final bool isSmallScreen = screenHeight < 700;
 
     return Scaffold(
+      backgroundColor: Color(0xFF0f1419),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -917,7 +687,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
+          child: Padding(
             padding: EdgeInsets.all(screenWidth * 0.06),
             child: Column(
               children: [
@@ -926,279 +696,278 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                   alignment: Alignment.centerLeft,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      gradient: LinearGradient(
+                        colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)],
+                      ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.white.withOpacity(0.2)),
                     ),
                     child: IconButton(
-                      icon: Icon(
-                        Icons.arrow_back_ios_new,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+                      icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
                 ),
 
-                SizedBox(height: screenHeight * 0.05),
-
-                // Animated OTP Icon
-                ScaleTransition(
-                  scale: _pulseAnimation,
-                  child: Container(
-                    padding: EdgeInsets.all(30),
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        colors: [
-                          Colors.orange.withOpacity(0.3),
-                          Colors.orange.withOpacity(0.1),
-                        ],
-                      ),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                    ),
-                    child: Icon(Icons.security, size: 60, color: Colors.orange),
-                  ),
-                ),
-
-                SizedBox(height: screenHeight * 0.04),
-
-                // Title
-                ShaderMask(
-                  shaderCallback:
-                      (bounds) => LinearGradient(
-                        colors: [Colors.orange, Colors.amber],
-                      ).createShader(bounds),
-                  child: Text(
-                    'Verify Your Account',
-                    style: TextStyle(
-                      fontSize: isTablet ? 28 : 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: screenHeight * 0.02),
-
-                // Description
-                Text(
-                  'Enter the 6-digit verification code sent to',
-                  style: TextStyle(
-                    fontSize: isTablet ? 16 : 14,
-                    color: Colors.white.withOpacity(0.7),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                SizedBox(height: 8),
-
-                // Contact Display
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
-                  ),
-                  child: Text(
-                    widget.isEmail ? widget.contact : '+91 ${widget.contact}',
-                    style: TextStyle(
-                      fontSize: isTablet ? 18 : 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.orange,
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: screenHeight * 0.05),
-
-                // OTP Input Fields
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(6, (index) {
-                    return Container(
-                      width: isTablet ? 60 : 45,
-                      height: isTablet ? 70 : 60,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color:
-                              otpControllers[index].text.isNotEmpty
-                                  ? Colors.orange.withOpacity(0.8)
-                                  : Colors.white.withOpacity(0.3),
-                          width: 2,
-                        ),
-                        boxShadow:
-                            otpControllers[index].text.isNotEmpty
-                                ? [
-                                  BoxShadow(
-                                    color: Colors.orange.withOpacity(0.3),
-                                    blurRadius: 8,
-                                    offset: Offset(0, 4),
-                                  ),
-                                ]
-                                : null,
-                      ),
-                      child: TextField(
-                        controller: otpControllers[index],
-                        focusNode: focusNodes[index],
-                        textAlign: TextAlign.center,
-                        keyboardType: TextInputType.number,
-                        maxLength: 1,
-                        style: TextStyle(
-                          fontSize: isTablet ? 24 : 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                        decoration: InputDecoration(
-                          counterText: '',
-                          border: InputBorder.none,
-                          hintText: '•',
-                          hintStyle: TextStyle(
-                            color: Colors.white.withOpacity(0.3),
-                            fontSize: isTablet ? 24 : 20,
-                          ),
-                        ),
-                        onChanged: (value) {
-                          if (value.isNotEmpty && index < 5) {
-                            focusNodes[index + 1].requestFocus();
-                          } else if (value.isEmpty && index > 0) {
-                            focusNodes[index - 1].requestFocus();
-                          }
-                          setState(() {});
-                        },
-                      ),
-                    );
-                  }),
-                ),
-
-                SizedBox(height: screenHeight * 0.04),
-
-                // Resend Code Section
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Didn\'t receive code? ',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: isTablet ? 16 : 14,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap:
-                          resendTimer == 0
-                              ? () {
-                                setState(() {
-                                  resendTimer = 30;
-                                  startResendTimer();
-                                });
-                                // Add resend OTP logic here
-                              }
-                              : null,
-                      child: Text(
-                        resendTimer > 0
-                            ? 'Resend in ${resendTimer}s'
-                            : 'Resend',
-                        style: TextStyle(
-                          color:
-                              resendTimer > 0
-                                  ? Colors.white.withOpacity(0.4)
-                                  : Colors.orange,
-                          fontSize: isTablet ? 16 : 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: screenHeight * 0.05),
-
-                // Verify Button
-                GestureDetector(
-                  onTap:
-                      isOTPComplete
-                          ? () {
-                            HapticFeedback.lightImpact();
-                            // Navigate to home screen after successful verification
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HomeScreen(),
-                              ),
-                              (route) => false,
-                            );
-                          }
-                          : null,
-                  child: AnimatedContainer(
-                    duration: Duration(milliseconds: 200),
-                    width: double.infinity,
-                    height: screenHeight * 0.07,
-                    decoration: BoxDecoration(
-                      gradient:
-                          isOTPComplete
-                              ? LinearGradient(
-                                colors: [Colors.orange, Colors.amber],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              )
-                              : null,
-                      color:
-                          isOTPComplete ? null : Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow:
-                          isOTPComplete
-                              ? [
-                                BoxShadow(
-                                  color: Colors.orange.withOpacity(0.4),
-                                  blurRadius: 15,
-                                  offset: Offset(0, 8),
-                                ),
-                              ]
-                              : null,
-                    ),
-                    child: Center(
-                      child: Text(
-                        'VERIFY & CONTINUE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: isTablet ? 18 : 16,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: screenHeight * 0.03),
-
-                // Edit Contact Option
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Row(
+                Expanded(
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.edit_outlined,
-                        color: Colors.white.withOpacity(0.6),
-                        size: 16,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Edit ${widget.isEmail ? 'Email' : 'Mobile Number'}',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontSize: isTablet ? 16 : 14,
-                          decoration: TextDecoration.underline,
+                      // Animated OTP Icon
+                      ScaleTransition(
+                        scale: _pulseAnimation,
+                        child: Container(
+                          padding: EdgeInsets.all(isTablet ? 35 : 30),
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              colors: [
+                                Colors.orange.withOpacity(0.3),
+                                Colors.orange.withOpacity(0.1),
+                                Colors.transparent,
+                              ],
+                            ),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                          ),
+                          child: Icon(Icons.security, size: isTablet ? 70 : 60, color: Colors.orange),
                         ),
+                      ),
+
+                      SizedBox(height: isSmallScreen ? 30 : 40),
+
+                      // Title
+                      ShaderMask(
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: [Colors.orange, Colors.amber],
+                        ).createShader(bounds),
+                        child: Text(
+                          'Verify Your Account',
+                          style: TextStyle(
+                            fontSize: isTablet ? 28 : (isSmallScreen ? 20 : 24),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: 16),
+
+                      Text(
+                        'Enter the 6-digit verification code sent to',
+                        style: TextStyle(
+                          fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                      SizedBox(height: 8),
+
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withOpacity(0.2)),
+                        ),
+                        child: Text(
+                          widget.isEmail ? widget.contact : '+91 ${widget.contact}',
+                          style: TextStyle(
+                            fontSize: isTablet ? 18 : (isSmallScreen ? 14 : 16),
+                            fontWeight: FontWeight.w600,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: isSmallScreen ? 30 : 40),
+
+                      // OTP Input Fields with improved visibility
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: List.generate(6, (index) {
+                          return Container(
+                            width: isTablet ? 55 : (isSmallScreen ? 40 : 45),
+                            height: isTablet ? 65 : (isSmallScreen ? 50 : 60),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.white.withOpacity(0.15), Colors.white.withOpacity(0.08)],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: otpControllers[index].text.isNotEmpty
+                                    ? Colors.orange.withOpacity(0.8)
+                                    : Colors.white.withOpacity(0.3),
+                                width: 2,
+                              ),
+                              boxShadow: otpControllers[index].text.isNotEmpty
+                                  ? [
+                                BoxShadow(
+                                  color: Colors.orange.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 4),
+                                ),
+                              ]
+                                  : null,
+                            ),
+                            child: TextField(
+                              controller: otpControllers[index],
+                              focusNode: focusNodes[index],
+                              textAlign: TextAlign.center,
+                              keyboardType: TextInputType.number,
+                              maxLength: 1,
+                              style: TextStyle(
+                                fontSize: isTablet ? 24 : (isSmallScreen ? 18 : 20),
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.8),
+                                    offset: Offset(1, 1),
+                                    blurRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              decoration: InputDecoration(
+                                counterText: '',
+                                border: InputBorder.none,
+                                hintText: '•',
+                                hintStyle: TextStyle(
+                                  color: Colors.white.withOpacity(0.4),
+                                  fontSize: isTablet ? 24 : 20,
+                                ),
+                              ),
+                              onChanged: (value) {
+                                if (value.isNotEmpty && index < 5) {
+                                  focusNodes[index + 1].requestFocus();
+                                } else if (value.isEmpty && index > 0) {
+                                  focusNodes[index - 1].requestFocus();
+                                }
+                                setState(() {});
+                              },
+                            ),
+                          );
+                        }),
+                      ),
+
+                      SizedBox(height: isSmallScreen ? 24 : 32),
+
+                      // Resend Code
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Didn\'t receive code? ',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: resendTimer == 0
+                                ? () {
+                              setState(() {
+                                resendTimer = 30;
+                                startResendTimer();
+                              });
+                            }
+                                : null,
+                            child: Text(
+                              resendTimer > 0 ? 'Resend in ${resendTimer}s' : 'Resend',
+                              style: TextStyle(
+                                color: resendTimer > 0 ? Colors.white.withOpacity(0.4) : Colors.orange,
+                                fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
+                ),
+
+                // Bottom Section
+                Column(
+                  children: [
+                    // Verify Button
+                    GestureDetector(
+                      onTap: isOTPComplete
+                          ? () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => HomeScreen()),
+                              (route) => false,
+                        );
+                      }
+                          : null,
+                      child: AnimatedContainer(
+                        duration: Duration(milliseconds: 200),
+                        width: double.infinity,
+                        height: isTablet ? 60 : (isSmallScreen ? 50 : 56),
+                        decoration: BoxDecoration(
+                          gradient: isOTPComplete
+                              ? LinearGradient(
+                            colors: [Colors.orange, Colors.amber],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          )
+                              : null,
+                          color: isOTPComplete ? null : Colors.grey.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: isOTPComplete
+                              ? [
+                            BoxShadow(
+                              color: Colors.orange.withOpacity(0.4),
+                              blurRadius: 15,
+                              offset: Offset(0, 8),
+                            ),
+                          ]
+                              : null,
+                        ),
+                        child: Center(
+                          child: Text(
+                            'VERIFY & CONTINUE',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: isTablet ? 18 : (isSmallScreen ? 14 : 16),
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: 16),
+
+                    // Edit Contact Option
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            color: Colors.white.withOpacity(0.6),
+                            size: 16,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Edit ${widget.isEmail ? 'Email' : 'Mobile Number'}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

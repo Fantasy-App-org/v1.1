@@ -1,1031 +1,665 @@
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
-class CompletedMatchesPage extends StatelessWidget {
-  const CompletedMatchesPage({Key? key}) : super(key: key);
+/// ----------------------
+/// DESIGN SYSTEM
+/// ----------------------
+class AppColors {
+  static const bg = Color(0xFFF8FAFC);
+  static const bg2 = Color(0xFFF1F5F9);
+  static const ink = Color(0xFF1F2937);
+  static const sub = Color(0xFF6B7280);
+
+  static const primary = Color(0xFF2563EB);
+  static const primaryDark = Color(0xFF1D4ED8);
+
+  static const success = Color(0xFF10B981);
+  static const successDark = Color(0xFF059669);
+
+  static const accentBlue = Color(0xFF3B82F6);
+  static const accentIndigo = Color(0xFF6366F1);
+  static const accentViolet = Color(0xFF7C3AED);
+  static const warn = Color(0xFFF59E0B);
+}
+
+class AppText {
+  static const title = TextStyle(
+    color: AppColors.ink,
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+  );
+  static const h2 = TextStyle(
+    color: AppColors.ink,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+  );
+  static const body = TextStyle(
+    color: AppColors.ink,
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+  );
+  static const small = TextStyle(
+    color: AppColors.sub,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+  );
+}
+
+class Spacing {
+  static const xs = 6.0;
+  static const sm = 10.0;
+  static const md = 14.0;
+  static const lg = 18.0;
+  static const xl = 22.0;
+}
+
+/// ----------------------
+/// REUSABLE WIDGETS
+/// ----------------------
+class StatusBadge extends StatelessWidget {
+  final String text;
+  final Color color;
+  final Color? bg;
+  final EdgeInsets padding;
+  final double radius;
+
+  const StatusBadge({
+    super.key,
+    required this.text,
+    required this.color,
+    this.bg,
+    this.padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    this.radius = 12,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-
-        title: const Text(
-          'Completed Matches',
-          style: TextStyle(
-            color: Color(0xFF1F2937),
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        centerTitle: true,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.white, Color(0xFFF8FAFC)],
-            ),
-          ),
-        ),
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: bg ?? color.withOpacity(.1),
+        border: Border.all(color: color.withOpacity(.2)),
+        borderRadius: BorderRadius.circular(radius),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFF8FAFC), Color(0xFFF1F5F9)],
-          ),
-        ),
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            _buildMatchCard(
-              context: context,
-              team1: 'Phoenix Cricketers',
-              team1Short: 'PC',
-              team1Logo: '🏏',
-              team1Score: '148/7',
-              team1Overs: '17.3',
-              team2: 'Lexus',
-              team2Short: 'LEX',
-              team2Logo: '🏆',
-              team2Score: '147/10',
-              team2Overs: '19.4',
-              winner: 'Phoenix Cricketers won by 3 wickets',
-              totalWinnings: '₹10000',
-              winners: '81',
-              entry: '₹100',
-              onTap: () => _showMatchDetails(context),
-              isWinner: true,
-            ),
-            const SizedBox(height: 20),
-            _buildMatchCard(
-              context: context,
-              team1: 'Nellai Royal Kings',
-              team1Short: 'NRK',
-              team1Logo: '👑',
-              team1Score: '165/8',
-              team1Overs: '20.0',
-              team2: 'Dindigul Dragons',
-              team2Short: 'DD',
-              team2Logo: '🐉',
-              team2Score: '162/9',
-              team2Overs: '20.0',
-              winner: 'Nellai Royal Kings won by 3 runs',
-              totalWinnings: '₹15000',
-              winners: '94',
-              entry: '₹150',
-              onTap: () => _showMatchDetails(context),
-              isWinner: true,
-            ),
-            const SizedBox(height: 20),
-            _buildMatchCard(
-              context: context,
-              team1: 'Lyca Kovai Kings',
-              team1Short: 'LKK',
-              team1Logo: '⚡',
-              team1Score: '178/6',
-              team1Overs: '20.0',
-              team2: 'IDream Tiruppur Tamizhans',
-              team2Short: 'TT',
-              team2Logo: '🌟',
-              team2Score: '175/8',
-              team2Overs: '20.0',
-              winner: 'Lyca Kovai Kings won by 3 runs',
-              totalWinnings: '₹12000',
-              winners: '67',
-              entry: '₹120',
-              onTap: () => _showMatchDetails(context),
-              isWinner: true,
-            ),
-          ],
+      child: Text(
+        text,
+        style: AppText.small.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+          letterSpacing: .2,
         ),
       ),
     );
   }
+}
 
-  Widget _buildMatchCard({
-    required BuildContext context,
-    required String team1,
-    required String team1Short,
-    required String team1Logo,
-    required String team1Score,
-    required String team1Overs,
-    required String team2,
-    required String team2Short,
-    required String team2Logo,
-    required String team2Score,
-    required String team2Overs,
-    required String winner,
-    required String totalWinnings,
-    required String winners,
-    required String entry,
-    required VoidCallback onTap,
-    required bool isWinner,
-  }) {
-    return Container(
+class GradientButton extends StatelessWidget {
+  final VoidCallback onTap;
+  final IconData icon;
+  final String label;
+
+  const GradientButton({
+    super.key,
+    required this.onTap,
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
+          colors: [AppColors.primary, AppColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            const Color(0xFFFAFBFF),
-          ],
         ),
+        borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.08),
-            spreadRadius: 0,
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            spreadRadius: 0,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: AppColors.primary.withOpacity(.25),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
-        border: Border.all(
-          color: const Color(0xFF6366F1).withOpacity(0.1),
-          width: 1,
-        ),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          borderRadius: BorderRadius.circular(10),
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
-          splashColor: const Color(0xFF6366F1).withOpacity(0.1),
-          highlightColor: const Color(0xFF6366F1).withOpacity(0.05),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            child: Column(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Status Badge
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFF10B981),
-                            const Color(0xFF059669),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF10B981).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.check_circle,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'Completed',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Teams Section
-                Row(
-                  children: [
-                    // Team 1
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            team1,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1F2937),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      const Color(0xFF3B82F6),
-                                      const Color(0xFF1D4ED8),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF3B82F6).withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    team1Logo,
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF3B82F6).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  team1Short,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1D4ED8),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // VS Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFF6B7280),
-                            const Color(0xFF4B5563),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF6B7280).withOpacity(0.3),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: const Text(
-                        'VS',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-
-                    // Team 2
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            team2,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1F2937),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.end,
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  team2Short,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF7C3AED),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      const Color(0xFF8B5CF6),
-                                      const Color(0xFF7C3AED),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF8B5CF6).withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    team2Logo,
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-
-                // Score Section
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        const Color(0xFFF8FAFC),
-                        const Color(0xFFF1F5F9),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0xFF6366F1).withOpacity(0.1),
-                    ),
+                Icon(icon, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: .2,
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text(
-                              team1Score,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1F2937),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '($team1Overs ov)',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: 2,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              const Color(0xFF6366F1).withOpacity(0.3),
-                              const Color(0xFF8B5CF6).withOpacity(0.3),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(1),
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text(
-                              team2Score,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1F2937),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '($team2Overs ov)',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Winner Section
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFFF59E0B).withOpacity(0.1),
-                        const Color(0xFFD97706).withOpacity(0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFF59E0B).withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF59E0B),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(
-                          Icons.emoji_events,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          winner,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFFD97706),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Prize Info
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF10B981).withOpacity(0.1),
-                        const Color(0xFF059669).withOpacity(0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF10B981).withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Total Winnings',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            totalWinnings,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF059669),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Winners',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            winners,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF059669),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Entry Fee',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            entry,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF059669),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                )
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class OutlineButtonSmall extends StatelessWidget {
+  final VoidCallback onTap;
+  final IconData icon;
+  final String label;
+
+  const OutlineButtonSmall({
+    super.key,
+    required this.onTap,
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.primary, width: 1.2),
+        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: AppColors.primary, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: .2,
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SmallCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsets padding;
+  final EdgeInsets? margin;
+  final BorderRadius radius;
+
+  const SmallCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(14),
+    this.margin,
+    this.radius = const BorderRadius.all(Radius.circular(14)),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: margin,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: radius,
+        border: Border.all(color: AppColors.accentIndigo.withOpacity(.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: padding,
+      child: child,
+    );
+  }
+}
+
+class CompactDivider extends StatelessWidget {
+  const CompactDivider({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Container(height: 1, color: Colors.grey.shade100);
+  }
+}
+
+/// ----------------------
+/// COMPLETED MATCHES
+/// ----------------------
+class CompletedMatchesPage extends StatelessWidget {
+  const CompletedMatchesPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      // appBar: AppBar(
+      //   backgroundColor: Colors.white,
+      //   elevation: 0,
+      //   title: const Text("", style: AppText.title),
+      //   centerTitle: true,
+      // ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            colors: [AppColors.bg, AppColors.bg2],
+          ),
+        ),
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            MatchCard(
+              team1: const TeamMeta(
+                name: 'Phoenix Cricketers', short: 'PC', emoji: '🏏',
+                score: '148/7', overs: '17.3',
+                primary: AppColors.accentBlue,
+              ),
+              team2: const TeamMeta(
+                name: 'Lexus', short: 'LEX', emoji: '🏆',
+                score: '147/10', overs: '19.4',
+                primary: AppColors.accentViolet,
+              ),
+              winnerText: 'Phoenix Cricketers won by 3 wickets',
+              totalWinnings: '₹10,000',
+              winners: '81',
+              entry: '₹100',
+              isWinner: true,
+              onTap: () => _showMatchDetails(context),
+            ),
+            const SizedBox(height: 14),
+            MatchCard(
+              team1: const TeamMeta(
+                name: 'Nellai Royal Kings', short: 'NRK', emoji: '👑',
+                score: '165/8', overs: '20.0',
+                primary: AppColors.accentBlue,
+              ),
+              team2: const TeamMeta(
+                name: 'Dindigul Dragons', short: 'DD', emoji: '🐉',
+                score: '162/9', overs: '20.0',
+                primary: AppColors.accentViolet,
+              ),
+              winnerText: 'Nellai Royal Kings won by 3 runs',
+              totalWinnings: '₹15,000',
+              winners: '94',
+              entry: '₹150',
+              isWinner: true,
+              onTap: () => _showMatchDetails(context),
+            ),
+            const SizedBox(height: 14),
+            MatchCard(
+              team1: const TeamMeta(
+                name: 'Lyca Kovai Kings', short: 'LKK', emoji: '⚡',
+                score: '178/6', overs: '20.0',
+                primary: AppColors.accentBlue,
+              ),
+              team2: const TeamMeta(
+                name: 'IDream Tiruppur Tamizhans', short: 'TT', emoji: '🌟',
+                score: '175/8', overs: '20.0',
+                primary: AppColors.accentViolet,
+              ),
+              winnerText: 'Lyca Kovai Kings won by 3 runs',
+              totalWinnings: '₹12,000',
+              winners: '67',
+              entry: '₹120',
+              isWinner: true,
+              onTap: () => _showMatchDetails(context),
+            ),
+          ],
         ),
       ),
     );
   }
 
   void _showMatchDetails(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const MatchDetailsPage()),
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const MatchDetailsPage()));
+  }
+}
+
+class TeamMeta {
+  final String name;
+  final String short;
+  final String emoji;
+  final String score;
+  final String overs;
+  final Color primary;
+
+  const TeamMeta({
+    required this.name,
+    required this.short,
+    required this.emoji,
+    required this.score,
+    required this.overs,
+    required this.primary,
+  });
+}
+
+class MatchCard extends StatelessWidget {
+  final TeamMeta team1;
+  final TeamMeta team2;
+  final String winnerText;
+  final String totalWinnings;
+  final String winners;
+  final String entry;
+  final VoidCallback onTap;
+  final bool isWinner;
+
+  const MatchCard({
+    super.key,
+    required this.team1,
+    required this.team2,
+    required this.winnerText,
+    required this.totalWinnings,
+    required this.winners,
+    required this.entry,
+    required this.onTap,
+    required this.isWinner,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SmallCard(
+      padding: const EdgeInsets.all(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Column(
+          children: [
+            // Compact "Completed" badge
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                StatusBadge(
+                  text: 'Completed',
+                  color: AppColors.successDark,
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  radius: 10,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Teams row
+            Row(
+              children: [
+                Expanded(child: _TeamSide(meta: team1, alignEnd: false)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(.65),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text('VS',
+                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                Expanded(child: _TeamSide(meta: team2, alignEnd: true)),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+            // Score strip
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.bg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.accentIndigo.withOpacity(.08)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(child: _ScoreBlock(score: team1.score, overs: team1.overs)),
+                  Container(width: 1, height: 28, color: Colors.black12),
+                  Expanded(child: _ScoreBlock(score: team2.score, overs: team2.overs)),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 10),
+            // Winner
+            Row(
+              children: [
+                const Icon(Icons.emoji_events, size: 16, color: AppColors.warn),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    winnerText,
+                    style: AppText.small.copyWith(
+                      color: AppColors.warn,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+            // Prize row (compact)
+            Row(
+              children: [
+                Expanded(child: _PrizeCell(label: 'Total Winnings', value: totalWinnings)),
+                Expanded(child: _PrizeCell(label: 'Winners', value: winners)),
+                Expanded(child: _PrizeCell(label: 'Entry Fee', value: entry)),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
-
-
 }
-// Match Details Page
+
+class _TeamSide extends StatelessWidget {
+  final TeamMeta meta;
+  final bool alignEnd;
+
+  const _TeamSide({required this.meta, required this.alignEnd});
+
+  @override
+  Widget build(BuildContext context) {
+    final align = alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+    return Column(
+      crossAxisAlignment: align,
+      children: [
+        Text(
+          meta.name,
+          maxLines: 1, overflow: TextOverflow.ellipsis,
+          style: AppText.body.copyWith(fontWeight: FontWeight.w700),
+          textAlign: alignEnd ? TextAlign.end : TextAlign.start,
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
+          children: [
+            if (!alignEnd) _Logo(meta: meta),
+            if (!alignEnd) const SizedBox(width: 8),
+            _ShortTag(meta: meta),
+            if (alignEnd) const SizedBox(width: 8),
+            if (alignEnd) _Logo(meta: meta),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _Logo extends StatelessWidget {
+  final TeamMeta meta;
+  const _Logo({required this.meta});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34, height: 34,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [meta.primary.withOpacity(.9), meta.primary]),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [BoxShadow(color: meta.primary.withOpacity(.25), blurRadius: 6, offset: const Offset(0, 3))],
+      ),
+      child: Center(child: Text(meta.emoji, style: const TextStyle(fontSize: 16))),
+    );
+  }
+}
+
+class _ShortTag extends StatelessWidget {
+  final TeamMeta meta;
+  const _ShortTag({required this.meta});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: meta.primary.withOpacity(.08),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        meta.short,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          color: meta.primary,
+          letterSpacing: .2,
+        ),
+      ),
+    );
+  }
+}
+
+class _ScoreBlock extends StatelessWidget {
+  final String score, overs;
+  const _ScoreBlock({required this.score, required this.overs});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(score, style: AppText.h2.copyWith(fontSize: 18, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 2),
+        Text('($overs ov)', style: AppText.small),
+      ],
+    );
+  }
+}
+
+class _PrizeCell extends StatelessWidget {
+  final String label, value;
+  const _PrizeCell({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppText.small),
+        const SizedBox(height: 2),
+        Text(value, style: AppText.h2.copyWith(color: AppColors.successDark)),
+      ],
+    );
+  }
+}
+
+/// ----------------------
+/// MATCH DETAILS
+/// ----------------------
 class MatchDetailsPage extends StatelessWidget {
-  const MatchDetailsPage({Key? key}) : super(key: key);
+  const MatchDetailsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Match Details',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        backgroundColor: Colors.white, elevation: 0,
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.black87), onPressed: () => Navigator.pop(context)),
+        title: const Text('Match Details', style: AppText.h2),
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: Column(
           children: [
-            // Match Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 2,
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
+            SmallCard(
               child: Column(
                 children: [
                   Row(
                     children: [
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  '🏏',
-                                  style: TextStyle(fontSize: 24),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'PC',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Text(
-                              'Phoenix Cricketers',
-                              style: TextStyle(fontSize: 12),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 20),
-                            child: Text(
-                              'VS',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              'PC 6 5 LEX',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: Colors.purple.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  '🏆',
-                                  style: TextStyle(fontSize: 24),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'LEX',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Text(
-                              'Lexus',
-                              style: TextStyle(fontSize: 12),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
+                      Expanded(child: _MiniTeamTile(emoji: '🏏', short: 'PC', name: 'Phoenix Cricketers', color: AppColors.accentBlue)),
+                      const StatusBadge(text: 'PC 6 5 LEX', color: AppColors.successDark),
+                      Expanded(child: _MiniTeamTile(emoji: '🏆', short: 'LEX', name: 'Lexus', color: AppColors.accentViolet, right: true)),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Completed',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Phoenix Cricketers won by 3 wickets',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  const SizedBox(height: 12),
+                  const StatusBadge(text: 'Completed', color: AppColors.successDark),
+                  const SizedBox(height: 8),
+                  Text('Phoenix Cricketers won by 3 wickets',
+                      style: AppText.small.copyWith(color: AppColors.successDark, fontWeight: FontWeight.w700)),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            // Action Buttons
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
+            const SizedBox(height: 12),
+            SmallCard(
+              padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF2563EB).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap:
-                              () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ScorecardPage(),
-                                ),
-                              ),
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 14,
-                              horizontal: 16,
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.leaderboard_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'View Scorecard',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: const Color(0xFF2563EB),
-                          width: 1.5,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                        color: Colors.white,
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap:
-                              () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>  PlayerStatsPage(),
-                                ),
-                              ),
-                          borderRadius: BorderRadius.circular(10),
-                          splashColor: const Color(0xFF2563EB).withOpacity(0.1),
-                          highlightColor: const Color(
-                            0xFF2563EB,
-                          ).withOpacity(0.05),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 14,
-                              horizontal: 16,
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.analytics_outlined,
-                                  color: Color(0xFF2563EB),
-                                  size: 18,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Player Stats',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF2563EB),
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  Expanded(child: GradientButton(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ScorecardPage())),
+                    icon: Icons.leaderboard_rounded, label: 'Scorecard',
+                  )),
+                  const SizedBox(width: 10),
+                  Expanded(child: OutlineButtonSmall(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlayerStatsPage())),
+                    icon: Icons.analytics_outlined, label: 'Player Stats',
+                  )),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            // Leaderboard Preview
+            const SizedBox(height: 12),
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 2,
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
+              child: SmallCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Leaderboard',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed:
-                              () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LeaderboardPage(),
-                                ),
-                              ),
-                          child: const Text('View All'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      const Text('Leaderboard', style: AppText.h2),
+                      TextButton(
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaderboardPage())),
+                        child: const Text('View All'),
+                      )
+                    ]),
+                    const SizedBox(height: 8),
                     Expanded(
                       child: ListView(
-                        children: [
-                          _buildLeaderboardItem(
-                            context,
-                            '1',
-                            'shiv18',
-                            '907.5',
-                            Colors.amber,
-                          ),
-                          _buildLeaderboardItem(
-                            context,
-                            '2',
-                            'john_doe',
-                            '900.5',
-                            Colors.grey,
-                          ),
-                          _buildLeaderboardItem(
-                            context,
-                            '3',
-                            'cricket_fan',
-                            '844.5',
-                            Colors.orange,
-                          ),
-                          _buildLeaderboardItem(
-                            context,
-                            '4',
-                            'player123',
-                            '820.0',
-                            Colors.blue,
-                          ),
-                          _buildLeaderboardItem(
-                            context,
-                            '5',
-                            'sports_lover',
-                            '798.5',
-                            Colors.green,
-                          ),
+                        children: const [
+                          LeaderboardTile(rank: '1', name: 'shiv18', points: '907.5', color: Colors.amber),
+                          LeaderboardTile(rank: '2', name: 'john_doe', points: '900.5', color: Colors.grey),
+                          LeaderboardTile(rank: '3', name: 'cricket_fan', points: '844.5', color: Colors.orange),
+                          LeaderboardTile(rank: '4', name: 'player123', points: '820.0', color: Colors.blue),
+                          LeaderboardTile(rank: '5', name: 'sports_lover', points: '798.5', color: Colors.green),
                         ],
                       ),
                     ),
@@ -1038,314 +672,160 @@ class MatchDetailsPage extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildLeaderboardItem(
-    BuildContext context,
-    String rank,
-    String name,
-    String points,
-    Color color,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap:
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder:
-                      (context) => TeamPreviewPage(
-                        playerName: name,
-                        totalPoints: points,
-                      ),
-                ),
-              ),
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Center(
-                    child: Text(
-                      rank,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                Text(
-                  points,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
+class _MiniTeamTile extends StatelessWidget {
+  final String emoji, short, name;
+  final Color color;
+  final bool right;
+
+  const _MiniTeamTile({
+    required this.emoji,
+    required this.short,
+    required this.name,
+    required this.color,
+    this.right = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final align = right ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+    return Column(
+      crossAxisAlignment: align,
+      children: [
+        Container(
+          width: 42, height: 42,
+          decoration: BoxDecoration(color: color.withOpacity(.08), borderRadius: BorderRadius.circular(10)),
+          child: Center(child: Text(emoji, style: const TextStyle(fontSize: 22))),
         ),
+        const SizedBox(height: 6),
+        Text(short, style: AppText.h2),
+        Text(name, style: AppText.small, textAlign: right ? TextAlign.end : TextAlign.start, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ],
+    );
+  }
+}
+
+class LeaderboardTile extends StatelessWidget {
+  final String rank, name, points;
+  final Color color;
+  const LeaderboardTile({super.key, required this.rank, required this.name, required this.points, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(color: Colors.grey.withOpacity(.06), borderRadius: BorderRadius.circular(8)),
+      child: Row(
+        children: [
+          Container(
+            width: 22, height: 22,
+            decoration: BoxDecoration(color: color.withOpacity(.2), borderRadius: BorderRadius.circular(4)),
+            child: Center(child: Text(rank, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800))),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(name, style: AppText.body)),
+          Text(points, style: AppText.body.copyWith(fontWeight: FontWeight.w800)),
+        ],
       ),
     );
   }
 }
 
-// Team Preview Page (Like Image 1)
+/// ----------------------
+/// TEAM PREVIEW (unchanged logic; condensed paddings & sizes)
+/// ----------------------
 class TeamPreviewPage extends StatelessWidget {
   final String playerName;
   final String totalPoints;
 
-  const TeamPreviewPage({
-    Key? key,
-    required this.playerName,
-    required this.totalPoints,
-  }) : super(key: key);
+  const TeamPreviewPage({super.key, required this.playerName, required this.totalPoints});
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-    final availableHeight = screenHeight - kToolbarHeight - MediaQuery.of(context).padding.top - 180; // Reserve space for header and bottom
+    final availableHeight = screenHeight - kToolbarHeight - MediaQuery.of(context).padding.top - 160;
 
     return Scaffold(
       backgroundColor: Colors.green[600],
       appBar: AppBar(
-        backgroundColor: Colors.green[600],
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Team Preview',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        backgroundColor: Colors.green[600], elevation: 0,
+        leading: IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
+        title: const Text('Team Preview', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
         centerTitle: true,
       ),
       body: Column(
         children: [
-          // Header with Completed status
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.green[700],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'Completed',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(color: Colors.green[700], borderRadius: BorderRadius.circular(14)),
+            child: const Text('Completed', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
           ),
-          // Cricket Field Layout - Full Screen
-          Container(
-            height: availableHeight,
-            width: screenWidth,
+          SizedBox(
+            height: availableHeight, width: screenWidth,
             child: CustomPaint(
               painter: CricketFieldPainter(),
               child: Stack(
                 children: [
-                  // Wicket Keepers (Top)
-                  Positioned(
+                  _FieldSection(
                     top: availableHeight * 0.08,
-                    left: 0,
-                    right: 0,
-                    child: Column(
-                      children: [
-                        Text(
-                          'WICKET KEEPER',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: screenWidth * 0.025,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildPlayerCard('V Vadakke...', '55.0 Pts', true, false, screenWidth),
-                            _buildPlayerCard('S Balakrishn...', '105.0 Pts', true, true, screenWidth),
-                            _buildPlayerCard('J Cholayil', '96.0 Pts', true, false, screenWidth),
-                          ],
-                        ),
-                      ],
-                    ),
+                    title: 'WICKET KEEPER',
+                    children: [
+                      _player('V Vadakke...', '55.0 Pts', true, false, screenWidth),
+                      _player('S Balakrishn...', '105.0 Pts', true, true, screenWidth),
+                      _player('J Cholayil', '96.0 Pts', true, false, screenWidth),
+                    ],
                   ),
-
-                  // Batsmen (Upper Middle)
-                  Positioned(
+                  _FieldSection(
                     top: availableHeight * 0.25,
-                    left: 0,
-                    right: 0,
-                    child: Column(
-                      children: [
-                        Text(
-                          'BATSMAN',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: screenWidth * 0.025,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: screenWidth * 0.02,
-                          runSpacing: 8,
-                          children: [
-                            _buildPlayerCard('S Sudhaka...', '40.0 Pts', true, false, screenWidth),
-                            _buildPlayerCard('SR Henry', '23.0 Pts', false, false, screenWidth),
-                            _buildPlayerCard('R Kumar', '5.0 Pts', true, false, screenWidth),
-                            _buildPlayerCard('AFA Kadar', '41.0 Pts', false, false, screenWidth),
-                            _buildPlayerCard('J Cyril', '11.0 Pts', false, false, screenWidth),
-                          ],
-                        ),
-                      ],
-                    ),
+                    title: 'BATSMAN',
+                    wrap: true,
+                    children: [
+                      _player('S Sudhaka...', '40.0 Pts', true, false, screenWidth),
+                      _player('SR Henry', '23.0 Pts', false, false, screenWidth),
+                      _player('R Kumar', '5.0 Pts', true, false, screenWidth),
+                      _player('AFA Kadar', '41.0 Pts', false, false, screenWidth),
+                      _player('J Cyril', '11.0 Pts', false, false, screenWidth),
+                    ],
                   ),
-
-                  // All Rounders (Center)
-                  Positioned(
+                  _FieldSection(
                     top: availableHeight * 0.5,
-                    left: 0,
-                    right: 0,
-                    child: Column(
-                      children: [
-                        Text(
-                          'ALL ROUNDER',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: screenWidth * 0.025,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildPlayerCard('R Raj', '346.5 Pts', true, true, screenWidth),
-                            _buildPlayerCard('IH Banwa', '92.0 Pts', false, false, screenWidth),
-                          ],
-                        ),
-                      ],
-                    ),
+                    title: 'ALL ROUNDER',
+                    children: [
+                      _player('R Raj', '346.5 Pts', true, true, screenWidth),
+                      _player('IH Banwa', '92.0 Pts', false, false, screenWidth),
+                    ],
                   ),
-
-                  // Bowlers (Bottom)
-                  Positioned(
+                  _FieldSection(
                     bottom: availableHeight * 0.08,
-                    left: 0,
-                    right: 0,
-                    child: Column(
-                      children: [
-                        Text(
-                          'BOWLER',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: screenWidth * 0.025,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildPlayerCard('A Kumar', '45.0 Pts', true, false, screenWidth),
-                            _buildPlayerCard('M Singh', '38.0 Pts', false, false, screenWidth),
-                          ],
-                        ),
-                      ],
-                    ),
+                    title: 'BOWLER',
+                    children: [
+                      _player('A Kumar', '45.0 Pts', true, false, screenWidth),
+                      _player('M Singh', '38.0 Pts', false, false, screenWidth),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
-          // Bottom Stats
           Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(12),
-            ),
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: Colors.black.withOpacity(.85), borderRadius: BorderRadius.circular(10)),
             child: Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        playerName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Text(
-                      '$totalPoints Points',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Rank: #1',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                    Text(
-                      'Prize: ₹2,500',
-                      style: TextStyle(
-                        color: Colors.green[300],
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Flexible(child: Text(playerName, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis)),
+                  Text('$totalPoints Points', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                ]),
+                const SizedBox(height: 8),
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  const Text('Rank: #1', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text('Prize: ₹2,500', style: TextStyle(color: Colors.green[300], fontSize: 12, fontWeight: FontWeight.w700)),
+                ]),
               ],
             ),
           ),
@@ -1354,547 +834,130 @@ class TeamPreviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPlayerCard(
-      String name,
-      String points,
-      bool isSelected,
-      bool isCaptain,
-      double screenWidth,
-      ) {
-    double cardSize = screenWidth * 0.12; // Responsive card size
-    double iconSize = cardSize * 0.5;
-
-    return Container(
-      width: cardSize + 10,
+  static Widget _player(String n, String pts, bool sel, bool cap, double w) {
+    final cardSize = w * 0.10; // Slightly smaller
+    final iconSize = cardSize * 0.52;
+    return SizedBox(
+      width: cardSize + 8,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: cardSize,
-            height: cardSize,
+            width: cardSize, height: cardSize,
             decoration: BoxDecoration(
-              color: isSelected ? Colors.blue[600] : Colors.yellow[600],
+              color: sel ? Colors.blue[600] : Colors.yellow[700],
               borderRadius: BorderRadius.circular(cardSize / 2),
-              border: Border.all(
-                color: isCaptain ? Colors.orange : Colors.white,
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              border: Border.all(color: cap ? Colors.orange : Colors.white, width: 2),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 4, offset: const Offset(0, 2))],
             ),
             child: Stack(
               children: [
-                Center(
-                  child: Icon(
-                    Icons.sports_cricket,
-                    size: iconSize,
-                    color: Colors.white,
-                  ),
-                ),
-                if (isCaptain)
+                Center(child: Icon(Icons.sports_cricket, size: iconSize, color: Colors.white)),
+                if (cap)
                   Positioned(
-                    top: 0,
-                    right: 0,
+                    top: 0, right: 0,
                     child: Container(
-                      width: cardSize * 0.3,
-                      height: cardSize * 0.3,
-                      decoration: const BoxDecoration(
-                        color: Colors.orange,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          'C',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: cardSize * 0.2,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      width: cardSize * 0.28, height: cardSize * 0.28,
+                      decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
+                      child: Center(child: Text('C', style: TextStyle(color: Colors.white, fontSize: cardSize * 0.18, fontWeight: FontWeight.w800))),
                     ),
                   ),
               ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            name,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: screenWidth * 0.02,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            points,
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: screenWidth * 0.018,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          const SizedBox(height: 3),
+          Text(n, style: TextStyle(color: Colors.white, fontSize: w * 0.018, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+          Text(pts, style: TextStyle(color: Colors.white70, fontSize: w * 0.016), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
         ],
       ),
     );
   }
 }
 
-// Custom painter for circular cricket field
-class CricketFieldPainter extends CustomPainter {
+class _FieldSection extends StatelessWidget {
+  final double? top;
+  final double? bottom;
+  final String title;
+  final bool wrap;
+  final List<Widget> children;
+  const _FieldSection({this.top, this.bottom, required this.title, this.wrap = false, required this.children});
+
   @override
-  void paint(Canvas canvas, Size size) {
-    // Calculate the radius to use the entire available space
-    double radius = math.min(size.width, size.height) / 2 - 20;
-    Offset center = Offset(size.width / 2, size.height / 2);
+  Widget build(BuildContext context) {
+    final label = Text(title, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800));
+    final content = wrap
+        ? Wrap(alignment: WrapAlignment.center, spacing: 8, runSpacing: 6, children: children)
+        : Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: children);
 
-    // Draw green field background (circle)
-    final Paint fieldPaint = Paint()
-      ..color = Colors.green[600]!
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(center, radius, fieldPaint);
-
-    // Draw field boundary (circle outline)
-    final Paint boundaryPaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawCircle(center, radius, boundaryPaint);
-
-    // Draw pitch (rectangle in center)
-    final Paint pitchPaint = Paint()
-      ..color = Colors.brown.withOpacity(0.4)
-      ..style = PaintingStyle.fill;
-
-    final Rect pitchRect = Rect.fromCenter(
-      center: center,
-      width: radius * 0.15,
-      height: radius * 0.8,
+    return Positioned(
+      top: top, bottom: bottom, left: 0, right: 0,
+      child: Column(children: [label, const SizedBox(height: 6), content]),
     );
-    canvas.drawRect(pitchRect, pitchPaint);
-
-    // Draw pitch outline
-    final Paint pitchOutlinePaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawRect(pitchRect, pitchOutlinePaint);
-
-    // Draw center circle
-    final Paint circlePaint = Paint()
-      ..color = Colors.white.withOpacity(0.5)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawCircle(center, radius * 0.25, circlePaint);
-
-    // Draw inner circle (30-yard circle)
-    final Paint innerCirclePaint = Paint()
-      ..color = Colors.white.withOpacity(0.3)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawCircle(center, radius * 0.6, innerCirclePaint);
   }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
-// Cricket Field Painter
-
-// Scorecard Page
-
-
-
+/// ----------------------
+/// SCORECARD (compact tabs)
+/// ----------------------
 class ScorecardPage extends StatefulWidget {
-  const ScorecardPage({Key? key}) : super(key: key);
+  const ScorecardPage({super.key});
 
   @override
   State<ScorecardPage> createState() => _ScorecardPageState();
 }
 
 class _ScorecardPageState extends State<ScorecardPage> {
-  int selectedTeamIndex = 0; // 0 for Lexus, 1 for Phoenix Cricketers
+  int selectedTeamIndex = 0; // 0 Lexus, 1 Phoenix
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Scorecard',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        backgroundColor: Colors.white, elevation: 0,
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.black87), onPressed: () => Navigator.pop(context)),
+        title: const Text('Scorecard', style: AppText.h2),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(14),
         child: Column(
           children: [
-            // Match Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
+            SmallCard(
               child: Column(
                 children: [
-                  // Teams Row
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Team 1
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.directions_car,
-                                color: Colors.black54,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Lexus',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              '147/10',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            Text(
-                              '(19.4)',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // VS
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'VS',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ),
-
-                      // Team 2
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.sports_cricket,
-                                color: Colors.red,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Phoenix Cricketers',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              '148/7',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            Text(
-                              '(17.3)',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      Expanded(child: _ScoreTeam(name: 'Lexus', score: '147/10', overs: '(19.4)', icon: Icons.directions_car, color: Colors.black54)),
+                      const SizedBox(width: 2),
+                      Text('VS', style: AppText.small),
+                      const SizedBox(width: 2),
+                      Expanded(child: _ScoreTeam(name: 'Phoenix Cricketers', score: '148/7', overs: '(17.3)', icon: Icons.sports_cricket, color: Colors.red)),
                     ],
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // Match Status
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.green.shade200),
-                    ),
-                    child: const Text(
-                      'Completed',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Result
-                  const Text(
-                    'Phoenix Cricketers won by 3 wickets',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                  const SizedBox(height: 10),
+                  const StatusBadge(text: 'Completed', color: AppColors.successDark),
+                  const SizedBox(height: 8),
+                  const Text('Phoenix Cricketers won by 3 wickets', style: AppText.body, textAlign: TextAlign.center),
                 ],
               ),
             ),
+            const SizedBox(height: 14),
 
-            const SizedBox(height: 24),
-
-            // Batting Section
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
+            // COMPACT PILL TABS
+            SmallCard(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
               child: Column(
                 children: [
-                  // Team Tabs
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedTeamIndex = 0;
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-                                color: selectedTeamIndex == 0 ? Colors.teal : Colors.transparent,
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(12),
-                                ),
-                              ),
-                              child: Text(
-                                'Lexus',
-                                style: TextStyle(
-                                  color: selectedTeamIndex == 0 ? Colors.white : Colors.grey.shade600,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedTeamIndex = 1;
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-                                color: selectedTeamIndex == 1 ? Colors.teal : Colors.transparent,
-                                borderRadius: const BorderRadius.only(
-                                  topRight: Radius.circular(12),
-                                ),
-                              ),
-                              child: Text(
-                                'Phoenix Cricketers',
-                                style: TextStyle(
-                                  color: selectedTeamIndex == 1 ? Colors.white : Colors.grey.shade600,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  _CompactSegmented(
+                    options: const ['Lexus', 'Phoenix Cricketers'],
+                    index: selectedTeamIndex,
+                    onChanged: (i) => setState(() => selectedTeamIndex = i),
                   ),
-
-                  // Batting Header
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      border: Border(
-                        bottom: BorderSide(color: Colors.grey.shade200),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Expanded(
-                          flex: 3,
-                          child: Text(
-                            'BATTER',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(
-                          width: 30,
-                          child: Text(
-                            'R',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(
-                          width: 30,
-                          child: Text(
-                            'B',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(
-                          width: 30,
-                          child: Text(
-                            '4s',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(
-                          width: 30,
-                          child: Text(
-                            '6s',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(
-                          width: 50,
-                          child: Text(
-                            'S/R',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Batting Data
-                  ...getBattingData(selectedTeamIndex).map((player) => _buildBatterRow(player)).toList(),
+                  const SizedBox(height: 8),
+                  const CompactDivider(),
+                  _BattingHeader(),
+                  ...getBattingData(selectedTeamIndex).map(_batterRow).toList(),
                 ],
               ),
             ),
@@ -1904,471 +967,267 @@ class _ScorecardPageState extends State<ScorecardPage> {
     );
   }
 
-  Widget _buildBatterRow(Map<String, dynamic> player) {
+  Widget _batterRow(Map<String, dynamic> p) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade100),
-        ),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade100))),
       child: Row(
         children: [
           Expanded(
             flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        color: player['isOut'] ? Colors.red : Colors.green,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    Text(
-                      player['name'],
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(
+                  width: 7, height: 7,
+                  margin: const EdgeInsets.only(right: 6),
+                  decoration: BoxDecoration(color: p['isOut'] ? Colors.red : Colors.green, shape: BoxShape.circle),
                 ),
-                if (player['dismissal'] != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    player['dismissal'],
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+                Text(p['name'], style: AppText.body),
+              ]),
+              if (p['dismissal'] != null) ...[
+                const SizedBox(height: 2),
+                Text(p['dismissal'], style: AppText.small),
+              ]
+            ]),
           ),
-          SizedBox(
-            width: 30,
-            child: Text(
-              player['runs'].toString(),
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          SizedBox(
-            width: 30,
-            child: Text(
-              player['balls'].toString(),
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          SizedBox(
-            width: 30,
-            child: Text(
-              player['fours'].toString(),
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          SizedBox(
-            width: 30,
-            child: Text(
-              player['sixes'].toString(),
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          SizedBox(
-            width: 50,
-            child: Text(
-              player['strikeRate'].toStringAsFixed(2),
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
+          _cell(p['runs'].toString(), isBold: true),
+          _cell(p['balls'].toString()),
+          _cell(p['fours'].toString()),
+          _cell(p['sixes'].toString()),
+          _cell((p['strikeRate'] as num).toStringAsFixed(2)),
         ],
       ),
     );
   }
 
+  Widget _cell(String t, {bool isBold = false}) => SizedBox(
+    width: 44,
+    child: Text(
+      t,
+      textAlign: TextAlign.center,
+      style: isBold ? AppText.body : AppText.body.copyWith(fontWeight: FontWeight.w500),
+    ),
+  );
+
   List<Map<String, dynamic>> getBattingData(int teamIndex) {
     if (teamIndex == 0) {
-      // Lexus batting data
       return [
         {
           'name': 'Sunil Raja Henry',
           'dismissal': 'runout (S Balakrishnan / V Va...)',
-          'runs': 9,
-          'balls': 6,
-          'fours': 2,
-          'sixes': 0,
-          'strikeRate': 150.00,
-          'isOut': true,
+          'runs': 9, 'balls': 6, 'fours': 2, 'sixes': 0, 'strikeRate': 150.00, 'isOut': true,
         },
         {
           'name': 'Julius Cyril',
           'dismissal': 'c V Vadakkemadathil b M Sa...',
-          'runs': 7,
-          'balls': 15,
-          'fours': 0,
-          'sixes': 0,
-          'strikeRate': 46.67,
-          'isOut': true,
+          'runs': 7, 'balls': 15, 'fours': 0, 'sixes': 0, 'strikeRate': 46.67, 'isOut': true,
         },
         {
           'name': 'Ismail Hanif Banwa',
           'dismissal': 'c S Kassim b M Sawood',
-          'runs': 25,
-          'balls': 24,
-          'fours': 3,
-          'sixes': 0,
-          'strikeRate': 104.17,
-          'isOut': true,
+          'runs': 25, 'balls': 24, 'fours': 3, 'sixes': 0, 'strikeRate': 104.17, 'isOut': true,
         },
         {
           'name': 'Mahammad Ajizbhai...',
           'dismissal': 'runout (S Balakrishnan / R Raj)',
-          'runs': 45,
-          'balls': 26,
-          'fours': 5,
-          'sixes': 1,
-          'strikeRate': 173.08,
-          'isOut': true,
+          'runs': 45, 'balls': 26, 'fours': 5, 'sixes': 1, 'strikeRate': 173.08, 'isOut': true,
         },
         {
           'name': 'Rijil Venugopal',
           'dismissal': 'c J Vellapparakunnil b S Kassi...',
-          'runs': 4,
-          'balls': 5,
-          'fours': 0,
-          'sixes': 0,
-          'strikeRate': 80.00,
-          'isOut': true,
+          'runs': 4, 'balls': 5, 'fours': 0, 'sixes': 0, 'strikeRate': 80.00, 'isOut': true,
         },
         {
           'name': 'Ansari Farhan Abdul...',
           'dismissal': 'b R Raj',
-          'runs': 19,
-          'balls': 23,
-          'fours': 2,
-          'sixes': 0,
-          'strikeRate': 82.61,
-          'isOut': true,
+          'runs': 19, 'balls': 23, 'fours': 2, 'sixes': 0, 'strikeRate': 82.61, 'isOut': true,
         },
         {
           'name': 'Muhammad Usman',
           'dismissal': 'c S Kassim b R Raj',
-          'runs': 20,
-          'balls': 13,
-          'fours': 1,
-          'sixes': 1,
-          'strikeRate': 153.85,
-          'isOut': true,
+          'runs': 20, 'balls': 13, 'fours': 1, 'sixes': 1, 'strikeRate': 153.85, 'isOut': true,
         },
         {
           'name': 'Sameer Thajudeen',
           'dismissal': 'runout (R Raj)',
-          'runs': 8,
-          'balls': 6,
-          'fours': 0,
-          'sixes': 1,
-          'strikeRate': 133.33,
-          'isOut': true,
+          'runs': 8, 'balls': 6, 'fours': 0, 'sixes': 1, 'strikeRate': 133.33, 'isOut': true,
         },
         {
           'name': 'Mohamed Shihab',
           'dismissal': 'runout (R Raj / S Balakrishnan)',
-          'runs': 0,
-          'balls': 1,
-          'fours': 0,
-          'sixes': 0,
-          'strikeRate': 0.00,
-          'isOut': true,
+          'runs': 0, 'balls': 1, 'fours': 0, 'sixes': 0, 'strikeRate': 0.00, 'isOut': true,
         },
       ];
     } else {
-      // Phoenix Cricketers batting data
       return [
-        {
-          'name': 'V Vadakkemadathil',
-          'dismissal': 'c S Raja Henry b J Cyril',
-          'runs': 32,
-          'balls': 28,
-          'fours': 4,
-          'sixes': 1,
-          'strikeRate': 114.29,
-          'isOut': true,
-        },
-        {
-          'name': 'S Balakrishnan',
-          'dismissal': 'lbw b M Ajizbhai',
-          'runs': 18,
-          'balls': 15,
-          'fours': 2,
-          'sixes': 0,
-          'strikeRate': 120.00,
-          'isOut': true,
-        },
-        {
-          'name': 'R Raj',
-          'dismissal': null,
-          'runs': 42,
-          'balls': 31,
-          'fours': 3,
-          'sixes': 2,
-          'strikeRate': 135.48,
-          'isOut': false,
-        },
-        {
-          'name': 'S Kassim',
-          'dismissal': 'c I Banwa b U Farhan',
-          'runs': 15,
-          'balls': 12,
-          'fours': 1,
-          'sixes': 1,
-          'strikeRate': 125.00,
-          'isOut': true,
-        },
-        {
-          'name': 'M Sawood',
-          'dismissal': null,
-          'runs': 28,
-          'balls': 18,
-          'fours': 2,
-          'sixes': 1,
-          'strikeRate': 155.56,
-          'isOut': false,
-        },
-        {
-          'name': 'J Vellapparakunnil',
-          'dismissal': 'b M Usman',
-          'runs': 7,
-          'balls': 8,
-          'fours': 1,
-          'sixes': 0,
-          'strikeRate': 87.50,
-          'isOut': true,
-        },
-        {
-          'name': 'A Mohammed',
-          'dismissal': 'c S Thajudeen b R Venugopal',
-          'runs': 3,
-          'balls': 5,
-          'fours': 0,
-          'sixes': 0,
-          'strikeRate': 60.00,
-          'isOut': true,
-        },
-        {
-          'name': 'K Rahman',
-          'dismissal': 'run out (M Shihab)',
-          'runs': 1,
-          'balls': 2,
-          'fours': 0,
-          'sixes': 0,
-          'strikeRate': 50.00,
-          'isOut': true,
-        },
+        {'name': 'V Vadakkemadathil', 'dismissal': 'c S Raja Henry b J Cyril', 'runs': 32, 'balls': 28, 'fours': 4, 'sixes': 1, 'strikeRate': 114.29, 'isOut': true},
+        {'name': 'S Balakrishnan', 'dismissal': 'lbw b M Ajizbhai', 'runs': 18, 'balls': 15, 'fours': 2, 'sixes': 0, 'strikeRate': 120.00, 'isOut': true},
+        {'name': 'R Raj', 'dismissal': null, 'runs': 42, 'balls': 31, 'fours': 3, 'sixes': 2, 'strikeRate': 135.48, 'isOut': false},
+        {'name': 'S Kassim', 'dismissal': 'c I Banwa b U Farhan', 'runs': 15, 'balls': 12, 'fours': 1, 'sixes': 1, 'strikeRate': 125.00, 'isOut': true},
+        {'name': 'M Sawood', 'dismissal': null, 'runs': 28, 'balls': 18, 'fours': 2, 'sixes': 1, 'strikeRate': 155.56, 'isOut': false},
+        {'name': 'J Vellapparakunnil', 'dismissal': 'b M Usman', 'runs': 7, 'balls': 8, 'fours': 1, 'sixes': 0, 'strikeRate': 87.50, 'isOut': true},
+        {'name': 'A Mohammed', 'dismissal': 'c S Thajudeen b R Venugopal', 'runs': 3, 'balls': 5, 'fours': 0, 'sixes': 0, 'strikeRate': 60.00, 'isOut': true},
+        {'name': 'K Rahman', 'dismissal': 'run out (M Shihab)', 'runs': 1, 'balls': 2, 'fours': 0, 'sixes': 0, 'strikeRate': 50.00, 'isOut': true},
       ];
     }
   }
 }
-// Player Stats Page
 
+class _ScoreTeam extends StatelessWidget {
+  final String name;
+  final String score;
+  final String overs;
+  final IconData icon;
+  final Color color;
 
+  const _ScoreTeam({
+    required this.name, required this.score, required this.overs,
+    required this.icon, required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      Container(
+        width: 42, height: 42,
+        decoration: BoxDecoration(color: color.withOpacity(.08), shape: BoxShape.circle),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      const SizedBox(height: 6),
+      Text(name, style: AppText.body, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+      const SizedBox(height: 2),
+      Text(score, style: AppText.h2.copyWith(fontSize: 16)),
+      Text(overs, style: AppText.small),
+    ]);
+  }
+}
+
+class _CompactSegmented extends StatelessWidget {
+  final List<String> options;
+  final int index;
+  final ValueChanged<int> onChanged;
+
+  const _CompactSegmented({required this.options, required this.index, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: List.generate(options.length, (i) {
+          final selected = i == index;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onChanged(i),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                margin: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: selected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: selected
+                      ? [BoxShadow(color: Colors.black.withOpacity(.06), blurRadius: 6, offset: const Offset(0, 2))]
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    options[i],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.small.copyWith(
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                      color: selected ? AppColors.ink : AppColors.sub,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _BattingHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    Text _h(String t) => Text(t, style: AppText.small.copyWith(color: AppColors.ink, fontWeight: FontWeight.w800), textAlign: TextAlign.center);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      color: Colors.grey.shade50,
+      child: Row(
+        children: [
+          const Expanded(flex: 3, child: Text('BATTER', style: AppText.h2)),
+          SizedBox(width: 44, child: _h('R')),
+          SizedBox(width: 44, child: _h('B')),
+          SizedBox(width: 44, child: _h('4s')),
+          SizedBox(width: 44, child: _h('6s')),
+          SizedBox(width: 44, child: _h('S/R')),
+        ],
+      ),
+    );
+  }
+}
+
+/// ----------------------
+/// PLAYER STATS (same logic, compact UI)
+/// ----------------------
 class Player {
   final String name;
   final double selectedByPercentage;
   final double points;
   final Map<String, dynamic> stats;
-
-  Player({
-    required this.name,
-    required this.selectedByPercentage,
-    required this.points,
-    required this.stats,
-  });
+  Player({required this.name, required this.selectedByPercentage, required this.points, required this.stats});
 }
 
 class PlayerStatsPage extends StatelessWidget {
-  PlayerStatsPage({Key? key}) : super(key: key);
+  PlayerStatsPage({super.key});
 
   final List<Player> players = [
-   Player(
-      name: 'Renil Raj',
-      selectedByPercentage: 66.9,
-      points: 231.0,
-      stats: {
-        'Starting 11': {'actual': 'Yes', 'points': 4},
-        'Runs': {'actual': 52, 'points': 52},
-        '4\'s': {'actual': 4, 'points': 20},
-        '6\'s': {'actual': 3, 'points': 24},
-        'S/R': {'actual': 153, 'points': 0},
-        '50': {'actual': 'Yes', 'points': 8},
-        '100': {'actual': 'No', 'points': 0},
-        'Duck': {'actual': 'No', 'points': 0},
-        'Wkts': {'actual': 2, 'points': 50},
-      },
-    ),
   Player(
-      name: 'Shibu Balakrishnan',
-      selectedByPercentage: 22.3,
-      points: 105.0,
-      stats: {
-        'Starting 11': {'actual': 'Yes', 'points': 4},
-        'Runs': {'actual': 35, 'points': 35},
-        '4\'s': {'actual': 2, 'points': 10},
-        '6\'s': {'actual': 1, 'points': 8},
-        'S/R': {'actual': 125, 'points': 0},
-        '50': {'actual': 'No', 'points': 0},
-        '100': {'actual': 'No', 'points': 0},
-        'Duck': {'actual': 'No', 'points': 0},
-        'Wkts': {'actual': 4, 'points': 100},
-      },
-    ),
- Player(
-      name: 'Mohammed Sawood',
-      selectedByPercentage: 1.1,
-      points: 78.0,
-      stats: {
-        'Starting 11': {'actual': 'Yes', 'points': 4},
-        'Runs': {'actual': 28, 'points': 28},
-        '4\'s': {'actual': 3, 'points': 15},
-        '6\'s': {'actual': 1, 'points': 8},
-        'S/R': {'actual': 140, 'points': 0},
-        '50': {'actual': 'No', 'points': 0},
-        '100': {'actual': 'No', 'points': 0},
-        'Duck': {'actual': 'No', 'points': 0},
-        'Wkts': {'actual': 2, 'points': 50},
-      },
-    ),
-   Player(
-      name: 'Vinod Vadakkemadathil',
-      selectedByPercentage: 73.1,
-      points: 55.0,
-      stats: {
-        'Starting 11': {'actual': 'Yes', 'points': 4},
-        'Runs': {'actual': 18, 'points': 18},
-        '4\'s': {'actual': 1, 'points': 5},
-        '6\'s': {'actual': 0, 'points': 0},
-        'S/R': {'actual': 90, 'points': 0},
-        '50': {'actual': 'No', 'points': 0},
-        '100': {'actual': 'No', 'points': 0},
-        'Duck': {'actual': 'No', 'points': 0},
-        'Wkts': {'actual': 3, 'points': 75},
-      },
-    ),
+  name: 'Renil Raj', selectedByPercentage: 66.9, points: 231.0,
+  stats: {'Starting 11': {'actual': 'Yes', 'points': 4}, 'Runs': {'actual': 52, 'points': 52}, '4\'s': {'actual': 4, 'points': 20}, '6\'s': {'actual': 3, 'points': 24}, 'S/R': {'actual': 153, 'points': 0}, '50': {'actual': 'Yes', 'points': 8}, '100': {'actual': 'No', 'points': 0}, 'Duck': {'actual': 'No', 'points': 0}, 'Wkts': {'actual': 2, 'points': 50}},
+  ),
+  Player(
+  name: 'Shibu Balakrishnan', selectedByPercentage: 22.3, points: 105.0,
+  stats: {'Starting 11': {'actual': 'Yes', 'points': 4}, 'Runs': {'actual': 35, 'points': 35}, '4\'s': {'actual': 2, 'points': 10}, '6\'s': {'actual': 1, 'points': 8}, 'S/R': {'actual': 125, 'points': 0}, '50': {'actual': 'No', 'points': 0}, '100': {'actual': 'No', 'points': 0}, 'Duck': {'actual': 'No', 'points': 0}, 'Wkts': {'actual': 4, 'points': 100}},
+  ),
+  Player(
+  name: 'Mohammed Sawood', selectedByPercentage: 1.1, points: 78.0,
+  stats: {'Starting 11': {'actual': 'Yes', 'points': 4}, 'Runs': {'actual': 28, 'points': 28}, '4\'s': {'actual': 3, 'points': 15}, '6\'s': {'actual': 1, 'points': 8}, 'S/R': {'actual': 140, 'points': 0}, '50': {'actual': 'No', 'points': 0}, '100': {'actual': 'No', 'points': 0}, 'Duck': {'actual': 'No', 'points': 0}, 'Wkts': {'actual': 2, 'points': 50}},
+  ),
+  Player(
+  name: 'Vinod Vadakkemadathil', selectedByPercentage: 73.1, points: 55.0,
+  stats: {'Starting 11': {'actual': 'Yes', 'points': 4}, 'Runs': {'actual': 18, 'points': 18}, '4\'s': {'actual': 1, 'points': 5}, '6\'s': {'actual': 0, 'points': 0}, 'S/R': {'actual': 90, 'points': 0}, '50': {'actual': 'No', 'points': 0}, '100': {'actual': 'No', 'points': 0}, 'Duck': {'actual': 'No', 'points': 0}, 'Wkts': {'actual': 3, 'points': 75}},
+  ),
+  Player(
+  name: 'Jishudas Cholayil', selectedByPercentage: 40.6, points: 48.0,
+  stats: {'Starting 11': {'actual': 'Yes', 'points': 4}, 'Runs': {'actual': 22, 'points': 22}, '4\'s': {'actual': 2, 'points': 10}, '6\'s': {'actual': 0, 'points': 0}, 'S/R': {'actual': 110, 'points': 0}, '50': {'actual': 'No', 'points': 0}, '100': {'actual': 'No', 'points': 0}, 'Duck': {'actual': 'No', 'points': 0}, 'Wkts': {'actual': 1, 'points': 25}},
+  ),
+  Player(
+  name: 'Sadiq Kassim', selectedByPercentage: 3.4, points: 48.0,
+  stats: {'Starting 11': {'actual': 'Yes', 'points': 4}, 'Runs': {'actual': 19, 'points': 19}, '4\'s': {'actual': 1, 'points': 5}, '6\'s': {'actual': 1, 'points': 8}, 'S/R': {'actual': 95, 'points': 0}, '50': {'actual': 'No', 'points': 0}, '100': {'actual': 'No', 'points': 0}, 'Duck': {'actual': 'No', 'points': 0}, 'Wkts': {'actual': 1, 'points': 25}},
+  ),
+  Player(
+  name: 'Suneesh Sudhakaran', selectedByPercentage: 60.6, points: 40.0,
+  stats: {'Starting 11': {'actual': 'Yes', 'points': 4}, 'Runs': {'actual': 15, 'points': 15}, '4\'s': {'actual': 1, 'points': 5}, '6\'s': {'actual': 0, 'points': 0}, 'S/R': {'actual': 75, 'points': 0}, '50': {'actual': 'No', 'points': 0}, '100': {'actual': 'No', 'points': 0}, 'Duck': {'actual': 'No', 'points': 0}, 'Wkts': {'actual': 2, 'points': 50}},
+  ),
+  Player(
+  name: 'Sonu Sudhakaran', selectedByPercentage: 0.0, points: 28.0,
+  stats: {'Starting 11': {'actual': 'Yes', 'points': 4}, 'Runs': {'actual': 12, 'points': 12}, '4\'s': {'actual': 1, 'points': 5}, '6\'s': {'actual': 0, 'points': 0}, 'S/R': {'actual': 80, 'points': 0}, '50': {'actual': 'No', 'points': 0}, '100': {'actual': 'No', 'points': 0}, 'Duck': {'actual': 'No', 'points': 0}, 'Wkts': {'actual': 0, 'points': 0}},
+  ),
+  Player(
+  name: 'Jithu Vellapparakunnil', selectedByPercentage: 48.6, points: 23.0,
+  stats: {'Starting 11': {'actual': 'Yes', 'points': 4}, 'Runs': {'actual': 8, 'points': 8}, '4\'s': {'actual': 0, 'points': 0}, '6\'s': {'actual': 0, 'points': 0}, 'S/R': {'actual': 67, 'points': 0}, '50': {'actual': 'No', 'points': 0}, '100': {'actual': 'No', 'points': 0}, 'Duck': {'actual': 'No', 'points': 0}, 'Wkts': {'actual': 1, 'points': 25}},
+  ),
     Player(
-      name: 'Jishudas Cholayil',
-      selectedByPercentage: 40.6,
-      points: 48.0,
-      stats: {
-        'Starting 11': {'actual': 'Yes', 'points': 4},
-        'Runs': {'actual': 22, 'points': 22},
-        '4\'s': {'actual': 2, 'points': 10},
-        '6\'s': {'actual': 0, 'points': 0},
-        'S/R': {'actual': 110, 'points': 0},
-        '50': {'actual': 'No', 'points': 0},
-        '100': {'actual': 'No', 'points': 0},
-        'Duck': {'actual': 'No', 'points': 0},
-        'Wkts': {'actual': 1, 'points': 25},
-      },
-    ),
-  Player(
-      name: 'Sadiq Kassim',
-      selectedByPercentage: 3.4,
-      points: 48.0,
-      stats: {
-        'Starting 11': {'actual': 'Yes', 'points': 4},
-        'Runs': {'actual': 19, 'points': 19},
-        '4\'s': {'actual': 1, 'points': 5},
-        '6\'s': {'actual': 1, 'points': 8},
-        'S/R': {'actual': 95, 'points': 0},
-        '50': {'actual': 'No', 'points': 0},
-        '100': {'actual': 'No', 'points': 0},
-        'Duck': {'actual': 'No', 'points': 0},
-        'Wkts': {'actual': 1, 'points': 25},
-      },
-    ),
- Player(
-      name: 'Suneesh Sudhakaran',
-      selectedByPercentage: 60.6,
-      points: 40.0,
-      stats: {
-        'Starting 11': {'actual': 'Yes', 'points': 4},
-        'Runs': {'actual': 15, 'points': 15},
-        '4\'s': {'actual': 1, 'points': 5},
-        '6\'s': {'actual': 0, 'points': 0},
-        'S/R': {'actual': 75, 'points': 0},
-        '50': {'actual': 'No', 'points': 0},
-        '100': {'actual': 'No', 'points': 0},
-        'Duck': {'actual': 'No', 'points': 0},
-        'Wkts': {'actual': 2, 'points': 50},
-      },
-    ),
- Player(
-      name: 'Sonu Sudhakaran',
-      selectedByPercentage: 0.0,
-      points: 28.0,
-      stats: {
-        'Starting 11': {'actual': 'Yes', 'points': 4},
-        'Runs': {'actual': 12, 'points': 12},
-        '4\'s': {'actual': 1, 'points': 5},
-        '6\'s': {'actual': 0, 'points': 0},
-        'S/R': {'actual': 80, 'points': 0},
-        '50': {'actual': 'No', 'points': 0},
-        '100': {'actual': 'No', 'points': 0},
-        'Duck': {'actual': 'No', 'points': 0},
-        'Wkts': {'actual': 0, 'points': 0},
-      },
-    ),
-     Player(
-      name: 'Jithu Vellapparakunnil',
-      selectedByPercentage: 48.6,
-      points: 23.0,
-      stats: {
-        'Starting 11': {'actual': 'Yes', 'points': 4},
-        'Runs': {'actual': 8, 'points': 8},
-        '4\'s': {'actual': 0, 'points': 0},
-        '6\'s': {'actual': 0, 'points': 0},
-        'S/R': {'actual': 67, 'points': 0},
-        '50': {'actual': 'No', 'points': 0},
-        '100': {'actual': 'No', 'points': 0},
-        'Duck': {'actual': 'No', 'points': 0},
-        'Wkts': {'actual': 1, 'points': 25},
-      },
-    ),
-     Player(
-      name: 'Roshan Kumar',
-      selectedByPercentage: 97.7,
-      points: 5.0,
+      name: 'Roshan Kumar', selectedByPercentage: 97.7, points: 5.0,
       stats: {
         'Starting 11': {'actual': 'Yes', 'points': 4},
         'Runs': {'actual': 1, 'points': 1},
@@ -2382,9 +1241,21 @@ class PlayerStatsPage extends StatelessWidget {
       },
     ),
     Player(
-      name: 'Muzammil Shamsuddin',
-      selectedByPercentage: 0.0,
-      points: 4.0,
+      name: 'Sameer Thajudeen', selectedByPercentage: 22.5, points: 8.0,
+      stats: {
+        'Starting 11': {'actual': 'Yes', 'points': 4},
+        'Runs': {'actual': 8, 'points': 8},
+        '4\'s': {'actual': 0, 'points': 0},
+        '6\'s': {'actual': 1, 'points': 8},
+        'S/R': {'actual': 133, 'points': 0},
+        '50': {'actual': 'No', 'points': 0},
+        '100': {'actual': 'No', 'points': 0},
+        'Duck': {'actual': 'No', 'points': 0},
+        'Wkts': {'actual': 0, 'points': 0},
+      },
+    ),
+    Player(
+      name: 'Mohamed Shihab', selectedByPercentage: 10.2, points: 0.0,
       stats: {
         'Starting 11': {'actual': 'Yes', 'points': 4},
         'Runs': {'actual': 0, 'points': 0},
@@ -2393,7 +1264,7 @@ class PlayerStatsPage extends StatelessWidget {
         'S/R': {'actual': 0, 'points': 0},
         '50': {'actual': 'No', 'points': 0},
         '100': {'actual': 'No', 'points': 0},
-        'Duck': {'actual': 'Yes', 'points': 0},
+        'Duck': {'actual': 'Yes', 'points': -2},
         'Wkts': {'actual': 0, 'points': 0},
       },
     ),
@@ -2402,502 +1273,262 @@ class PlayerStatsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Colors.white, elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Player Points',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: const Text('Player Stats', style: AppText.h2),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          // Header Row
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              border: Border(
-                bottom: BorderSide(color: Colors.grey[200]!),
-              ),
-            ),
-            child: const Row(
+      body: ListView.separated(
+        padding: const EdgeInsets.all(14),
+        itemCount: players.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (context, index) {
+          final p = players[index];
+          return SmallCard(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'Player',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                // Header row
+                Row(
+                  children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.accentIndigo.withOpacity(.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.person, color: AppColors.accentIndigo, size: 20),
                     ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(p.name, style: AppText.h2, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withOpacity(.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${p.points.toStringAsFixed(1)} pts',
+                        style: AppText.small.copyWith(color: AppColors.successDark, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                // Selected by meter
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Selected by', style: AppText.small),
+                    Text('${p.selectedByPercentage.toStringAsFixed(1)}%', style: AppText.small.copyWith(color: AppColors.ink, fontWeight: FontWeight.w700)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: (p.selectedByPercentage / 100).clamp(0.0, 1.0),
+                    minHeight: 8,
+                    backgroundColor: AppColors.bg2,
+                    valueColor: const AlwaysStoppedAnimation(AppColors.primary),
                   ),
                 ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'Selected By',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    'Points',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
+
+                const SizedBox(height: 12),
+                const CompactDivider(),
+                const SizedBox(height: 8),
+
+                // Stats grid
+                _StatsGrid(stats: p.stats),
               ],
             ),
-          ),
-          // Player List
-          Expanded(
-            child: ListView.builder(
-              itemCount: players.length,
-              itemBuilder: (context, index) {
-                final player = players[index];
-                return PlayerCard(player: player);
-              },
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 }
 
-class PlayerCard extends StatelessWidget {
-  final Player player;
-
-  const PlayerCard({Key? key, required this.player}) : super(key: key);
+class _StatsGrid extends StatelessWidget {
+  final Map<String, dynamic> stats;
+  const _StatsGrid({required this.stats});
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (context) => PlayerBreakupSheet(player: player),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey[200]!),
+    final entries = stats.entries.toList();
+    return GridView.builder(
+      itemCount: entries.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3, mainAxisExtent: 58, crossAxisSpacing: 8, mainAxisSpacing: 8,
+      ),
+      itemBuilder: (_, i) {
+        final k = entries[i].key;
+        final v = entries[i].value;
+        return Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.bg,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.black12),
           ),
-        ),
-        child: Row(
-          children: [
-            // Player Info
-            Expanded(
-              flex: 3,
-              child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(k, style: AppText.small),
+              const Spacer(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Player Avatar
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.blue[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.person,
-                      color: Colors.blue[600],
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Player Name with Icons
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          player.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 12,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                              size: 16,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  Text('${v['actual']}', style: AppText.body.copyWith(fontWeight: FontWeight.w700)),
+                  Text('+${v['points']}', style: AppText.small.copyWith(color: AppColors.successDark, fontWeight: FontWeight.w800)),
                 ],
               ),
-            ),
-            // Selected By Percentage
-            Expanded(
-              flex: 2,
-              child: Text(
-                '${player.selectedByPercentage}%',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-            // Points
-            Expanded(
-              flex: 1,
-              child: Text(
-                player.points.toString(),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.green[600],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
-class PlayerBreakupSheet extends StatelessWidget {
-  final Player player;
-
-  const PlayerBreakupSheet({Key? key, required this.player}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Handle Bar
-          Container(
-            margin: const EdgeInsets.only(top: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Points Breakup',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-          ),
-          // Player Summary
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.blue[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.person,
-                    color: Colors.blue[600],
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        player.name,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Text(
-                            'SELECTED BY',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            'POINTS',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            'CREDITS',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Text(
-                            '${player.selectedByPercentage}%',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(width: 45),
-                          Text(
-                            player.points.toString(),
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green[600],
-                            ),
-                          ),
-                          const SizedBox(width: 45),
-                          const Text(
-                            '10.0',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Stats Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              border: Border(
-                bottom: BorderSide(color: Colors.grey[200]!),
-              ),
-            ),
-            child: const Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'Event',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    'Actual',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    'Points',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Stats List
-          Expanded(
-            child: ListView.builder(
-              itemCount: player.stats.length,
-              itemBuilder: (context, index) {
-                final statKey = player.stats.keys.elementAt(index);
-                final statValue = player.stats[statKey];
-
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Colors.grey[200]!),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          statKey,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: Text(
-                          statValue['actual'].toString(),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: Text(
-                          statValue['points'].toString(),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: statValue['points'] > 0
-                                ? Colors.green[600]
-                                : Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-// Leaderboard Page
+/// ----------------------
+/// LEADERBOARD PAGE
+/// ----------------------
 class LeaderboardPage extends StatelessWidget {
-  const LeaderboardPage({Key? key}) : super(key: key);
+  const LeaderboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final items = const [
+      LeaderboardTile(rank: '1', name: 'shiv18', points: '907.5', color: Colors.amber),
+      LeaderboardTile(rank: '2', name: 'john_doe', points: '900.5', color: Colors.grey),
+      LeaderboardTile(rank: '3', name: 'cricket_fan', points: '844.5', color: Colors.orange),
+      LeaderboardTile(rank: '4', name: 'player123', points: '820.0', color: Colors.blue),
+      LeaderboardTile(rank: '5', name: 'sports_lover', points: '798.5', color: Colors.green),
+      LeaderboardTile(rank: '6', name: 'mvp_rahul', points: '790.0', color: Colors.purple),
+      LeaderboardTile(rank: '7', name: 'deep_point', points: '775.0', color: Colors.teal),
+      LeaderboardTile(rank: '8', name: 'pull_shot', points: '760.0', color: Colors.brown),
+      LeaderboardTile(rank: '9', name: 'cover_drive', points: '742.0', color: Colors.cyan),
+      LeaderboardTile(rank: '10', name: 'sweep_king', points: '735.5', color: Colors.indigo),
+    ];
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Colors.white, elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Leaderboard',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: const Text('Leaderboard', style: AppText.h2),
         centerTitle: true,
       ),
-      body: const Center(
-        child: Text('Leaderboard Page', style: TextStyle(fontSize: 18)),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(14),
+        itemCount: items.length,
+        itemBuilder: (_, i) => SmallCard(
+          padding: const EdgeInsets.all(10),
+          margin: const EdgeInsets.only(bottom: 10),
+          child: items[i],
+        ),
       ),
+    );
+  }
+}
+
+/// ----------------------
+/// CRICKET FIELD PAINTER
+/// ----------------------
+class CricketFieldPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final shortest = math.min(size.width, size.height);
+
+    // Ground (oval)
+    final groundPaint = Paint()..color = Colors.green.shade600;
+    final groundRect = Rect.fromCenter(center: center, width: size.width * 0.9, height: size.height * 0.9);
+    canvas.drawOval(groundRect, groundPaint);
+
+    // Inner circle
+    final innerPaint = Paint()..color = Colors.green.shade500;
+    canvas.drawCircle(center, shortest * 0.36, innerPaint);
+
+    // Boundary ring
+    final boundaryPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..color = Colors.white.withOpacity(.6);
+    canvas.drawOval(groundRect.deflate(6), boundaryPaint);
+
+    // Pitch
+    final pitchWidth = size.width * 0.08;
+    final pitchHeight = size.height * 0.36;
+    final pitchRect = Rect.fromCenter(center: center, width: pitchWidth, height: pitchHeight);
+    final pitchPaint = Paint()..color = const Color(0xFFCFB997); // clay-ish
+    canvas.drawRRect(RRect.fromRectAndRadius(pitchRect, const Radius.circular(8)), pitchPaint);
+
+    // Crease lines
+    final creasePaint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 2;
+    final creaseOffset = pitchHeight * 0.38;
+    canvas.drawLine(Offset(center.dx - pitchWidth / 2, center.dy - creaseOffset),
+        Offset(center.dx + pitchWidth / 2, center.dy - creaseOffset), creasePaint);
+    canvas.drawLine(Offset(center.dx - pitchWidth / 2, center.dy + creaseOffset),
+        Offset(center.dx + pitchWidth / 2, center.dy + creaseOffset), creasePaint);
+
+    // Dots around field (fielding positions vibe)
+    final dotPaint = Paint()..color = Colors.white70;
+    for (int i = 0; i < 12; i++) {
+      final angle = (2 * math.pi / 12) * i;
+      final r = shortest * 0.40;
+      final dx = center.dx + r * math.cos(angle);
+      final dy = center.dy + r * math.sin(angle);
+      canvas.drawCircle(Offset(dx, dy), 2.5, dotPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// ----------------------
+/// MAIN (for quick run)
+/// ----------------------
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Completed Matches',
+      theme: ThemeData(
+        scaffoldBackgroundColor: AppColors.bg,
+        useMaterial3: false,
+        fontFamily: 'Inter',
+        appBarTheme: const AppBarTheme(
+          iconTheme: IconThemeData(color: AppColors.ink),
+          titleTextStyle: AppText.title,
+        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+      ),
+      home: const CompletedMatchesPage(),
     );
   }
 }
