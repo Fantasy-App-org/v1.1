@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../auth/login.dart';
+import '../body/refral /referal.dart';
 import '../drawe_pages/about_us.dart';
 import '../drawe_pages/profile.dart';
-import '../body/refral /refral.dart';
+
 import '../wallet/wallet.dart';
 import '../drawe_pages/Legality_pages.dart';
 import '../drawe_pages/fantasy point system.dart';

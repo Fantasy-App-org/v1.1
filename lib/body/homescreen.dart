@@ -1,4 +1,5 @@
-import 'package:fantasy/body/refral%20/refral.dart';
+
+import 'package:fantasy/body/refral%20/referal.dart';
 import 'package:fantasy/drawe_pages/about_us.dart';
 import 'package:fantasy/drawe_pages/profile.dart';
 import 'package:fantasy/wallet/wallet.dart';

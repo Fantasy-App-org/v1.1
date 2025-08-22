@@ -11,16 +11,10 @@ class HowToPlayPage extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
-          Text(
-            content,
-            style: const TextStyle(fontSize: 15, height: 1.4),
-          ),
+          Text(content, style: const TextStyle(fontSize: 15, height: 1.4)),
         ],
       ),
     );

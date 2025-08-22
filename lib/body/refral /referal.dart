@@ -5,7 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'how it works.dart';
+import '../../drawe_pages/how_to_play.dart';
 
 class NewReferralScreen extends StatelessWidget {
   const NewReferralScreen({Key? key}) : super(key: key);
@@ -70,7 +70,8 @@ class NewReferralScreen extends StatelessWidget {
                     ),
                     onPressed: () {
                       Share.share(
-                          "Join now using my referral code: QBYWWIOKCW");
+                        "Join now using my referral code: QBYWWIOKCW",
+                      );
                     },
                     icon: const Icon(Icons.send_rounded),
                     label: Text(
@@ -96,7 +97,7 @@ class NewReferralScreen extends StatelessWidget {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
                     blurRadius: 8,
-                  )
+                  ),
                 ],
               ),
               child: Column(
@@ -120,8 +121,9 @@ class NewReferralScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       IconButton(
                         onPressed: () {
-                          Clipboard.setData(const ClipboardData(
-                              text: "QBYWWIOKCW"));
+                          Clipboard.setData(
+                            const ClipboardData(text: "QBYWWIOKCW"),
+                          );
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text("Referral code copied!"),
@@ -129,9 +131,11 @@ class NewReferralScreen extends StatelessWidget {
                             ),
                           );
                         },
-                        icon: const Icon(Icons.copy_rounded,
-                            color: Colors.green),
-                      )
+                        icon: const Icon(
+                          Icons.copy_rounded,
+                          color: Colors.green,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -160,29 +164,41 @@ class NewReferralScreen extends StatelessWidget {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
                     blurRadius: 8,
-                  )
+                  ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Share via",
-                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text(
+                    "Share via",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _shareIcon(FontAwesomeIcons.whatsapp, Colors.green,
-                          "WhatsApp",
-                          "whatsapp://send?text=Join%20now%20with%20code%20QBYWWIOKCW"),
-                      _shareIcon(FontAwesomeIcons.facebook, Colors.blue,
-                          "Facebook", "https://facebook.com"),
-                      _shareIcon(FontAwesomeIcons.telegram, Colors.blueAccent,
-                          "Telegram",
-                          "https://t.me/share/url?text=Join%20now%20with%20code%20QBYWWIOKCW"),
+                      _shareIcon(
+                        FontAwesomeIcons.whatsapp,
+                        Colors.green,
+                        "WhatsApp",
+                        "whatsapp://send?text=Join%20now%20with%20code%20QBYWWIOKCW",
+                      ),
+                      _shareIcon(
+                        FontAwesomeIcons.facebook,
+                        Colors.blue,
+                        "Facebook",
+                        "https://facebook.com",
+                      ),
+                      _shareIcon(
+                        FontAwesomeIcons.telegram,
+                        Colors.blueAccent,
+                        "Telegram",
+                        "https://t.me/share/url?text=Join%20now%20with%20code%20QBYWWIOKCW",
+                      ),
                       _shareIcon(Icons.more_horiz, Colors.grey, "More", ""),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -198,7 +214,7 @@ class NewReferralScreen extends StatelessWidget {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
                     blurRadius: 8,
-                  )
+                  ),
                 ],
               ),
               child: Row(
@@ -217,21 +233,27 @@ class NewReferralScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const HowToPlayPage()),
+                  MaterialPageRoute(builder: (context) => HowToPlayPage()),
                 );
               },
-              child: const Text("How it works",
-                  style: TextStyle(color: Colors.green)),
+              child: const Text(
+                "How it works",
+                style: TextStyle(color: Colors.green),
+              ),
             ),
             TextButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const FairPlaySecurityPage()),
+                  MaterialPageRoute(
+                    builder: (context) => const FairPlaySecurityPage(),
+                  ),
                 );
               },
-              child: const Text("Rules of Fair Play",
-                  style: TextStyle(color: Colors.green)),
+              child: const Text(
+                "Rules of Fair Play",
+                style: TextStyle(color: Colors.green),
+              ),
             ),
           ],
         ),
@@ -249,9 +271,11 @@ class NewReferralScreen extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        Text(subtitle,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-            textAlign: TextAlign.center),
+        Text(
+          subtitle,
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
@@ -264,7 +288,8 @@ class NewReferralScreen extends StatelessWidget {
             await launchUrl(Uri.parse(url));
           } else {
             Share.share(
-                "Join now using my referral code: QBYWWIOKCW"); // fallback
+              "Join now using my referral code: QBYWWIOKCW",
+            ); // fallback
           }
         } else {
           Share.share("Join now using my referral code: QBYWWIOKCW");
@@ -287,9 +312,14 @@ class NewReferralScreen extends StatelessWidget {
   Widget _progressItem(String label, String value, Color color) {
     return Column(
       children: [
-        Text(value,
-            style: TextStyle(
-                fontWeight: FontWeight.bold, fontSize: 18, color: color)),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: color,
+          ),
+        ),
         const SizedBox(height: 4),
         Text(label, style: const TextStyle(color: Colors.grey)),
       ],

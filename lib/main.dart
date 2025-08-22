@@ -1,14 +1,13 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'body/homescreen.dart';
-import 'body/refral /refral.dart';
+import 'body/refral /referal.dart';
+
 import 'auth/signup.dart';
 import 'body/splash.dart';
 import 'body/welcome.dart';
 
 // Screens
-
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,7 +15,8 @@ void main() {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark, // Dark icons for white background
+      statusBarIconBrightness:
+          Brightness.dark, // Dark icons for white background
     ),
   );
   runApp(const StarFantasyApp());
@@ -62,7 +62,9 @@ class StarFantasyApp extends StatelessWidget {
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
-          fillColor: const Color(0xFFF5F5F5), // Light gray background for inputs
+          fillColor: const Color(
+            0xFFF5F5F5,
+          ), // Light gray background for inputs
           filled: true,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
@@ -95,9 +97,7 @@ class StarFantasyApp extends StatelessWidget {
           space: 1,
         ),
         // Icon theme
-        iconTheme: IconThemeData(
-          color: Colors.grey.shade700,
-        ),
+        iconTheme: IconThemeData(color: Colors.grey.shade700),
         // Bottom navigation bar theme
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.white,
@@ -111,7 +111,7 @@ class StarFantasyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-         '/welcome': (context) => const WelcomeScreen(),
+        '/welcome': (context) => const WelcomeScreen(),
         '/signup': (context) => const SignupPage(),
         '/home': (context) => const HomeScreen(),
         '/referral': (context) => const NewReferralScreen(),
@@ -130,9 +130,10 @@ class StarPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
+    final Paint paint =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill;
 
     final double width = size.width;
     final double height = size.height;
@@ -174,9 +175,10 @@ class GradientStarPainter extends CustomPainter {
       end: Alignment.bottomRight,
     );
 
-    final Paint paint = Paint()
-      ..shader = gradient.createShader(rect)
-      ..style = PaintingStyle.fill;
+    final Paint paint =
+        Paint()
+          ..shader = gradient.createShader(rect)
+          ..style = PaintingStyle.fill;
 
     final double width = size.width;
     final double height = size.height;
@@ -232,10 +234,7 @@ class ActionButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (icon != null) ...[
-              icon!,
-              const SizedBox(width: 10),
-            ],
+            if (icon != null) ...[icon!, const SizedBox(width: 10)],
             Text(
               text,
               style: const TextStyle(
@@ -393,8 +392,7 @@ class MatchCard extends StatelessWidget {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      if (matchTime.isNotEmpty)
-                        const SizedBox(height: 4),
+                      if (matchTime.isNotEmpty) const SizedBox(height: 4),
                       if (matchTime.isNotEmpty)
                         Text(
                           matchTime,
@@ -472,7 +470,11 @@ class MatchCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.emoji_events, color: Colors.amber[700], size: 16),
+                      Icon(
+                        Icons.emoji_events,
+                        color: Colors.amber[700],
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         prize,

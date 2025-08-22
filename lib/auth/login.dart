@@ -115,18 +115,32 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
     final bool isTablet = screenWidth > 600;
 
     // Dynamic sizing based on screen size
-    final double headerHeight = isSmallPhone ? screenHeight * 0.25 :
-    isMediumPhone ? screenHeight * 0.28 :
-    isLargePhone ? screenHeight * 0.32 :
-    screenHeight * 0.35;
+    final double headerHeight =
+        isSmallPhone
+            ? screenHeight * 0.25
+            : isMediumPhone
+            ? screenHeight * 0.28
+            : isLargePhone
+            ? screenHeight * 0.32
+            : screenHeight * 0.35;
 
-    final double logoSize = isSmallPhone ? 48 :
-    isMediumPhone ? 56 :
-    isTablet ? 72 : 64;
+    final double logoSize =
+        isSmallPhone
+            ? 48
+            : isMediumPhone
+            ? 56
+            : isTablet
+            ? 72
+            : 64;
 
-    final double titleFontSize = isSmallPhone ? 22 :
-    isMediumPhone ? 25 :
-    isTablet ? 32 : 28;
+    final double titleFontSize =
+        isSmallPhone
+            ? 22
+            : isMediumPhone
+            ? 25
+            : isTablet
+            ? 32
+            : 28;
 
     return Scaffold(
       body: Container(
@@ -148,7 +162,10 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
             physics: BouncingScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minHeight: screenHeight - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom,
+                minHeight:
+                    screenHeight -
+                    MediaQuery.of(context).padding.top -
+                    MediaQuery.of(context).padding.bottom,
               ),
               child: IntrinsicHeight(
                 child: Column(
@@ -162,40 +179,48 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                         child: Stack(
                           children: [
                             // Reduced floating orbs for smaller screens
-                            if (!isSmallPhone) ...List.generate(4, (index) {
-                              return AnimatedBuilder(
-                                animation: _fadeController,
-                                builder: (context, child) {
-                                  return Positioned(
-                                    left: (index * 90.0) % screenWidth,
-                                    top: (index * 50.0) % headerHeight,
-                                    child: Container(
-                                      width: 15 + (index * 8.0),
-                                      height: 15 + (index * 8.0),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: RadialGradient(
-                                          colors: [
-                                            Colors.white.withOpacity(0.2),
-                                            Colors.transparent,
-                                          ],
+                            if (!isSmallPhone)
+                              ...List.generate(4, (index) {
+                                return AnimatedBuilder(
+                                  animation: _fadeController,
+                                  builder: (context, child) {
+                                    return Positioned(
+                                      left: (index * 90.0) % screenWidth,
+                                      top: (index * 50.0) % headerHeight,
+                                      child: Container(
+                                        width: 15 + (index * 8.0),
+                                        height: 15 + (index * 8.0),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: RadialGradient(
+                                            colors: [
+                                              Colors.white.withOpacity(0.2),
+                                              Colors.transparent,
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              );
-                            }),
+                                    );
+                                  },
+                                );
+                              }),
 
                             // Compact Header Content
                             Positioned(
-                              top: isSmallPhone ? screenHeight * 0.05 : screenHeight * 0.08,
+                              top:
+                                  isSmallPhone
+                                      ? screenHeight * 0.05
+                                      : screenHeight * 0.08,
                               left: screenWidth * 0.1,
                               right: screenWidth * 0.1,
                               child: SlideTransition(
                                 position: _slideAnimation,
                                 child: Container(
-                                  padding: EdgeInsets.all(isSmallPhone ? screenWidth * 0.03 : screenWidth * 0.04),
+                                  padding: EdgeInsets.all(
+                                    isSmallPhone
+                                        ? screenWidth * 0.03
+                                        : screenWidth * 0.04,
+                                  ),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(20),
                                     gradient: LinearGradient(
@@ -219,7 +244,8 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                     ],
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       // Logo - now supports custom asset
@@ -227,7 +253,9 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                         padding: EdgeInsets.all(6),
                                         decoration: BoxDecoration(
                                           color: Colors.white.withOpacity(0.0),
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: _buildLogo(logoSize),
                                       ),
@@ -236,20 +264,26 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                         'Welcome Back',
                                         style: TextStyle(
                                           color: Colors.white.withOpacity(0.9),
-                                          fontSize: isSmallPhone ? 12 : isTablet ? 16 : 14,
+                                          fontSize:
+                                              isSmallPhone
+                                                  ? 12
+                                                  : isTablet
+                                                  ? 16
+                                                  : 14,
                                           fontWeight: FontWeight.w300,
                                           letterSpacing: 1.2,
                                         ),
                                       ),
                                       SizedBox(height: 2),
                                       ShaderMask(
-                                        shaderCallback: (bounds) => LinearGradient(
-                                          colors: [
-                                            Colors.white,
-                                            Color(0xFFFFD700),
-                                            Colors.white,
-                                          ],
-                                        ).createShader(bounds),
+                                        shaderCallback:
+                                            (bounds) => LinearGradient(
+                                              colors: [
+                                                Colors.white,
+                                                Color(0xFFFFD700),
+                                                Colors.white,
+                                              ],
+                                            ).createShader(bounds),
                                         child: Text(
                                           'STAR 25 PRO',
                                           style: TextStyle(
@@ -265,7 +299,12 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                         'Where Champions Rise ⚡',
                                         style: TextStyle(
                                           color: Colors.white.withOpacity(0.8),
-                                          fontSize: isSmallPhone ? 10 : isTablet ? 14 : 12,
+                                          fontSize:
+                                              isSmallPhone
+                                                  ? 10
+                                                  : isTablet
+                                                  ? 14
+                                                  : 12,
                                           fontWeight: FontWeight.w400,
                                           letterSpacing: 0.8,
                                         ),
@@ -281,14 +320,19 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                     ),
 
                     // Flexible space
-                    if (isSmallPhone) SizedBox(height: 16) else SizedBox(height: 24),
+                    if (isSmallPhone)
+                      SizedBox(height: 16)
+                    else
+                      SizedBox(height: 24),
 
                     // Compact Login Form
                     Expanded(
                       child: ScaleTransition(
                         scale: _scaleAnimation,
                         child: Container(
-                          margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+                          margin: EdgeInsets.symmetric(
+                            horizontal: screenWidth * 0.05,
+                          ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(30),
                             gradient: LinearGradient(
@@ -312,7 +356,11 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                             ],
                           ),
                           child: Padding(
-                            padding: EdgeInsets.all(isSmallPhone ? screenWidth * 0.04 : screenWidth * 0.06),
+                            padding: EdgeInsets.all(
+                              isSmallPhone
+                                  ? screenWidth * 0.04
+                                  : screenWidth * 0.06,
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
@@ -329,11 +377,16 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(25),
                                       gradient: LinearGradient(
-                                        colors: [Color(0xFFFFD700), Color(0xFFFF6B35)],
+                                        colors: [
+                                          Color(0xFFFFD700),
+                                          Color(0xFFFF6B35),
+                                        ],
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Color(0xFFFFD700).withOpacity(0.4),
+                                          color: Color(
+                                            0xFFFFD700,
+                                          ).withOpacity(0.4),
                                           blurRadius: 15,
                                           offset: Offset(0, 5),
                                         ),
@@ -343,7 +396,12 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                       'Mobile Number',
                                       style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: isSmallPhone ? 12 : isTablet ? 16 : 14,
+                                        fontSize:
+                                            isSmallPhone
+                                                ? 12
+                                                : isTablet
+                                                ? 16
+                                                : 14,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -367,12 +425,21 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                 SizedBox(height: isSmallPhone ? 16 : 20),
 
                                 // Compact Checkbox
-                                _buildCompactGlassCheckbox(screenWidth, isSmallPhone, isTablet),
+                                _buildCompactGlassCheckbox(
+                                  screenWidth,
+                                  isSmallPhone,
+                                  isTablet,
+                                ),
 
                                 SizedBox(height: isSmallPhone ? 20 : 24),
 
                                 // Continue Button
-                                _buildCompactPremiumButton(screenWidth, screenHeight, isSmallPhone, isTablet),
+                                _buildCompactPremiumButton(
+                                  screenWidth,
+                                  screenHeight,
+                                  isSmallPhone,
+                                  isTablet,
+                                ),
 
                                 SizedBox(height: isSmallPhone ? 12 : 16),
 
@@ -381,10 +448,16 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                   child: RichText(
                                     textAlign: TextAlign.center,
                                     text: TextSpan(
-                                      text: 'By continuing, You agree to get updates via SMS, Email & Whatsapp. ',
+                                      text:
+                                          'By continuing, You agree to get updates via SMS, Email & Whatsapp. ',
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.7),
-                                        fontSize: isSmallPhone ? 10 : isTablet ? 14 : 12,
+                                        fontSize:
+                                            isSmallPhone
+                                                ? 10
+                                                : isTablet
+                                                ? 14
+                                                : 12,
                                       ),
                                       children: [
                                         TextSpan(
@@ -427,14 +500,18 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                       ),
                                     ),
                                     Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: screenWidth * 0.04,
+                                      ),
                                       child: Container(
                                         padding: EdgeInsets.symmetric(
                                           horizontal: isSmallPhone ? 12 : 16,
                                           vertical: isSmallPhone ? 6 : 8,
                                         ),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(15),
+                                          borderRadius: BorderRadius.circular(
+                                            15,
+                                          ),
                                           gradient: LinearGradient(
                                             colors: [
                                               Colors.white.withOpacity(0.2),
@@ -445,8 +522,15 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                         child: Text(
                                           'OR',
                                           style: TextStyle(
-                                            color: Colors.white.withOpacity(0.8),
-                                            fontSize: isSmallPhone ? 10 : isTablet ? 14 : 12,
+                                            color: Colors.white.withOpacity(
+                                              0.8,
+                                            ),
+                                            fontSize:
+                                                isSmallPhone
+                                                    ? 10
+                                                    : isTablet
+                                                    ? 14
+                                                    : 12,
                                             fontWeight: FontWeight.w600,
                                             letterSpacing: 2,
                                           ),
@@ -480,7 +564,12 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                       "Don't have an account? ",
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.7),
-                                        fontSize: isSmallPhone ? 12 : isTablet ? 16 : 14,
+                                        fontSize:
+                                            isSmallPhone
+                                                ? 12
+                                                : isTablet
+                                                ? 16
+                                                : 14,
                                       ),
                                     ),
                                     GestureDetector(
@@ -489,8 +578,18 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                         Navigator.push(
                                           context,
                                           PageRouteBuilder(
-                                            pageBuilder: (context, animation, secondaryAnimation) => SignupPage(),
-                                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                            pageBuilder:
+                                                (
+                                                  context,
+                                                  animation,
+                                                  secondaryAnimation,
+                                                ) => SignupPage(),
+                                            transitionsBuilder: (
+                                              context,
+                                              animation,
+                                              secondaryAnimation,
+                                              child,
+                                            ) {
                                               return SlideTransition(
                                                 position: Tween<Offset>(
                                                   begin: const Offset(1.0, 0.0),
@@ -508,11 +607,17 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                           vertical: isSmallPhone ? 4 : 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(15),
+                                          borderRadius: BorderRadius.circular(
+                                            15,
+                                          ),
                                           gradient: LinearGradient(
                                             colors: [
-                                              Color(0xFFFFD700).withOpacity(0.3),
-                                              Color(0xFFFFD700).withOpacity(0.1),
+                                              Color(
+                                                0xFFFFD700,
+                                              ).withOpacity(0.3),
+                                              Color(
+                                                0xFFFFD700,
+                                              ).withOpacity(0.1),
                                             ],
                                           ),
                                         ),
@@ -520,7 +625,12 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
                                           'Register Now',
                                           style: TextStyle(
                                             color: Color(0xFFFFD700),
-                                            fontSize: isSmallPhone ? 12 : isTablet ? 16 : 14,
+                                            fontSize:
+                                                isSmallPhone
+                                                    ? 12
+                                                    : isTablet
+                                                    ? 16
+                                                    : 14,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -603,7 +713,12 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
         controller: controller,
         keyboardType: keyboardType,
         style: TextStyle(
-          fontSize: isSmallPhone ? 14 : isTablet ? 18 : 16,
+          fontSize:
+              isSmallPhone
+                  ? 14
+                  : isTablet
+                  ? 18
+                  : 16,
           color: Colors.black, // Changed to white for better visibility
           fontWeight: FontWeight.w500,
         ),
@@ -611,7 +726,12 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
           hintText: '$hint ',
           hintStyle: TextStyle(
             color: Colors.black.withOpacity(0.6),
-            fontSize: isSmallPhone ? 14 : isTablet ? 18 : 16,
+            fontSize:
+                isSmallPhone
+                    ? 14
+                    : isTablet
+                    ? 18
+                    : 16,
           ),
           prefixIcon: Container(
             margin: EdgeInsets.all(isSmallPhone ? 8 : 10),
@@ -620,7 +740,11 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
               color: Colors.black.withOpacity(0.4),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: Colors.white.withOpacity(0.8), size: isSmallPhone ? 18 : 20),
+            child: Icon(
+              icon,
+              color: Colors.white.withOpacity(0.8),
+              size: isSmallPhone ? 18 : 20,
+            ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -639,7 +763,11 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
     );
   }
 
-  Widget _buildCompactGlassCheckbox(double screenWidth, bool isSmallPhone, bool isTablet) {
+  Widget _buildCompactGlassCheckbox(
+    double screenWidth,
+    bool isSmallPhone,
+    bool isTablet,
+  ) {
     return Row(
       children: [
         GestureDetector(
@@ -653,24 +781,38 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
             height: isSmallPhone ? 24 : 28,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(6),
-              gradient: isAgeVerified
-                  ? LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFF6B35)])
-                  : null,
+              gradient:
+                  isAgeVerified
+                      ? LinearGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFFF6B35)],
+                      )
+                      : null,
               border: Border.all(
-                color: isAgeVerified ? Colors.transparent : Colors.white.withOpacity(0.5),
+                color:
+                    isAgeVerified
+                        ? Colors.transparent
+                        : Colors.white.withOpacity(0.5),
                 width: 2,
               ),
-              boxShadow: isAgeVerified
-                  ? [
-                BoxShadow(
-                  color: Color(0xFFFFD700).withOpacity(0.4),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
-                ),
-              ]
-                  : null,
+              boxShadow:
+                  isAgeVerified
+                      ? [
+                        BoxShadow(
+                          color: Color(0xFFFFD700).withOpacity(0.4),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ]
+                      : null,
             ),
-            child: isAgeVerified ? Icon(Icons.check, color: Colors.white, size: isSmallPhone ? 14 : 16) : null,
+            child:
+                isAgeVerified
+                    ? Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: isSmallPhone ? 14 : 16,
+                    )
+                    : null,
           ),
         ),
         SizedBox(width: screenWidth * 0.03),
@@ -679,7 +821,12 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
             'I certify that I am above 18 years',
             style: TextStyle(
               color: Colors.white.withOpacity(0.8),
-              fontSize: isSmallPhone ? 12 : isTablet ? 16 : 14,
+              fontSize:
+                  isSmallPhone
+                      ? 12
+                      : isTablet
+                      ? 16
+                      : 14,
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -688,74 +835,104 @@ class _Dream11LoginPageState extends State<Dream11LoginPage>
     );
   }
 
-  Widget _buildCompactPremiumButton(double screenWidth, double screenHeight, bool isSmallPhone, bool isTablet) {
+  Widget _buildCompactPremiumButton(
+    double screenWidth,
+    double screenHeight,
+    bool isSmallPhone,
+    bool isTablet,
+  ) {
     return GestureDetector(
-      onTap: isAgeVerified
-          ? () {
-        HapticFeedback.lightImpact();
-        if (mobileController.text.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Please enter your mobile number'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-            ),
-          );
-          return;
-        }
-        String contact = mobileController.text;
-        Navigator.push(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => OTPVerificationScreen(
-              contact: contact,
-              isEmail: false,
-            ),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1.0, 0.0),
-                  end: Offset.zero,
-                ).animate(animation),
-                child: child,
-              );
-            },
-          ),
-        );
-      }
-          : null,
+      onTap:
+          isAgeVerified
+              ? () {
+                HapticFeedback.lightImpact();
+                if (mobileController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Please enter your mobile number'),
+                      backgroundColor: Colors.red,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  );
+                  return;
+                }
+                String contact = mobileController.text;
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder:
+                        (context, animation, secondaryAnimation) =>
+                            OTPVerificationScreen(
+                              contact: contact,
+                              isEmail: false,
+                            ),
+                    transitionsBuilder: (
+                      context,
+                      animation,
+                      secondaryAnimation,
+                      child,
+                    ) {
+                      return SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(1.0, 0.0),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
+                      );
+                    },
+                  ),
+                );
+              }
+              : null,
       child: AnimatedContainer(
         duration: Duration(milliseconds: 300),
         width: double.infinity,
         height: isSmallPhone ? 48 : screenHeight * 0.06,
         decoration: BoxDecoration(
-          gradient: isAgeVerified
-              ? LinearGradient(
-            colors: [Color(0xFFFFD700), Color(0xFFFF6B35), Color(0xFFE91E63)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          )
-              : LinearGradient(
-            colors: [Colors.grey.withOpacity(0.3), Colors.grey.withOpacity(0.2)],
-          ),
+          gradient:
+              isAgeVerified
+                  ? LinearGradient(
+                    colors: [
+                      Color(0xFFFFD700),
+                      Color(0xFFFF6B35),
+                      Color(0xFFE91E63),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                  : LinearGradient(
+                    colors: [
+                      Colors.grey.withOpacity(0.3),
+                      Colors.grey.withOpacity(0.2),
+                    ],
+                  ),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: isAgeVerified
-              ? [
-            BoxShadow(
-              color: Color(0xFFFFD700).withOpacity(0.4),
-              blurRadius: 16,
-              offset: Offset(0, 6),
-            ),
-          ]
-              : null,
+          boxShadow:
+              isAgeVerified
+                  ? [
+                    BoxShadow(
+                      color: Color(0xFFFFD700).withOpacity(0.4),
+                      blurRadius: 16,
+                      offset: Offset(0, 6),
+                    ),
+                  ]
+                  : null,
         ),
         child: Center(
           child: Text(
             'CONTINUE',
             style: TextStyle(
-              color: isAgeVerified ? Colors.white : Colors.white.withOpacity(0.5),
-              fontSize: isSmallPhone ? 14 : isTablet ? 18 : 16,
+              color:
+                  isAgeVerified ? Colors.white : Colors.white.withOpacity(0.5),
+              fontSize:
+                  isSmallPhone
+                      ? 14
+                      : isTablet
+                      ? 18
+                      : 16,
               fontWeight: FontWeight.bold,
               letterSpacing: 2,
             ),
@@ -783,7 +960,10 @@ class OTPVerificationScreen extends StatefulWidget {
 
 class _OTPVerificationScreenState extends State<OTPVerificationScreen>
     with TickerProviderStateMixin {
-  final List<TextEditingController> otpControllers = List.generate(6, (index) => TextEditingController());
+  final List<TextEditingController> otpControllers = List.generate(
+    6,
+    (index) => TextEditingController(),
+  );
   final List<FocusNode> focusNodes = List.generate(6, (index) => FocusNode());
 
   bool isOTPComplete = false;
@@ -813,7 +993,9 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
 
   void _checkOTPComplete() {
     setState(() {
-      isOTPComplete = otpControllers.every((controller) => controller.text.isNotEmpty);
+      isOTPComplete = otpControllers.every(
+        (controller) => controller.text.isNotEmpty,
+      );
     });
   }
 
@@ -1002,31 +1184,43 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                     width: double.infinity,
                     height: screenHeight * 0.07,
                     decoration: BoxDecoration(
-                      gradient: isOTPComplete
-                          ? LinearGradient(
-                        colors: [Color(0xFFFFD700), Color(0xFFFF6B35), Color(0xFFE91E63)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                          : LinearGradient(
-                        colors: [Colors.white.withOpacity(0.3), Colors.grey.withOpacity(0.2)],
-                      ),
+                      gradient:
+                          isOTPComplete
+                              ? LinearGradient(
+                                colors: [
+                                  Color(0xFFFFD700),
+                                  Color(0xFFFF6B35),
+                                  Color(0xFFE91E63),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                              : LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.3),
+                                  Colors.grey.withOpacity(0.2),
+                                ],
+                              ),
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: isOTPComplete
-                          ? [
-                        BoxShadow(
-                          color: Color(0xFFFFD700).withOpacity(0.4),
-                          blurRadius: 20,
-                          offset: Offset(0, 8),
-                        ),
-                      ]
-                          : null,
+                      boxShadow:
+                          isOTPComplete
+                              ? [
+                                BoxShadow(
+                                  color: Color(0xFFFFD700).withOpacity(0.4),
+                                  blurRadius: 20,
+                                  offset: Offset(0, 8),
+                                ),
+                              ]
+                              : null,
                     ),
                     child: Center(
                       child: Text(
                         'VERIFY OTP',
                         style: TextStyle(
-                          color: isOTPComplete ? Colors.white : Colors.white.withOpacity(0.5),
+                          color:
+                              isOTPComplete
+                                  ? Colors.white
+                                  : Colors.white.withOpacity(0.5),
                           fontSize: isTablet ? 18 : 16,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 2,
@@ -1052,18 +1246,32 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                     GestureDetector(
                       onTap: resendTimer == 0 ? _resendOTP : null,
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: resendTimer == 0 ? Color(0xFFFFD700).withOpacity(0.2) : Colors.transparent,
+                          color:
+                              resendTimer == 0
+                                  ? Color(0xFFFFD700).withOpacity(0.2)
+                                  : Colors.transparent,
                           borderRadius: BorderRadius.circular(15),
                           border: Border.all(
-                            color: resendTimer == 0 ? Color(0xFFFFD700) : Colors.white.withOpacity(0.3),
+                            color:
+                                resendTimer == 0
+                                    ? Color(0xFFFFD700)
+                                    : Colors.white.withOpacity(0.3),
                           ),
                         ),
                         child: Text(
-                          resendTimer == 0 ? 'Resend OTP' : 'Resend in ${resendTimer}s',
+                          resendTimer == 0
+                              ? 'Resend OTP'
+                              : 'Resend in ${resendTimer}s',
                           style: TextStyle(
-                            color: resendTimer == 0 ? Color(0xFFFFD700) : Colors.white.withOpacity(0.5),
+                            color:
+                                resendTimer == 0
+                                    ? Color(0xFFFFD700)
+                                    : Colors.white.withOpacity(0.5),
                             fontSize: isTablet ? 16 : 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1085,7 +1293,11 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.white.withOpacity(0.7), size: 20),
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.white.withOpacity(0.7),
+                        size: 20,
+                      ),
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -1112,67 +1324,78 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
       width: isTablet ? 55 : 45,
       height: isTablet ? 55 : 45,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15), // Increased opacity for better visibility
+        color: Colors.white.withOpacity(
+          0.15,
+        ), // Increased opacity for better visibility
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: otpControllers[index].text.isNotEmpty ? Color(0xFFFFD700) : Colors.white.withOpacity(0.4),
+          color:
+              otpControllers[index].text.isNotEmpty
+                  ? Color(0xFFFFD700)
+                  : Colors.white.withOpacity(0.4),
           width: 2,
         ),
-        boxShadow: otpControllers[index].text.isNotEmpty
-            ? [
-          BoxShadow(
-            color: Color(0xFFFFD700).withOpacity(0.3),
-            blurRadius: 10,
-            offset: Offset(0, 3),
-          ),
-        ]
-            : null,
+        boxShadow:
+            otpControllers[index].text.isNotEmpty
+                ? [
+                  BoxShadow(
+                    color: Color(0xFFFFD700).withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: Offset(0, 3),
+                  ),
+                ]
+                : null,
       ),
-        child: TextFormField(
-          controller: otpControllers[index],
-          focusNode: focusNodes[index],
-          keyboardType: TextInputType.number,
-          textAlign: TextAlign.center,
-          maxLength: 1,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          style: TextStyle(
-            fontSize: isTablet ? 24 : 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black, // White text for visibility on dark background
+      child: TextFormField(
+        controller: otpControllers[index],
+        focusNode: focusNodes[index],
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.center,
+        maxLength: 1,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        style: TextStyle(
+          fontSize: isTablet ? 24 : 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.black, // White text for visibility on dark background
+        ),
+        cursorColor: Color(0xFFFFD700), // Gold cursor to match theme
+        decoration: InputDecoration(
+          counterText: '',
+          border: InputBorder.none,
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFFFFD700), width: 2),
+            borderRadius: BorderRadius.circular(12),
           ),
-          cursorColor: Color(0xFFFFD700), // Gold cursor to match theme
-          decoration: InputDecoration(
-            counterText: '',
-            border: InputBorder.none,
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFFFFD700), width: 2),
-              borderRadius: BorderRadius.circular(12),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(
+              color: Colors.white.withOpacity(0.4),
+              width: 1.5,
             ),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.4), width: 1.5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            hintText: '•', // Optional: faint dot to indicate empty field
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 20),
+            borderRadius: BorderRadius.circular(12),
           ),
-          onChanged: (value) {
-            if (value.isNotEmpty) {
-              if (index < 5) {
-                focusNodes[index + 1].requestFocus();
-              } else {
-                focusNodes[index].unfocus();
-              }
-            } else if (index > 0) {
-              focusNodes[index - 1].requestFocus();
+          hintText: '•', // Optional: faint dot to indicate empty field
+          hintStyle: TextStyle(
+            color: Colors.white.withOpacity(0.4),
+            fontSize: 20,
+          ),
+        ),
+        onChanged: (value) {
+          if (value.isNotEmpty) {
+            if (index < 5) {
+              focusNodes[index + 1].requestFocus();
+            } else {
+              focusNodes[index].unfocus();
             }
-          },
-          onTap: () {
-            otpControllers[index].selection = TextSelection.fromPosition(
-              TextPosition(offset: otpControllers[index].text.length),
-            );
-          },
-        )
-
+          } else if (index > 0) {
+            focusNodes[index - 1].requestFocus();
+          }
+        },
+        onTap: () {
+          otpControllers[index].selection = TextSelection.fromPosition(
+            TextPosition(offset: otpControllers[index].text.length),
+          );
+        },
+      ),
     );
   }
 
@@ -1183,33 +1406,36 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(
-        child: Container(
-          padding: EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+      builder:
+          (context) => Center(
+            child: Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.white.withOpacity(0.3)),
               ),
-              SizedBox(height: 16),
-              Text(
-                'Verifying OTP...',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFFFFD700),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Verifying OTP...',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
 
     // Simulate API call
@@ -1234,121 +1460,158 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.black.withOpacity(0.85),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFF6B35)]),
-                ),
-                child: Icon(Icons.check, color: Colors.white, size: 45),
-              ),
-              SizedBox(height: 25),
-              Text(
-                'Success!',
-                style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 12),
-              Text(
-                'Your account has been verified successfully.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, fontSize: 16),
-              ),
-              SizedBox(height: 30),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFFF6B35),
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => HomeScreen()),
+      builder:
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            backgroundColor: Colors.black.withOpacity(0.85),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFFF6B35)],
+                      ),
+                    ),
+                    child: Icon(Icons.check, color: Colors.white, size: 45),
+                  ),
+                  SizedBox(height: 25),
+                  Text(
+                    'Success!',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    'Your account has been verified successfully.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                  SizedBox(height: 30),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFFF6B35),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => HomeScreen()),
                         (route) => false,
-                  );
-                },
-                child: Text('Continue to Home', style: TextStyle(color: Colors.white, fontSize: 16)),
+                      );
+                    },
+                    child: Text(
+                      'Continue to Home',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
   void _showErrorDialog() {
     showDialog(
       context: context,
-      builder: (context) => Center(
-        child: Container(
-          margin: EdgeInsets.all(20),
-          padding: EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(colors: [Colors.red, Colors.redAccent]),
-                ),
-                child: Icon(Icons.error_outline, color: Colors.white, size: 40),
+      builder:
+          (context) => Center(
+            child: Container(
+              margin: EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withOpacity(0.3)),
               ),
-              SizedBox(height: 20),
-              Text(
-                'Verification Failed',
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              Text(
-                'Invalid OTP. Please check and try again.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16),
-              ),
-              SizedBox(height: 30),
-              GestureDetector(
-                onTap: () {
-                  Navigator.pop(context);
-                  for (var controller in otpControllers) {
-                    controller.clear();
-                  }
-                  focusNodes[0].requestFocus();
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [Colors.red, Colors.redAccent]),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'Try Again',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [Colors.red, Colors.redAccent],
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.error_outline,
+                      color: Colors.white,
+                      size: 40,
                     ),
                   ),
-                ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Verification Failed',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Invalid OTP. Please check and try again.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 16,
+                    ),
+                  ),
+                  SizedBox(height: 30),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      for (var controller in otpControllers) {
+                        controller.clear();
+                      }
+                      focusNodes[0].requestFocus();
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(vertical: 15),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.red, Colors.redAccent],
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Try Again',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 

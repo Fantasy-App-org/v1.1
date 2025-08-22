@@ -88,10 +88,16 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
           child: FadeTransition(
             opacity: _fadeAnimation,
             child: SingleChildScrollView(
-              physics: isSmallScreen ? AlwaysScrollableScrollPhysics() : NeverScrollableScrollPhysics(),
+              physics:
+                  isSmallScreen
+                      ? AlwaysScrollableScrollPhysics()
+                      : NeverScrollableScrollPhysics(),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  minHeight: screenHeight - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom,
+                  minHeight:
+                      screenHeight -
+                      MediaQuery.of(context).padding.top -
+                      MediaQuery.of(context).padding.bottom,
                 ),
                 child: Padding(
                   padding: EdgeInsets.symmetric(
@@ -106,7 +112,9 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                         width: double.infinity,
                         child: Column(
                           children: [
-                            SizedBox(height: isSmallScreen ? 20 : screenHeight * 0.02),
+                            SizedBox(
+                              height: isSmallScreen ? 20 : screenHeight * 0.02,
+                            ),
 
                             // Logo with animated glow - UPDATED TO USE ASSET IMAGE
                             Container(
@@ -130,7 +138,9 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                                 ],
                               ),
                               child: Container(
-                                padding: EdgeInsets.all(0), // Add padding around the logo
+                                padding: EdgeInsets.all(
+                                  0,
+                                ), // Add padding around the logo
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   gradient: LinearGradient(
@@ -156,18 +166,26 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                               ),
                             ),
 
-                            SizedBox(height: isSmallScreen ? 16 : screenHeight * 0.025),
+                            SizedBox(
+                              height: isSmallScreen ? 16 : screenHeight * 0.025,
+                            ),
 
                             // Title with gradient
                             ShaderMask(
-                              shaderCallback: (bounds) => LinearGradient(
-                                colors: [Colors.orange, Colors.amber, Colors.orange],
-                              ).createShader(bounds),
+                              shaderCallback:
+                                  (bounds) => LinearGradient(
+                                    colors: [
+                                      Colors.orange,
+                                      Colors.amber,
+                                      Colors.orange,
+                                    ],
+                                  ).createShader(bounds),
                               child: Text(
                                 'Star 25 Pro',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: isTablet ? 32 : (isSmallScreen ? 24 : 28),
+                                  fontSize:
+                                      isTablet ? 32 : (isSmallScreen ? 24 : 28),
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.5,
                                 ),
@@ -180,7 +198,8 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                               'Create • Compete • Conquer',
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.8),
-                                fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
+                                fontSize:
+                                    isTablet ? 16 : (isSmallScreen ? 12 : 14),
                                 letterSpacing: 2.0,
                                 fontWeight: FontWeight.w300,
                               ),
@@ -192,7 +211,9 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                       // Form Section
                       Container(
                         width: double.infinity,
-                        margin: EdgeInsets.symmetric(vertical: isSmallScreen ? 20 : screenHeight * 0.03),
+                        margin: EdgeInsets.symmetric(
+                          vertical: isSmallScreen ? 20 : screenHeight * 0.03,
+                        ),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
@@ -227,7 +248,9 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                                 decoration: BoxDecoration(
                                   color: Colors.black.withOpacity(0.3),
                                   borderRadius: BorderRadius.circular(25),
-                                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.1),
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
@@ -235,7 +258,9 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                                       child: _buildToggleButton(
                                         'Mobile',
                                         !isEmailSignup,
-                                            () => setState(() => isEmailSignup = false),
+                                        () => setState(
+                                          () => isEmailSignup = false,
+                                        ),
                                         isTablet,
                                         isSmallScreen,
                                       ),
@@ -244,7 +269,9 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                                       child: _buildToggleButton(
                                         'Email',
                                         isEmailSignup,
-                                            () => setState(() => isEmailSignup = true),
+                                        () => setState(
+                                          () => isEmailSignup = true,
+                                        ),
                                         isTablet,
                                         isSmallScreen,
                                       ),
@@ -267,10 +294,22 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                               SizedBox(height: isSmallScreen ? 12 : 16),
 
                               _buildInputField(
-                                controller: isEmailSignup ? emailController : mobileController,
-                                hint: isEmailSignup ? 'Email address' : 'Mobile number',
-                                icon: isEmailSignup ? Icons.email_outlined : Icons.phone_outlined,
-                                keyboardType: isEmailSignup ? TextInputType.emailAddress : TextInputType.phone,
+                                controller:
+                                    isEmailSignup
+                                        ? emailController
+                                        : mobileController,
+                                hint:
+                                    isEmailSignup
+                                        ? 'Email address'
+                                        : 'Mobile number',
+                                icon:
+                                    isEmailSignup
+                                        ? Icons.email_outlined
+                                        : Icons.phone_outlined,
+                                keyboardType:
+                                    isEmailSignup
+                                        ? TextInputType.emailAddress
+                                        : TextInputType.phone,
                                 isTablet: isTablet,
                                 isSmallScreen: isSmallScreen,
                               ),
@@ -289,7 +328,10 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
 
                               // Age Verification
                               GestureDetector(
-                                onTap: () => setState(() => isAgeVerified = !isAgeVerified),
+                                onTap:
+                                    () => setState(
+                                      () => isAgeVerified = !isAgeVerified,
+                                    ),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
@@ -298,28 +340,49 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                                       width: isTablet ? 26 : 24,
                                       height: isTablet ? 26 : 24,
                                       decoration: BoxDecoration(
-                                        gradient: isAgeVerified
-                                            ? LinearGradient(colors: [Colors.orange, Colors.amber])
-                                            : null,
-                                        color: isAgeVerified ? null : Colors.transparent,
+                                        gradient:
+                                            isAgeVerified
+                                                ? LinearGradient(
+                                                  colors: [
+                                                    Colors.orange,
+                                                    Colors.amber,
+                                                  ],
+                                                )
+                                                : null,
+                                        color:
+                                            isAgeVerified
+                                                ? null
+                                                : Colors.transparent,
                                         borderRadius: BorderRadius.circular(6),
                                         border: Border.all(
-                                          color: isAgeVerified
-                                              ? Colors.transparent
-                                              : Colors.white.withOpacity(0.4),
+                                          color:
+                                              isAgeVerified
+                                                  ? Colors.transparent
+                                                  : Colors.white.withOpacity(
+                                                    0.4,
+                                                  ),
                                           width: 2,
                                         ),
-                                        boxShadow: isAgeVerified ? [
-                                          BoxShadow(
-                                            color: Colors.orange.withOpacity(0.3),
-                                            blurRadius: 8,
-                                            offset: Offset(0, 2),
-                                          ),
-                                        ] : null,
+                                        boxShadow:
+                                            isAgeVerified
+                                                ? [
+                                                  BoxShadow(
+                                                    color: Colors.orange
+                                                        .withOpacity(0.3),
+                                                    blurRadius: 8,
+                                                    offset: Offset(0, 2),
+                                                  ),
+                                                ]
+                                                : null,
                                       ),
-                                      child: isAgeVerified
-                                          ? Icon(Icons.check_rounded, color: Colors.white, size: 16)
-                                          : null,
+                                      child:
+                                          isAgeVerified
+                                              ? Icon(
+                                                Icons.check_rounded,
+                                                color: Colors.white,
+                                                size: 16,
+                                              )
+                                              : null,
                                     ),
                                     SizedBox(width: 12),
                                     Expanded(
@@ -327,7 +390,10 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                                         'I certify that I am above 18 years',
                                         style: TextStyle(
                                           color: Colors.white.withOpacity(0.9),
-                                          fontSize: isTablet ? 16 : (isSmallScreen ? 13 : 14),
+                                          fontSize:
+                                              isTablet
+                                                  ? 16
+                                                  : (isSmallScreen ? 13 : 14),
                                           fontWeight: FontWeight.w400,
                                         ),
                                       ),
@@ -345,52 +411,72 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                         children: [
                           // Sign Up Button
                           GestureDetector(
-                            onTap: areFieldsValid()
-                                ? () {
-                              HapticFeedback.lightImpact();
-                              String contact = isEmailSignup ? emailController.text : mobileController.text;
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => OTPVerificationScreen(
-                                    contact: contact,
-                                    isEmail: isEmailSignup,
-                                    isSignup: true,
-                                  ),
-                                ),
-                              );
-                            }
-                                : null,
+                            onTap:
+                                areFieldsValid()
+                                    ? () {
+                                      HapticFeedback.lightImpact();
+                                      String contact =
+                                          isEmailSignup
+                                              ? emailController.text
+                                              : mobileController.text;
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) =>
+                                                  OTPVerificationScreen(
+                                                    contact: contact,
+                                                    isEmail: isEmailSignup,
+                                                    isSignup: true,
+                                                  ),
+                                        ),
+                                      );
+                                    }
+                                    : null,
                             child: AnimatedContainer(
                               duration: Duration(milliseconds: 200),
                               width: double.infinity,
                               height: isTablet ? 60 : (isSmallScreen ? 50 : 56),
                               decoration: BoxDecoration(
-                                gradient: areFieldsValid()
-                                    ? LinearGradient(
-                                  colors: [Colors.orange, Colors.amber, Colors.orange.shade600],
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                )
-                                    : null,
-                                color: areFieldsValid() ? null : Colors.grey.withOpacity(0.2),
+                                gradient:
+                                    areFieldsValid()
+                                        ? LinearGradient(
+                                          colors: [
+                                            Colors.orange,
+                                            Colors.amber,
+                                            Colors.orange.shade600,
+                                          ],
+                                          begin: Alignment.centerLeft,
+                                          end: Alignment.centerRight,
+                                        )
+                                        : null,
+                                color:
+                                    areFieldsValid()
+                                        ? null
+                                        : Colors.grey.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(16),
-                                boxShadow: areFieldsValid()
-                                    ? [
-                                  BoxShadow(
-                                    color: Colors.orange.withOpacity(0.5),
-                                    blurRadius: 20,
-                                    offset: Offset(0, 8),
-                                  ),
-                                ]
-                                    : null,
+                                boxShadow:
+                                    areFieldsValid()
+                                        ? [
+                                          BoxShadow(
+                                            color: Colors.orange.withOpacity(
+                                              0.5,
+                                            ),
+                                            blurRadius: 20,
+                                            offset: Offset(0, 8),
+                                          ),
+                                        ]
+                                        : null,
                               ),
                               child: Center(
                                 child: Text(
                                   'CREATE ACCOUNT',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: isTablet ? 18 : (isSmallScreen ? 14 : 16),
+                                    fontSize:
+                                        isTablet
+                                            ? 18
+                                            : (isSmallScreen ? 14 : 16),
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.2,
                                   ),
@@ -410,7 +496,8 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                                 text: 'By signing up, you agree to our ',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.7),
-                                  fontSize: isTablet ? 14 : (isSmallScreen ? 11 : 12),
+                                  fontSize:
+                                      isTablet ? 14 : (isSmallScreen ? 11 : 12),
                                   height: 1.4,
                                 ),
                                 children: [
@@ -446,21 +533,27 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
                                 'Already have an account? ',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.7),
-                                  fontSize: isTablet ? 16 : (isSmallScreen ? 13 : 14),
+                                  fontSize:
+                                      isTablet ? 16 : (isSmallScreen ? 13 : 14),
                                 ),
                               ),
                               GestureDetector(
                                 onTap: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (context) => Dream11LoginPage()),
+                                    MaterialPageRoute(
+                                      builder: (context) => Dream11LoginPage(),
+                                    ),
                                   );
                                 },
                                 child: Text(
                                   'Login',
                                   style: TextStyle(
                                     color: Colors.orange,
-                                    fontSize: isTablet ? 16 : (isSmallScreen ? 13 : 14),
+                                    fontSize:
+                                        isTablet
+                                            ? 16
+                                            : (isSmallScreen ? 13 : 14),
                                     fontWeight: FontWeight.w600,
                                     decoration: TextDecoration.underline,
                                   ),
@@ -483,7 +576,13 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildToggleButton(String text, bool isSelected, VoidCallback onTap, bool isTablet, bool isSmallScreen) {
+  Widget _buildToggleButton(
+    String text,
+    bool isSelected,
+    VoidCallback onTap,
+    bool isTablet,
+    bool isSmallScreen,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -492,23 +591,25 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
           vertical: isTablet ? 16 : (isSmallScreen ? 12 : 14),
         ),
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-            colors: [Colors.orange, Colors.amber],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          )
-              : null,
+          gradient:
+              isSelected
+                  ? LinearGradient(
+                    colors: [Colors.orange, Colors.amber],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  )
+                  : null,
           borderRadius: BorderRadius.circular(25),
-          boxShadow: isSelected
-              ? [
-            BoxShadow(
-              color: Colors.orange.withOpacity(0.4),
-              blurRadius: 12,
-              offset: Offset(0, 4),
-            ),
-          ]
-              : null,
+          boxShadow:
+              isSelected
+                  ? [
+                    BoxShadow(
+                      color: Colors.orange.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    ),
+                  ]
+                  : null,
         ),
         child: Center(
           child: Text(
@@ -537,7 +638,9 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.white.withOpacity(0.15), // Increased opacity for better background
+            Colors.white.withOpacity(
+              0.15,
+            ), // Increased opacity for better background
             Colors.white.withOpacity(0.10), // Increased opacity
           ],
         ),
@@ -613,7 +716,10 @@ class OTPVerificationScreen extends StatefulWidget {
 
 class _OTPVerificationScreenState extends State<OTPVerificationScreen>
     with TickerProviderStateMixin {
-  final List<TextEditingController> otpControllers = List.generate(6, (index) => TextEditingController());
+  final List<TextEditingController> otpControllers = List.generate(
+    6,
+    (index) => TextEditingController(),
+  );
   final List<FocusNode> focusNodes = List.generate(6, (index) => FocusNode());
 
   bool isOTPComplete = false;
@@ -643,7 +749,9 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
 
   void _checkOTPComplete() {
     setState(() {
-      isOTPComplete = otpControllers.every((controller) => controller.text.isNotEmpty);
+      isOTPComplete = otpControllers.every(
+        (controller) => controller.text.isNotEmpty,
+      );
     });
   }
 
@@ -697,13 +805,20 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)],
+                        colors: [
+                          Colors.white.withOpacity(0.1),
+                          Colors.white.withOpacity(0.05),
+                        ],
                       ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.white.withOpacity(0.2)),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
@@ -727,9 +842,15 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                               ],
                             ),
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                            border: Border.all(
+                              color: Colors.orange.withOpacity(0.3),
+                            ),
                           ),
-                          child: Icon(Icons.security, size: isTablet ? 70 : 60, color: Colors.orange),
+                          child: Icon(
+                            Icons.security,
+                            size: isTablet ? 70 : 60,
+                            color: Colors.orange,
+                          ),
                         ),
                       ),
 
@@ -737,9 +858,10 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
 
                       // Title
                       ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [Colors.orange, Colors.amber],
-                        ).createShader(bounds),
+                        shaderCallback:
+                            (bounds) => LinearGradient(
+                              colors: [Colors.orange, Colors.amber],
+                            ).createShader(bounds),
                         child: Text(
                           'Verify Your Account',
                           style: TextStyle(
@@ -764,16 +886,26 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                       SizedBox(height: 8),
 
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)],
+                            colors: [
+                              Colors.white.withOpacity(0.1),
+                              Colors.white.withOpacity(0.05),
+                            ],
                           ),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.2)),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.2),
+                          ),
                         ),
                         child: Text(
-                          widget.isEmail ? widget.contact : '+91 ${widget.contact}',
+                          widget.isEmail
+                              ? widget.contact
+                              : '+91 ${widget.contact}',
                           style: TextStyle(
                             fontSize: isTablet ? 18 : (isSmallScreen ? 14 : 16),
                             fontWeight: FontWeight.w600,
@@ -793,24 +925,29 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                             height: isTablet ? 65 : (isSmallScreen ? 50 : 60),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [Colors.white.withOpacity(0.15), Colors.white.withOpacity(0.08)],
+                                colors: [
+                                  Colors.white.withOpacity(0.15),
+                                  Colors.white.withOpacity(0.08),
+                                ],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: otpControllers[index].text.isNotEmpty
-                                    ? Colors.orange.withOpacity(0.8)
-                                    : Colors.white.withOpacity(0.3),
+                                color:
+                                    otpControllers[index].text.isNotEmpty
+                                        ? Colors.orange.withOpacity(0.8)
+                                        : Colors.white.withOpacity(0.3),
                                 width: 2,
                               ),
-                              boxShadow: otpControllers[index].text.isNotEmpty
-                                  ? [
-                                BoxShadow(
-                                  color: Colors.orange.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 4),
-                                ),
-                              ]
-                                  : null,
+                              boxShadow:
+                                  otpControllers[index].text.isNotEmpty
+                                      ? [
+                                        BoxShadow(
+                                          color: Colors.orange.withOpacity(0.3),
+                                          blurRadius: 8,
+                                          offset: Offset(0, 4),
+                                        ),
+                                      ]
+                                      : null,
                             ),
                             child: TextField(
                               controller: otpControllers[index],
@@ -819,7 +956,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                               keyboardType: TextInputType.number,
                               maxLength: 1,
                               style: TextStyle(
-                                fontSize: isTablet ? 24 : (isSmallScreen ? 18 : 20),
+                                fontSize:
+                                    isTablet ? 24 : (isSmallScreen ? 18 : 20),
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                                 shadows: [
@@ -862,23 +1000,31 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                             'Didn\'t receive code? ',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.6),
-                              fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
+                              fontSize:
+                                  isTablet ? 16 : (isSmallScreen ? 12 : 14),
                             ),
                           ),
                           GestureDetector(
-                            onTap: resendTimer == 0
-                                ? () {
-                              setState(() {
-                                resendTimer = 30;
-                                startResendTimer();
-                              });
-                            }
-                                : null,
+                            onTap:
+                                resendTimer == 0
+                                    ? () {
+                                      setState(() {
+                                        resendTimer = 30;
+                                        startResendTimer();
+                                      });
+                                    }
+                                    : null,
                             child: Text(
-                              resendTimer > 0 ? 'Resend in ${resendTimer}s' : 'Resend',
+                              resendTimer > 0
+                                  ? 'Resend in ${resendTimer}s'
+                                  : 'Resend',
                               style: TextStyle(
-                                color: resendTimer > 0 ? Colors.white.withOpacity(0.4) : Colors.orange,
-                                fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
+                                color:
+                                    resendTimer > 0
+                                        ? Colors.white.withOpacity(0.4)
+                                        : Colors.orange,
+                                fontSize:
+                                    isTablet ? 16 : (isSmallScreen ? 12 : 14),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -894,46 +1040,55 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                   children: [
                     // Verify Button
                     GestureDetector(
-                      onTap: isOTPComplete
-                          ? () {
-                        HapticFeedback.lightImpact();
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => HomeScreen()),
-                              (route) => false,
-                        );
-                      }
-                          : null,
+                      onTap:
+                          isOTPComplete
+                              ? () {
+                                HapticFeedback.lightImpact();
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => HomeScreen(),
+                                  ),
+                                  (route) => false,
+                                );
+                              }
+                              : null,
                       child: AnimatedContainer(
                         duration: Duration(milliseconds: 200),
                         width: double.infinity,
                         height: isTablet ? 60 : (isSmallScreen ? 50 : 56),
                         decoration: BoxDecoration(
-                          gradient: isOTPComplete
-                              ? LinearGradient(
-                            colors: [Colors.orange, Colors.amber],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          )
-                              : null,
-                          color: isOTPComplete ? null : Colors.grey.withOpacity(0.2),
+                          gradient:
+                              isOTPComplete
+                                  ? LinearGradient(
+                                    colors: [Colors.orange, Colors.amber],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  )
+                                  : null,
+                          color:
+                              isOTPComplete
+                                  ? null
+                                  : Colors.grey.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: isOTPComplete
-                              ? [
-                            BoxShadow(
-                              color: Colors.orange.withOpacity(0.4),
-                              blurRadius: 15,
-                              offset: Offset(0, 8),
-                            ),
-                          ]
-                              : null,
+                          boxShadow:
+                              isOTPComplete
+                                  ? [
+                                    BoxShadow(
+                                      color: Colors.orange.withOpacity(0.4),
+                                      blurRadius: 15,
+                                      offset: Offset(0, 8),
+                                    ),
+                                  ]
+                                  : null,
                         ),
                         child: Center(
                           child: Text(
                             'VERIFY & CONTINUE',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: isTablet ? 18 : (isSmallScreen ? 14 : 16),
+                              fontSize:
+                                  isTablet ? 18 : (isSmallScreen ? 14 : 16),
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.2,
                             ),
@@ -960,7 +1115,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                             'Edit ${widget.isEmail ? 'Email' : 'Mobile Number'}',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.6),
-                              fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
+                              fontSize:
+                                  isTablet ? 16 : (isSmallScreen ? 12 : 14),
                               decoration: TextDecoration.underline,
                             ),
                           ),
