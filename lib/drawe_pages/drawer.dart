@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../auth/login.dart';
-import '../body/refral /referal.dart';
+import '../body/refral/referal.dart';
 import '../drawe_pages/about_us.dart';
 import '../drawe_pages/profile.dart';
 

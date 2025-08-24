@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'body/homescreen.dart';
-import 'body/refral /referal.dart';
+import 'body/refral/referal.dart';
 
 import 'auth/signup.dart';
 import 'body/splash.dart';
