@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../service/user_service.dart';
 
 class ContestApi {
-  static const String baseUrl = 'http://13.232.147.237:3000';
+  static const String baseUrl = 'http://api.start25pro.com:3000';
   static final UserService _userService = UserService();
 
   // Get contest list for a match
@@ -33,6 +33,35 @@ class ContestApi {
       }
     } catch (e) {
       print('ContestApi.getContestList Error: $e');
+      throw Exception('Service error: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getContestDetail(int contestId) async {
+    try {
+      final token = _userService.authToken;
+      if (token == null) {
+        throw Exception('Authentication token not available');
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/web-services/contest-detail'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'contest_id': contestId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load contest detail: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('ContestApi.getContestDetail Error: $e');
       throw Exception('Service error: $e');
     }
   }
@@ -183,7 +212,7 @@ class ContestApi {
     }
   }
 
-  // Get scorecard for a match - NEW METHOD
+  // Get scorecard for a match
   static Future<Map<String, dynamic>> getScorecard(String matchId) async {
     try {
       final token = _userService.authToken;
@@ -242,4 +271,33 @@ class ContestApi {
     }
   }
 
+  // NEW: Get complete team details with all players
+  static Future<Map<String, dynamic>> getTeamDetails(int teamId) async {
+    try {
+      final token = _userService.authToken;
+      if (token == null) {
+        throw Exception('Authentication token not available');
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/web-services/team-details'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'team_id': teamId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load team details: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('ContestApi.getTeamDetails Error: $e');
+      throw Exception('Service error: $e');
+    }
+  }
 }

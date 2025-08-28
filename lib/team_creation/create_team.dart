@@ -1,15 +1,17 @@
-// lib/team_creation/create_team.dart
 import 'package:flutter/material.dart';
 import '../model/fixture.dart';
 import '../model/player.dart';
+import '../model/user_team.dart';
 import '../service/team_service.dart';
 
 class CreateTeamPage extends StatefulWidget {
   final FixtureModel fixture;
+  final UserTeam? existingTeam; // Add this for editing existing teams
 
   const CreateTeamPage({
     Key? key,
     required this.fixture,
+    this.existingTeam, // Optional parameter for editing
   }) : super(key: key);
 
   @override
@@ -43,6 +45,10 @@ class _CreateTeamPageState extends State<CreateTeamPage>
   List<Player> _allRounders = [];
   List<Player> _bowlers = [];
 
+  // Edit mode properties
+  bool get _isEditMode => widget.existingTeam != null;
+  String get _pageTitle => _isEditMode ? "Edit Team" : "Create Team";
+
   @override
   void initState() {
     super.initState();
@@ -68,6 +74,12 @@ class _CreateTeamPageState extends State<CreateTeamPage>
       setState(() {
         _allPlayers = players;
         _categorizePlayersByPosition();
+
+        // If editing, pre-populate the team
+        if (_isEditMode && widget.existingTeam != null) {
+          _populateExistingTeam(widget.existingTeam!);
+        }
+
         _isLoading = false;
       });
 
@@ -79,6 +91,44 @@ class _CreateTeamPageState extends State<CreateTeamPage>
         _isLoading = false;
       });
     }
+  }
+
+  // New method to populate existing team data
+  void _populateExistingTeam(UserTeam existingTeam) {
+    print('Populating existing team: ${existingTeam.teamName}');
+
+    if (existingTeam.teamPlayers == null || existingTeam.teamPlayers!.isEmpty) {
+      print('No players found in existing team');
+      return;
+    }
+
+    _selectedPlayers.clear();
+
+    for (Player existingPlayer in existingTeam.teamPlayers!) {
+      // Find matching player in the loaded squad
+      Player? matchingPlayer = _allPlayers.firstWhere(
+            (player) => player.id == existingPlayer.id ||
+            player.playerName == existingPlayer.playerName,
+        orElse: () => existingPlayer,
+      );
+
+      if (matchingPlayer != null) {
+        matchingPlayer.isSelected = true;
+        _selectedPlayers.add(matchingPlayer);
+
+        // Set captain and vice captain
+        if (existingPlayer.playerName == existingTeam.captain?.toString()) {
+          _captain = matchingPlayer;
+        }
+        if (existingPlayer.playerName == existingTeam.viceCaptain?.toString()) {
+          _viceCaptain = matchingPlayer;
+        }
+      }
+    }
+
+    _calculateCreditsLeft();
+    print('Populated team with ${_selectedPlayers.length} players');
+    print('Captain: ${_captain?.playerName}, Vice Captain: ${_viceCaptain?.playerName}');
   }
 
   void _categorizePlayersByPosition() {
@@ -103,6 +153,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
 
     print('Categorized players: WK:${_wicketKeepers.length}, BAT:${_batsmen.length}, AR:${_allRounders.length}, BOWL:${_bowlers.length}');
   }
+
   void _calculateCreditsLeft() {
     double usedCredits = _selectedPlayers.fold(0, (sum, player) => sum + (player.credits ?? 0.0));
     setState(() {
@@ -254,13 +305,18 @@ class _CreateTeamPageState extends State<CreateTeamPage>
 
       final playerIds = _selectedPlayers.map((p) => p.id!).toList();
 
+      // Use existing team ID if editing, empty string if creating new
+      String teamId = _isEditMode && widget.existingTeam?.teamId != null
+          ? widget.existingTeam!.teamId.toString()
+          : "";
+
       final response = await _teamService.createTeam(
         captainId: _captain!.id!,
         viceCaptainId: _viceCaptain!.id!,
         matchId: widget.fixture.id,
         sportsId: 1, // Cricket sport ID
         playerIds: playerIds,
-        teamId: "", // Empty for new team
+        teamId: teamId, // Pass team ID for editing, empty for new team
         seriesId: widget.fixture.seriesId,
       );
 
@@ -269,21 +325,23 @@ class _CreateTeamPageState extends State<CreateTeamPage>
         _currentView = 3; // Show success view
       });
 
-      print('Team created successfully: ${response}');
+      String actionText = _isEditMode ? 'updated' : 'created';
+      print('Team $actionText successfully: ${response}');
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
 
+      String actionText = _isEditMode ? 'update' : 'create';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to create team: ${e.toString()}'),
+          content: Text('Failed to $actionText team: ${e.toString()}'),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 3),
         ),
       );
 
-      print('Error creating team: $e');
+      print('Error ${actionText}ing team: $e');
     }
   }
 
@@ -309,7 +367,9 @@ class _CreateTeamPageState extends State<CreateTeamPage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _currentView == 3 ? "Team Created" : "Create Team",
+              _currentView == 3
+                  ? (_isEditMode ? "Team Updated" : "Team Created")
+                  : _pageTitle,
               style: TextStyle(color: Colors.white, fontSize: 18),
             ),
             if (_currentView != 3)
@@ -324,15 +384,22 @@ class _CreateTeamPageState extends State<CreateTeamPage>
             margin: EdgeInsets.all(8),
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Color(0xFF8B1538),
+              color: _isEditMode ? Colors.orange : Color(0xFF8B1538),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.sports_cricket, color: Colors.white, size: 16),
+                Icon(
+                    _isEditMode ? Icons.edit : Icons.sports_cricket,
+                    color: Colors.white,
+                    size: 16
+                ),
                 SizedBox(width: 4),
-                Text("Fantasy", style: TextStyle(color: Colors.white, fontSize: 12)),
+                Text(
+                    _isEditMode ? "Edit" : "Fantasy",
+                    style: TextStyle(color: Colors.white, fontSize: 12)
+                ),
               ],
             ),
           ),
@@ -846,6 +913,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
     );
   }
 
+  // MISSING METHOD 1: Team Preview
   Widget _buildTeamPreview() {
     // Organize selected players by position
     List<Player> selectedWK = _selectedPlayers.where((p) => _isWicketKeeper(p)).toList();
@@ -1105,6 +1173,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
     );
   }
 
+  // MISSING METHOD 2: Captain Selection
   Widget _buildCaptainSelection() {
     return Container(
       padding: EdgeInsets.all(16),
@@ -1269,25 +1338,31 @@ class _CreateTeamPageState extends State<CreateTeamPage>
             height: 120,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.green, Colors.green.shade700],
+                colors: _isEditMode
+                    ? [Colors.orange, Colors.orange.shade700]
+                    : [Colors.green, Colors.green.shade700],
               ),
               borderRadius: BorderRadius.circular(60),
             ),
             child: Icon(
-              Icons.check_circle,
+              _isEditMode ? Icons.check_circle : Icons.check_circle,
               color: Colors.white,
               size: 60,
             ),
           ),
           SizedBox(height: 30),
           Text(
-            "Team Created Successfully!",
+            _isEditMode
+                ? "Team Updated Successfully!"
+                : "Team Created Successfully!",
             style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 16),
           Text(
-            "Your team has been saved with ${_selectedPlayers.length} players",
+            _isEditMode
+                ? "Your team changes have been saved with ${_selectedPlayers.length} players"
+                : "Your team has been saved with ${_selectedPlayers.length} players",
             style: TextStyle(color: Colors.white70, fontSize: 16),
             textAlign: TextAlign.center,
           ),
@@ -1347,17 +1422,17 @@ class _CreateTeamPageState extends State<CreateTeamPage>
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(context, true); // Return true to indicate successful edit
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: _isEditMode ? Colors.orange : Colors.green,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: Text(
-                "Go to Contests",
+                _isEditMode ? "Go Back" : "Go to Contests",
                 style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
@@ -1456,7 +1531,9 @@ class _CreateTeamPageState extends State<CreateTeamPage>
             Container(
               decoration: BoxDecoration(
                 gradient: (_captain != null && _viceCaptain != null)
-                    ? LinearGradient(colors: [Colors.green, Colors.green.shade700])
+                    ? LinearGradient(colors: _isEditMode
+                    ? [Colors.orange, Colors.orange.shade700]
+                    : [Colors.green, Colors.green.shade700])
                     : null,
                 color: (_captain != null && _viceCaptain != null) ? null : Colors.grey,
                 borderRadius: BorderRadius.circular(8),
@@ -1480,7 +1557,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                   ),
                 )
                     : Text(
-                  "Save Team",
+                  _isEditMode ? "Update Team" : "Save Team",
                   style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),

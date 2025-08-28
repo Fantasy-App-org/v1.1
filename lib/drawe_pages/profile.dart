@@ -6,6 +6,7 @@ import '../service/profile_service.dart';
 import '../service/user_service.dart';
 import '../model/user.dart';
 import '../config/debug_config.dart';
+import 'package:fantasy/body/edit_profile_page.dart';
 
 // Import the debug helper
 class DebugProfileHelper {
@@ -1085,26 +1086,54 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withValues(alpha: 0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        color: Colors.teal.shade700,
-                        onPressed: () {
-                          // TODO: Implement edit profile functionality
-                        },
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                color: Colors.teal.shade700,
+                onPressed: () async {
+                  // Navigate to EditProfilePage with current user data
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditProfilePage(
+                        initialName: _currentUser?.displayName,
+                        initialEmail: _currentUser?.email,
+                        initialAddress: _currentUser?.address,
+                        initialCity: _currentUser?.city,
+                        initialState: _currentUser?.state,
+                        initialCountry: _currentUser?.country,
+                        initialPincode: _currentUser?.pinCode,
+                        initialDateOfBirth: _currentUser?.dateOfBirth,
+                        initialGender: _currentUser?.gender,
+                        initialProfileImage: _profileImage,
                       ),
                     ),
+                  );
+
+                  // If profile was updated, refresh the data
+                  if (result != null) {
+                    await _loadProfileData();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Profile updated successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
                   ],
                 ),
                 const SizedBox(height: 8),

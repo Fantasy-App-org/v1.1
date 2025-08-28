@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:fantasy/service/user_service.dart';
 
 class ProfileApi {
-  static const String baseUrl = 'http://13.232.147.237:3000';
+  static const String baseUrl = 'http://api.start25pro.com:3000';
   static final UserService _userService = UserService();
 
   /// Get user profile data
@@ -68,6 +68,63 @@ class ProfileApi {
     } catch (e) {
       print('Error updating profile: $e');
       throw Exception('Error updating profile: $e');
+    }
+  }
+
+  /// Update personal details using the new API endpoint
+  static Future<Map<String, dynamic>> updatePersonalDetails({
+    required String name,
+    required String email,
+    required int gender,
+    required String dateOfBirth,
+    required String address,
+    required String city,
+    required String state,
+    required String country,
+    required String pincode,
+  }) async {
+    try {
+      // Check if user is authenticated
+      if (!_userService.isLoggedIn || _userService.authToken == null) {
+        throw Exception('Authentication required. Please login first.');
+      }
+
+      final requestBody = {
+        "name": name,
+        "email": email,
+        "gender": gender,
+        "date_of_birth": dateOfBirth,
+        "address": address,
+        "city": city,
+        "state": state,
+        "country": country,
+        "pincode": pincode,
+      };
+
+      print('Update Personal Details Request Body: ${json.encode(requestBody)}');
+
+      final response = await http.put( // CHANGED FROM POST TO PUT
+        Uri.parse('$baseUrl/web-services/update_personal_details'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${_userService.authToken}',
+        },
+        body: json.encode(requestBody),
+      );
+
+      print('Update Personal Details API Response Status: ${response.statusCode}');
+      print('Update Personal Details API Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication failed. Please login again.');
+      } else {
+        throw Exception('Failed to update personal details: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error updating personal details: $e');
+      throw Exception('Error updating personal details: $e');
     }
   }
 
@@ -158,6 +215,52 @@ class ProfileApi {
     }
   }
 
+  /// Update personal details using UserService
+  static Future<Map<String, dynamic>> updatePersonalDetailsUsingUserService({
+    required String name,
+    required String email,
+    required int gender,
+    required String dateOfBirth,
+    required String address,
+    required String city,
+    required String state,
+    required String country,
+    required String pincode,
+  }) async {
+    try {
+      final requestBody = {
+        "name": name,
+        "email": email,
+        "gender": gender,
+        "date_of_birth": dateOfBirth,
+        "address": address,
+        "city": city,
+        "state": state,
+        "country": country,
+        "pincode": pincode,
+      };
+
+      final response = await _userService.makeAuthenticatedRequest(
+        endpoint: '/web-services/update_personal_details',
+        method: 'PUT', // CHANGED FROM POST TO PUT
+        body: requestBody,
+      );
+
+      print('Update Personal Details API Response Status: ${response.statusCode}');
+      print('Update Personal Details API Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication failed. Please login again.');
+      } else {
+        throw Exception('Failed to update personal details: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error updating personal details: $e');
+      throw Exception('Error updating personal details: $e');
+    }
+  }
   static Future<Map<String, dynamic>> getReferrals() async {
     try {
       print('🔍 API: Fetching referrals from separate endpoint...');

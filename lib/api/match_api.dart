@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../service/user_service.dart';
 
 class MatchApi {
-  static const String baseUrl = 'http://13.232.147.237:3000';
+  static const String baseUrl = 'http://13.60.245.44:3000';
   static final UserService _userService = UserService();
 
   // Get my matches

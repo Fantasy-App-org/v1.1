@@ -5,10 +5,10 @@ import '../service/user_service.dart';
 import 'package:fantasy/model/create_team_request.dart';
 
 class TeamApi {
-  static const String baseUrl = 'http://13.232.147.237:3000';
+  static const String baseUrl = 'http://api.start25pro.com:3000';
   static final UserService _userService = UserService();
 
-  // Get user team
+  // Get user team (existing method)
   static Future<Map<String, dynamic>> getUserTeam({
     required int matchId,
     required int seriesId,
@@ -47,7 +47,106 @@ class TeamApi {
     }
   }
 
-  // Get squad list
+  // NEW METHOD: Get detailed team information by team ID
+  static Future<Map<String, dynamic>> getUserTeamById({
+    required String teamId,  // Accept as String
+    required int seriesId,
+  }) async {
+    try {
+      final token = _userService.authToken;
+      if (token == null) {
+        throw Exception('Authentication token not available');
+      }
+
+      print('🔍 getUserTeamById - TeamId: $teamId (${teamId.runtimeType}), SeriesId: $seriesId (${seriesId.runtimeType})');
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/web-services/getuserteambyid'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'team_id': teamId,     // Send as string
+          'series_id': seriesId, // Send as int
+        }),
+      );
+
+      print('getUserTeamById Response Status: ${response.statusCode}');
+      print('getUserTeamById Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        // Add response validation
+        if (responseData['status'] != true) {
+          throw Exception(responseData['message'] ?? 'API returned false status');
+        }
+
+        if (responseData['data'] == null) {
+          throw Exception('No data in API response');
+        }
+
+        return responseData;
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ TeamApi.getUserTeamById Error: $e');
+      throw Exception('Service error: $e');
+    }
+  }
+
+  // NEW METHOD: Switch team in contest
+  static Future<Map<String, dynamic>> switchTeam({
+    required int matchId,
+    required int contestId,
+    required int oldTeamId,
+    required int newTeamId,
+  }) async {
+    try {
+      final token = _userService.authToken;
+      if (token == null) {
+        throw Exception('Authentication token not available');
+      }
+
+      print('🔄 switchTeam - MatchId: $matchId, ContestId: $contestId, OldTeam: $oldTeamId, NewTeam: $newTeamId');
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/web-services/switchteam'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'match_id': matchId,
+          'contest_id': contestId,
+          'old_team': oldTeamId,
+          'new_team': newTeamId,
+        }),
+      );
+
+      print('switchTeam Response Status: ${response.statusCode}');
+      print('switchTeam Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        if (responseData['status'] != true) {
+          throw Exception(responseData['message'] ?? 'Failed to switch team');
+        }
+
+        return responseData;
+      } else {
+        throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ TeamApi.switchTeam Error: $e');
+      throw Exception('Service error: $e');
+    }
+  }
+
+  // Get squad list (existing method)
   static Future<Map<String, dynamic>> getSquadList({
     required int seriesId,
     required int matchId,
@@ -83,7 +182,7 @@ class TeamApi {
     }
   }
 
-  // Create user team - FIXED URL
+  // Create user team (existing method)
   static Future<Map<String, dynamic>> createUserTeam(CreateTeamRequest request) async {
     try {
       final token = _userService.authToken;
@@ -109,7 +208,6 @@ class TeamApi {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
-        // Check if the API returned success
         if (responseData['status'] == true) {
           return responseData;
         } else {

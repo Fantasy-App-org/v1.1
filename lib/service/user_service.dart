@@ -18,7 +18,7 @@ class UserService {
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _authTokenKey = 'auth_token'; // Add key for auth token
   static const String _deviceTokenKey = 'device_token';
-  final String baseUrl = 'http://13.232.147.237:3000'; // Update with your localhost port
+  final String baseUrl = 'http://api.start25pro.com:3000'; // Update with your localhost port
 
   String? get inviteFriendCode => _userData?['invite_friend_code'];
 

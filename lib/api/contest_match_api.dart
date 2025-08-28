@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../service/user_service.dart';
 
 class ContestMatchApi {
-  static const String baseUrl = 'http://13.232.147.237:3000';
+  static const String baseUrl = 'http://13.60.245.44:3000';
 
   // Get player stats for a specific match and contest
   static Future<Map<String, dynamic>> getPlayerStats({
