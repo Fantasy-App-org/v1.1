@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fantasy/service/wallet_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:fantasy/body/refral.dart'; // Added import for ReferralScreen
-import 'package:fantasy/drawe_pages/transection_history.dart'; // Added import for TransactionHistoryPage
+import 'package:fantasy/body/refral.dart';
+import 'package:fantasy/drawe_pages/transection_history.dart';
 
 import '../model/payment_models.dart';
 
@@ -370,7 +370,7 @@ class _WalletScreenState extends State<WalletScreen> {
                             ),
                           ),
                           Text(
-                            'Amount',
+                            'Points',
                             style: TextStyle(
                               fontSize: isTablet ? 14 : 12,
                               color: Colors.grey[600],
@@ -406,7 +406,7 @@ class _WalletScreenState extends State<WalletScreen> {
                             ),
                           ),
                           Text(
-                            'Amount',
+                            'Points',
                             style: TextStyle(
                               fontSize: isTablet ? 14 : 12,
                               color: Colors.grey[600],
@@ -450,19 +450,22 @@ class _WalletScreenState extends State<WalletScreen> {
       ),
       child: Column(
         children: [
-          _buildBalanceItem('Cash Deposit', _removeCurrencySymbol(walletService.getCashDepositFormatted()), screenWidth, isTablet),
+          _buildBalanceItem('Gift Reward Point (GRP)', _removeCurrencySymbol(walletService.getCashDepositFormatted()), screenWidth, isTablet),
           Divider(color: Colors.grey[200], thickness: 1),
-          _buildBalanceItem('Winnings', _removeCurrencySymbol(walletService.getWinningsFormatted()), screenWidth, isTablet),
+          _buildBalanceItem('Total Reward Point (TRP)', _removeCurrencySymbol(walletService.getWinningsFormatted()), screenWidth, isTablet),
           Divider(color: Colors.grey[200], thickness: 1),
-          _buildBalanceItem('CashBack Bonus', _removeCurrencySymbol(walletService.getCashbackFormatted()), screenWidth, isTablet),
+          _buildBalanceItem('Winning Reward Point (WRP)', _removeCurrencySymbol(walletService.getCashbackFormatted()), screenWidth, isTablet),
           Divider(color: Colors.grey[200], thickness: 1),
-          _buildBalanceItem('Referal Bonus', _removeCurrencySymbol(walletService.getLevelIncomeFormatted()), screenWidth, isTablet),
+          _buildBalanceItem('Pool Reward Point (PRP)', _removeCurrencySymbol(walletService.getLevelIncomeFormatted()), screenWidth, isTablet),
           Divider(color: Colors.grey[200], thickness: 1),
-          _buildBalanceItem('Bonus', _removeCurrencySymbol(walletService.getBonusFormatted()), screenWidth, isTablet),
+          _buildBalanceItem('Referral Reward Point (RRP)', _removeCurrencySymbol(walletService.getBonusFormatted()), screenWidth, isTablet),
+          Divider(color: Colors.grey[200], thickness: 1),
+          _buildBalanceItem('Bonus Reward Point (BRP)', _removeCurrencySymbol(walletService.getBonusFormatted()), screenWidth, isTablet),
         ],
       ),
     );
   }
+
 
   Widget _buildActionItems(WalletService walletService, double screenWidth, double screenHeight, bool isTablet) {
     return Column(
@@ -479,7 +482,7 @@ class _WalletScreenState extends State<WalletScreen> {
         ),
         SizedBox(height: screenHeight * 0.01),
         _buildActionItem(
-          'Refer and Earn',
+          'Refar and Earn Points',
           'Invite a friends, Play & Win',
           Icons.arrow_forward_ios,
               () {
@@ -618,7 +621,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (transaction != null) ...[
-                      Text('Amount: ${transaction.amount}'),
+                      Text('Point: ${transaction.amount}'),
                       Text('Transaction ID: ${transaction.txnId}'),
                       const SizedBox(height: 16),
                     ],
@@ -693,20 +696,23 @@ class _WalletScreenState extends State<WalletScreen> {
 
     String content = '';
     switch (title) {
-      case 'Cash Deposit':
-        content = 'Money added to your wallet through various payment methods.';
+      case 'Gift Reward Point (GRP)':
+        content = 'Points you earn as gift rewards from the platform.';
         break;
-      case 'Winnings':
-        content = 'Amount won from contests and games.';
+      case 'Total Reward Point (TRP)':
+        content = 'The total of all your reward points combined.';
         break;
-      case 'CashBack Bonus':
-        content = 'Cashback received from various offers and promotions.';
+      case 'Winning Reward Point (WRP)':
+        content = 'Points earned by winning contests or activities.';
         break;
-      case 'Referal Bonus':
-        content = 'Bonus earned by referring friends to the platform.';
+      case 'Pool Reward Point (PRP)':
+        content = 'Reward points earned from pooled contributions or special events.';
         break;
-      case 'Bonus':
-        content = 'Additional bonus amounts credited to your account.';
+      case 'Referral Reward Point (RRP)':
+        content = 'Points earned by referring friends to the platform.';
+        break;
+      case 'Bonus Reward Point (BRP)':
+        content = 'Extra bonus reward points credited by the platform.';
         break;
       default:
         content = 'Information about $title';
@@ -728,6 +734,7 @@ class _WalletScreenState extends State<WalletScreen> {
       },
     );
   }
+
 
   // Updated navigation methods with proper navigation
   void _navigateToTransactions() {

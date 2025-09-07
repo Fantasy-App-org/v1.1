@@ -69,6 +69,38 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
     super.dispose();
   }
 
+  // NEW METHOD: Check if a team is already joined to a specific contest
+  bool _isTeamAlreadyJoined(UserTeam team, Contest contest) {
+    // Find the joined contest for this specific contest
+    final joinedContest = _joinedContests.firstWhere(
+          (jc) => jc.contestId == contest.contestId,
+      orElse: () => JoinedContest(), // Return empty if not found
+    );
+
+    // If no joined contest found, team is not joined
+    if (joinedContest.contestId == null) return false;
+
+    // Check if any of the team details match this team
+    if (joinedContest.myTeamsDetails != null) {
+      return joinedContest.myTeamsDetails!.any((teamDetail) =>
+      teamDetail.teamId?.toString() == team.teamId?.toString() ||
+          (teamDetail.capName == team.captain && teamDetail.vcName == team.viceCaptain)
+      );
+    }
+
+    return false;
+  }
+
+  // NEW METHOD: Get available teams for a contest (excluding already joined teams)
+  List<UserTeam> _getAvailableTeamsForContest(Contest contest) {
+    return _userTeams.where((team) => !_isTeamAlreadyJoined(team, contest)).toList();
+  }
+
+  // NEW METHOD: Get already joined teams for a contest
+  List<UserTeam> _getJoinedTeamsForContest(Contest contest) {
+    return _userTeams.where((team) => _isTeamAlreadyJoined(team, contest)).toList();
+  }
+
   Future<void> _initializeContests() async {
     try {
       await _userService.initialize();
@@ -134,13 +166,30 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
     try {
       final contests = await _contestService.getContestsForMatch(matchId);
       setState(() {
-        _contests = contests;
+        _contests = contests ?? []; // Ensure contests is never null
       });
+
+      // Show popup if no contests are available
+      if (_contests.isEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showNoContestsAvailableDialog();
+        });
+      }
     } catch (e) {
-      throw e;
+      // Log the actual error for debugging
+      print('Contest loading error: $e');
+
+      // Instead of showing technical error, show user-friendly message
+      setState(() {
+        _contests = [];
+      });
+
+      // Show popup for no contests
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showNoContestsAvailableDialog();
+      });
     }
   }
-
   Future<void> _loadJoinedContests(int matchId) async {
     try {
       final joinedContests = await _contestService.getJoinedContestsForMatch(
@@ -185,6 +234,20 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
     });
   }
 
+  void _navigateToCopyTeam(UserTeam teamToCopy) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateTeamPage(
+          fixture: widget.fixture,
+          teamToCopy: teamToCopy, // Pass the team to copy
+        ),
+      ),
+    ).then((_) {
+      _refreshData();
+    });
+  }
+
   void _navigateToLogin() {
     Navigator.push(
       context,
@@ -197,11 +260,1464 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
   }
 
   void _joinContest(Contest contest) {
-    if (_userTeams.isEmpty) {
-      _showCreateTeamDialog(contest);
+    // UPDATED: Check available teams first
+    final availableTeams = _getAvailableTeamsForContest(contest);
+
+    if (availableTeams.isEmpty) {
+      _showNoTeamsAvailableDialog(contest);
     } else {
-      _showTeamSelectionDialog(contest);
+      _showMultiTeamSelectionDialog(contest);
     }
+  }
+
+  void _showNoContestsAvailableDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            margin: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF1A1A1A),
+                  const Color(0xFF2A2A2A),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFF22C55E).withValues(alpha: 0.3),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Animated cricket icon
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(40),
+                    border: Border.all(
+                      color: const Color(0xFF22C55E).withValues(alpha: 0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.sports_cricket,
+                    size: 40,
+                    color: Color(0xFF22C55E),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Title
+                const Text(
+                  'Contests Coming Soon!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 12),
+
+                // Subtitle
+                Text(
+                  'Stay tuned for upcoming contests',
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 16,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 8),
+
+                // Match info
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${widget.fixture.teamAShort} vs ${widget.fixture.teamBShort}',
+                    style: const TextStyle(
+                      color: Color(0xFF22C55E),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Description
+                Text(
+                  'Contests will be available closer to the match time. Check back soon!',
+                  style: TextStyle(
+                    color: Colors.grey[300],
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Action buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text(
+                          'Okay',
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _refreshData(); // Refresh to check for new contests
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF22C55E),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.refresh, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'Refresh',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+
+  // NEW METHOD: Show dialog when no teams are available
+  void _showNoTeamsAvailableDialog(Contest contest) {
+    final joinedTeams = _getJoinedTeamsForContest(contest);
+    final hasTeams = _userTeams.isNotEmpty;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.orange, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                hasTeams ? 'All Teams Already Joined' : 'No Teams Available',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                hasTeams
+                    ? 'All your teams are already joined to this contest. You cannot join the same team to a contest multiple times.'
+                    : 'You need to create a team before joining this contest.',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+              ),
+
+              if (hasTeams && joinedTeams.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'Teams already in this contest:',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A2A2A),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: joinedTeams.map((team) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Team ${team.teamName ?? 'Unknown'}',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )).toList(),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _navigateToCreateTeam();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E),
+              ),
+              child: Text(
+                hasTeams ? 'CREATE NEW TEAM' : 'CREATE TEAM',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showMultiTeamSelectionDialog(Contest contest) {
+    // UPDATED: Get only available teams (not already joined)
+    final availableTeams = _getAvailableTeamsForContest(contest);
+    final joinedTeams = _getJoinedTeamsForContest(contest);
+
+    // Track selected teams
+    List<UserTeam> selectedTeams = [];
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final totalCost = (contest.entryFee ?? 0) * selectedTeams.length;
+
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.all(16),
+              child: Container(
+                width: double.maxFinite,
+                height: MediaQuery.of(context).size.height * 0.8,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF22C55E),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.sports_cricket,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Select Teams',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                                // UPDATED: Show availability info
+                                Text(
+                                  '${availableTeams.length} available${joinedTeams.isNotEmpty ? ' • ${joinedTeams.length} already joined' : ''}',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF22C55E),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${selectedTeams.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Cost Summary
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2A2A2A),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF22C55E).withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Entry Fee: ₹${contest.entryFee ?? 0} × ${selectedTeams.length}',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Total Cost: ₹$totalCost',
+                                    style: const TextStyle(
+                                      color: Color(0xFF22C55E),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedTeams.clear();
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        'Clear All',
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        // UPDATED: Select all available teams only
+                                        selectedTeams = List.from(availableTeams);
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF22C55E).withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        'Select All',
+                                        style: TextStyle(
+                                          color: Color(0xFF22C55E),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // UPDATED: Show already joined teams first (if any), then available teams
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: joinedTeams.length + availableTeams.length,
+                        itemBuilder: (context, index) {
+                          final bool isJoinedSection = index < joinedTeams.length;
+
+                          if (isJoinedSection) {
+                            // Show already joined teams (non-selectable)
+                            final team = joinedTeams[index];
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.grey.withValues(alpha: 0.5),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    // Already joined badge
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.check_circle,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 16),
+
+                                    // Team Details
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Team ${team.teamName ?? 'Unknown'}',
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'C: ${team.captain ?? 'Unknown'}',
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          Text(
+                                            'VC: ${team.viceCaptain ?? 'Unknown'}',
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    // Already joined indicator
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.withValues(alpha: 0.5),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text(
+                                        'ALREADY JOINED',
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          } else {
+                            // Show available teams (selectable)
+                            final team = availableTeams[index - joinedTeams.length];
+                            final isSelected = selectedTeams.contains(team);
+                            final teamIndex = index - joinedTeams.length + 1;
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2A2A2A),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFF22C55E)
+                                      : Colors.grey.withValues(alpha: 0.3),
+                                  width: isSelected ? 2 : 1,
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    // Number Badge
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? const Color(0xFF22C55E)
+                                            : Colors.grey,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Center(
+                                        child: isSelected
+                                            ? const Icon(
+                                          Icons.check,
+                                          color: Colors.white,
+                                          size: 20,
+                                        )
+                                            : Text(
+                                          '$teamIndex',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 16),
+
+                                    // Team Details
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Team ${team.teamName ?? 'Unknown'}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'C: ${team.captain ?? 'Unknown'}',
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          Text(
+                                            'VC: ${team.viceCaptain ?? 'Unknown'}',
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${team.teamAName ?? 'ZIM'}: ${team.teamACount ?? 0} | ${team.teamBName ?? 'SL'}: ${team.teamBCount ?? 0}',
+                                            style: const TextStyle(
+                                              color: Colors.white60,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    // Select Button
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          if (isSelected) {
+                                            selectedTeams.remove(team);
+                                          } else {
+                                            selectedTeams.add(team);
+                                          }
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? const Color(0xFF22C55E)
+                                              : Colors.grey.withValues(alpha: 0.3),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          isSelected ? 'SELECTED' : 'SELECT',
+                                          style: TextStyle(
+                                            color: isSelected ? Colors.white : Colors.grey,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+
+                    // Bottom Buttons
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton(
+                              onPressed: selectedTeams.isEmpty
+                                  ? null
+                                  : () {
+                                Navigator.of(context).pop();
+                                _confirmJoinMultipleContests(contest, selectedTeams);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: selectedTeams.isEmpty
+                                    ? Colors.grey[600]
+                                    : const Color(0xFF22C55E),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                selectedTeams.isEmpty
+                                    ? 'SELECT TEAMS'
+                                    : 'JOIN WITH ${selectedTeams.length} TEAM${selectedTeams.length == 1 ? '' : 'S'}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _confirmJoinMultipleContests(Contest contest, List<UserTeam> selectedTeams) async {
+    final totalCost = (contest.entryFee ?? 0).toDouble() * selectedTeams.length;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          content: const Row(
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF22C55E)),
+              ),
+              SizedBox(width: 20),
+              Text(
+                'Checking balance...',
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    try {
+      final walletBalance = await _walletCheckService.getWalletBalance(
+        entryFee: totalCost.toString(),
+        contestId: (contest.contestId ?? 0).toString(),
+      );
+
+      Navigator.of(context).pop();
+      _showMultiTeamBalanceConfirmationDialog(contest, selectedTeams, walletBalance, totalCost);
+    } catch (e) {
+      Navigator.of(context).pop();
+      _showErrorDialog('Failed to fetch balance information: ${e.toString()}');
+    }
+  }
+
+  void _showMultiTeamBalanceConfirmationDialog(Contest contest, List<UserTeam> selectedTeams, WalletBalance balance, double totalCost) {
+    final hasSufficientBalance = balance.isSufficientForEntry(totalCost);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: hasSufficientBalance ? const Color(0xFF22C55E) : Colors.red,
+              width: 2,
+            ),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                hasSufficientBalance ? Icons.account_balance_wallet : Icons.warning,
+                color: hasSufficientBalance ? const Color(0xFF22C55E) : Colors.red,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'MULTI-TEAM CONFIRMATION',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+          content: Container(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Wallet Balance Section
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A2A2A),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[700]!),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Available Balance: ${balance.formattedTotalAmount}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Entry Fee per team',
+                            style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                          Text(
+                            '₹${contest.entryFee?.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Number of teams',
+                            style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                          Text(
+                            '${selectedTeams.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Divider(color: Colors.grey[600], height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total to Pay',
+                            style: TextStyle(
+                              color: Color(0xFF22C55E),
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '₹${totalCost.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              color: Color(0xFF22C55E),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Contest Details Section
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A2A2A),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Contest: ${contest.categoryTitle ?? 'Contest'}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Prize Pool: ₹${contest.prizeMoney ?? 0}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Selected Teams: ${selectedTeams.length}',
+                        style: const TextStyle(
+                          color: Color(0xFF22C55E),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Selected Teams List
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2A2A2A),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Teams joining:',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 120,
+                        child: ListView.builder(
+                          itemCount: selectedTeams.length,
+                          itemBuilder: (context, index) {
+                            final team = selectedTeams[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 20,
+                                    height: 20,
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFF22C55E),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '${index + 1}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Team ${team.teamName ?? 'Unknown'}',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    '₹${contest.entryFee?.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      color: Color(0xFF22C55E),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (!hasSufficientBalance) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red, width: 1),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error, color: Colors.red, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Insufficient balance! You need ₹${(totalCost - balance.totalAmount).toStringAsFixed(2)} more.',
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 12),
+                Text(
+                  'By joining this contest with multiple teams, you accept Fantasy T&C and confirm that you are not a resident of Assam, Odisha, Telegana, Nagaland or Sikkim.',
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: hasSufficientBalance
+                  ? () {
+                Navigator.of(context).pop();
+                _processJoinMultipleContests(contest, selectedTeams);
+              }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: hasSufficientBalance
+                    ? const Color(0xFF22C55E)
+                    : Colors.grey[600],
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                hasSufficientBalance
+                    ? 'JOIN WITH ${selectedTeams.length} TEAMS'
+                    : 'INSUFFICIENT BALANCE',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // NEW METHOD: Process multiple team joins
+  void _processJoinMultipleContests(Contest contest, List<UserTeam> selectedTeams) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF22C55E)),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Joining contest with ${selectedTeams.length} teams...',
+                style: const TextStyle(color: Colors.white),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Please wait...',
+                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    try {
+      // Join each team individually to the contest
+      List<String> successfulJoins = [];
+      List<String> failedJoins = [];
+
+      for (int i = 0; i < selectedTeams.length; i++) {
+        final team = selectedTeams[i];
+
+        try {
+          final result = await _joinContestService.joinContest(
+            fixture: widget.fixture,
+            contest: contest,
+            team: team,
+          );
+
+          if (_joinContestService.isJoinSuccessful(result)) {
+            successfulJoins.add('Team ${team.teamName ?? 'Unknown'}');
+          } else {
+            failedJoins.add('Team ${team.teamName ?? 'Unknown'}: ${_joinContestService.getErrorMessage(result)}');
+          }
+        } catch (e) {
+          failedJoins.add('Team ${team.teamName ?? 'Unknown'}: ${e.toString()}');
+        }
+      }
+
+      Navigator.of(context).pop(); // Close loading dialog
+
+      // Show results dialog
+      _showMultiJoinResultsDialog(contest, selectedTeams, successfulJoins, failedJoins);
+
+      // Refresh data if any joins were successful
+      if (successfulJoins.isNotEmpty) {
+        _refreshData();
+      }
+
+    } catch (e) {
+      Navigator.of(context).pop();
+      _showErrorDialog('Failed to join contest: ${e.toString()}');
+    }
+  }
+
+  // NEW METHOD: Show multi-join results
+  void _showMultiJoinResultsDialog(Contest contest, List<UserTeam> selectedTeams, List<String> successfulJoins, List<String> failedJoins) {
+    final allSuccessful = failedJoins.isEmpty;
+    final allFailed = successfulJoins.isEmpty;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: allSuccessful
+                  ? const Color(0xFF22C55E)
+                  : allFailed
+                  ? Colors.red
+                  : Colors.orange,
+              width: 2,
+            ),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                allSuccessful
+                    ? Icons.check_circle
+                    : allFailed
+                    ? Icons.error
+                    : Icons.warning,
+                color: allSuccessful
+                    ? const Color(0xFF22C55E)
+                    : allFailed
+                    ? Colors.red
+                    : Colors.orange,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  allSuccessful
+                      ? 'All Teams Joined!'
+                      : allFailed
+                      ? 'Join Failed'
+                      : 'Partial Success',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Container(
+            width: double.maxFinite,
+            constraints: const BoxConstraints(maxHeight: 400),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Summary
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2A2A2A),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Contest: ${contest.categoryTitle ?? 'Contest'}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Teams Selected:',
+                              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                            ),
+                            Text(
+                              '${selectedTeams.length}',
+                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Successfully Joined:',
+                              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                            ),
+                            Text(
+                              '${successfulJoins.length}',
+                              style: const TextStyle(color: Color(0xFF22C55E), fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        if (failedJoins.isNotEmpty)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Failed:',
+                                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                              ),
+                              Text(
+                                '${failedJoins.length}',
+                                style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Successful joins
+                  if (successfulJoins.isNotEmpty) ...[
+                    Text(
+                      'Successfully Joined (${successfulJoins.length}):',
+                      style: const TextStyle(
+                        color: Color(0xFF22C55E),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF22C55E).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Color(0xFF22C55E).withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        children: successfulJoins.map((teamName) => Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  teamName,
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Failed joins
+                  if (failedJoins.isNotEmpty) ...[
+                    Text(
+                      'Failed to Join (${failedJoins.length}):',
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        children: failedJoins.map((error) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.error, color: Colors.red, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  error,
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )).toList(),
+                      ),
+                    ),
+                  ],
+
+                  if (successfulJoins.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.blue, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'You can view your joined teams in the "My Contests" tab.',
+                              style: const TextStyle(
+                                color: Colors.blue,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            if (allSuccessful)
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _tabController.animateTo(2); // Go to My Contests tab
+                },
+                child: const Text(
+                  'View My Contests',
+                  style: TextStyle(color: Color(0xFF22C55E)),
+                ),
+              ),
+
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showCreateTeamDialog(Contest contest) {
@@ -241,6 +1757,9 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
   }
 
   void _showTeamSelectionDialog(Contest contest) {
+    // UPDATED: Use available teams only
+    final availableTeams = _getAvailableTeamsForContest(contest);
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -263,9 +1782,9 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                 Container(
                   height: 300,
                   child: ListView.builder(
-                    itemCount: _userTeams.length,
+                    itemCount: availableTeams.length,
                     itemBuilder: (context, index) {
-                      final team = _userTeams[index];
+                      final team = availableTeams[index];
                       return _buildTeamSelectionCard(team, contest);
                     },
                   ),
@@ -692,6 +2211,139 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
     }
   }
 
+  void _showCopyTeamConfirmation(UserTeam teamToCopy) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.copy, color: const Color(0xFF22C55E), size: 24),
+              const SizedBox(width: 8),
+              const Text(
+                'Copy Team',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Create a new team with the same players as Team ${teamToCopy.teamName}?',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2A2A2A),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[700]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Team ${teamToCopy.teamName}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'C: ${teamToCopy.captain} | VC: ${teamToCopy.viceCaptain}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${teamToCopy.teamAName}: ${teamToCopy.teamACount} | ${teamToCopy.teamBName}: ${teamToCopy.teamBCount}',
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: const Text(
+                        'You can select different Captain and Vice Captain in the new team.',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _navigateToCopyTeam(teamToCopy);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'COPY TEAM',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -874,61 +2526,105 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
   }
 
   Widget _buildErrorState() {
+    // Don't show technical errors to users - show friendly message instead
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey[400],
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(50),
+                border: Border.all(
+                  color: Colors.orange.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+              ),
+              child: const Icon(
+                Icons.schedule,
+                size: 50,
+                color: Colors.orange,
+              ),
             ),
-            const SizedBox(height: 16),
+
+            const SizedBox(height: 20),
+
+            const Text(
+              'Contests Not Available Yet',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 12),
+
             Text(
-              _errorMessage!,
+              'Contests will be available closer to the match. Please check back later!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 16,
+                height: 1.4,
               ),
             ),
+
             const SizedBox(height: 24),
-            if (_errorMessage!.contains('login'))
-              ElevatedButton(
+
+            if (_errorMessage != null && _errorMessage!.contains('login'))
+              ElevatedButton.icon(
                 onPressed: _navigateToLogin,
+                icon: const Icon(Icons.login, size: 20),
+                label: const Text('Login'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF22C55E),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 32, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text('Login'),
               )
             else
-              ElevatedButton(
-                onPressed: _refreshData,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF22C55E),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 32, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _refreshData,
+                    icon: const Icon(Icons.refresh, size: 20),
+                    label: const Text('Refresh'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF22C55E),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                   ),
-                ),
-                child: const Text('Retry'),
+                  const SizedBox(width: 16),
+                  TextButton.icon(
+                    onPressed: () => _tabController.animateTo(1),
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text('Create Team'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF22C55E),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                  ),
+                ],
               ),
           ],
         ),
       ),
     );
   }
-
   Widget _buildContestsTab() {
     return Column(
       children: [
@@ -1347,6 +3043,28 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                       ],
                     ),
                   ),
+                  // Copy Team Button
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => _showCopyTeamConfirmation(team),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.orange.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.copy,
+                          color: Colors.orange,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
                   Icon(
                     Icons.arrow_forward_ios,
                     color: Colors.grey[400],
@@ -1552,34 +3270,94 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.emoji_events_outlined,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No contests available',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+          // Animated container
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF22C55E).withValues(alpha: 0.1),
+                  const Color(0xFF22C55E).withValues(alpha: 0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(60),
+              border: Border.all(
+                color: const Color(0xFF22C55E).withValues(alpha: 0.2),
+                width: 2,
+              ),
+            ),
+            child: const Icon(
+              Icons.schedule,
+              size: 60,
+              color: Color(0xFF22C55E),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Contests will be available closer to the match.',
-            textAlign: TextAlign.center,
+
+          const SizedBox(height: 24),
+
+          const Text(
+            'Contests Coming Soon',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Text(
+            'Contests will be available closer to match time',
+            style: TextStyle(
+              fontSize: 16,
               color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 8),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${widget.fixture.teamAShort} vs ${widget.fixture.teamBShort}',
+              style: const TextStyle(
+                color: Color(0xFF22C55E),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          ElevatedButton.icon(
+            onPressed: _refreshData,
+            icon: const Icon(Icons.refresh, size: 20),
+            label: const Text(
+              'Check Again',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF22C55E),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
         ],
       ),
     );
   }
-
   Widget _buildEmptyJoinedContestsState() {
     return Center(
       child: Column(
@@ -1645,13 +3423,13 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
+            color: Colors.grey.withValues(alpha: 0.15),
             spreadRadius: 1,
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: const Color(0xFF22C55E).withOpacity(0.3), width: 1.5),
+        border: Border.all(color: const Color(0xFF22C55E).withValues(alpha: 0.3), width: 1.5),
       ),
       child: Material(
         color: Colors.transparent,
@@ -1847,10 +3625,10 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.1),
+                            color: Colors.orange.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: Colors.orange.withOpacity(0.3),
+                              color: Colors.orange.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
@@ -1875,10 +3653,10 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF22C55E).withOpacity(0.1),
+                        color: const Color(0xFF22C55E).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: const Color(0xFF22C55E).withOpacity(0.3),
+                          color: const Color(0xFF22C55E).withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -1906,53 +3684,9 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
       ),
     );
   }
-  Widget _buildDebugSection(String title, Map<String, String> data) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.green,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ...data.entries.map((entry) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 100,
-                  child: Text(
-                    '${entry.key}:',
-                    style: const TextStyle(color: Colors.blue, fontSize: 12),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    entry.value,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-          )).toList(),
-        ],
-      ),
-    );
-  }
 
   UserTeam? _findTeamByDetails(MyTeamDetails teamDetail) {
-    print('\n🔍 Finding team by details:');
+    print('\nFound team by details:');
     print('Looking for Team ID: ${teamDetail.teamId}');
     print('Available user teams: ${_userTeams.length}');
 
@@ -1978,7 +3712,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
   }
 
   UserTeam? _findCorrespondingTeam(JoinedContest contest) {
-    print('\n🔍 FINDING CORRESPONDING TEAM');
+    print('\nFINDING CORRESPONDING TEAM');
     print('Contest teams: ${contest.myTeamsDetails?.length ?? 0}');
     print('Available user teams: ${_userTeams.length}');
 
@@ -2067,7 +3801,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                     color: Color(0xFF2A2A2A),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Color(0xFF22C55E).withOpacity(0.3),
+                      color: Color(0xFF22C55E).withValues(alpha: 0.3),
                     ),
                   ),
                   child: ListTile(
@@ -2198,6 +3932,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
       },
     );
   }
+
   void _showTeamPreviewDialog(UserTeam team) {
     showDialog(
       context: context,
@@ -2286,239 +4021,6 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
       _showErrorDialog('Failed to load team details: ${e.toString()}');
     }
   }
-  void _showAPIDebugDialog(String title, Map<String, dynamic> response) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1A1A1A),
-          title: Text(
-            title,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-          ),
-          content: Container(
-            width: double.maxFinite,
-            height: 500,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Response Status
-                  _buildDebugSection('Response Status', {
-                    'status': response['status']?.toString() ?? 'null',
-                    'message': response['message']?.toString() ?? 'null',
-                  }),
-
-                  const SizedBox(height: 16),
-
-                  // Data Structure
-                  if (response['data'] != null)
-                    _buildDebugSection('Data Structure', {
-                      'data_type': response['data'].runtimeType.toString(),
-                      'data_keys': response['data'] is Map
-                          ? (response['data'] as Map).keys.toList().toString()
-                          : 'Not a Map',
-                    }),
-
-                  const SizedBox(height: 16),
-
-                  // Try to parse and show where it fails
-                  ElevatedButton(
-                    onPressed: () => _testTeamParsing(response),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                    child: const Text('Test Team Parsing', style: TextStyle(color: Colors.white)),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Raw Response (truncated)
-                  _buildDebugSection('Raw Response (First 500 chars)', {
-                    'raw': response.toString().length > 500
-                        ? '${response.toString().substring(0, 500)}...'
-                        : response.toString(),
-                  }),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close', style: TextStyle(color: Colors.grey)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-// Add this method to test parsing step by step
-  void _testTeamParsing(Map<String, dynamic> response) {
-    Navigator.of(context).pop(); // Close current dialog
-
-    Map<String, String> debugInfo = {};
-
-    try {
-      debugInfo['step'] = 'Checking response structure';
-
-      if (response['status'] != true) {
-        debugInfo['error'] = 'API status is not true';
-        debugInfo['status'] = response['status'].toString();
-        _showDebugDialog('Parsing Debug', 'API returned false status', debugInfo);
-        return;
-      }
-
-      debugInfo['step'] = 'Checking data field';
-
-      if (response['data'] == null) {
-        debugInfo['error'] = 'Data field is null';
-        _showDebugDialog('Parsing Debug', 'API data is null', debugInfo);
-        return;
-      }
-
-      dynamic teamData = response['data'];
-      debugInfo['data_type'] = teamData.runtimeType.toString();
-
-      // Handle different response structures
-      debugInfo['step'] = 'Processing data structure';
-
-      if (teamData is Map && teamData.containsKey('data')) {
-        teamData = teamData['data'];
-        debugInfo['nested_data_type'] = teamData.runtimeType.toString();
-      }
-
-      if (teamData is List && teamData.isNotEmpty) {
-        teamData = teamData[0];
-        debugInfo['list_item_type'] = teamData.runtimeType.toString();
-      }
-
-      if (teamData is! Map) {
-        debugInfo['error'] = 'Team data is not a Map';
-        debugInfo['final_type'] = teamData.runtimeType.toString();
-        _showDebugDialog('Parsing Debug', 'Unexpected data structure', debugInfo);
-        return;
-      }
-
-      // Now test UserTeam parsing
-      debugInfo['step'] = 'Testing UserTeam.fromJson';
-      debugInfo['team_data_keys'] = (teamData as Map).keys.toList().toString();
-
-      // Test critical fields that might cause type errors
-      final criticalFields = ['team_id', 'team_a_count', 'team_b_count', 'no_of_bat', 'no_of_wk', 'no_of_ar', 'no_of_bowl'];
-
-      for (String field in criticalFields) {
-        if (teamData.containsKey(field)) {
-          debugInfo['${field}_value'] = teamData[field].toString();
-          debugInfo['${field}_type'] = teamData[field].runtimeType.toString();
-        }
-      }
-
-      // Try to parse the team
-      final team = UserTeam.fromJson(teamData as Map<String, dynamic>);
-      debugInfo['success'] = 'UserTeam parsed successfully';
-      debugInfo['team_name'] = team.teamName.toString();
-      debugInfo['players_count'] = team.teamPlayers?.length.toString() ?? 'null';
-
-      _showDebugDialog('Parsing Debug', 'Team parsed successfully!', debugInfo);
-
-      // If parsing succeeded, try to navigate
-      _tryNavigateToTeamDetails(team);
-
-    } catch (e) {
-      debugInfo['parsing_error'] = e.toString();
-      debugInfo['error_type'] = e.runtimeType.toString();
-      _showDebugDialog('Parsing Debug', 'Parsing failed', debugInfo);
-    }
-  }
-
-// Add method to safely navigate after successful parsing
-  void _tryNavigateToTeamDetails(UserTeam team) {
-    try {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => FullTeamDetailsPage(
-            team: team,
-            teamAShort: widget.fixture.teamAShort,
-            teamBShort: widget.fixture.teamBShort,
-          ),
-        ),
-      );
-    } catch (e) {
-      _showDebugDialog(
-          'Navigation Error',
-          'Failed to navigate to team details',
-          {
-            'error': e.toString(),
-            'team_name': team.teamName.toString(),
-            'players_count': team.teamPlayers?.length.toString() ?? 'null',
-          }
-      );
-    }
-  }
-
-  void _showDebugDialog(String title, String message, Map<String, String> debugInfo) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1A1A1A),
-          title: Text(
-            title,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-          ),
-          content: Container(
-            width: double.maxFinite,
-            height: 400,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    message,
-                    style: const TextStyle(color: Colors.red, fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Debug Information:',
-                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  ...debugInfo.entries.map((entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 100,
-                          child: Text(
-                            '${entry.key}:',
-                            style: const TextStyle(color: Colors.blue, fontSize: 12),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            entry.value,
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close', style: TextStyle(color: Colors.grey)),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   void _showSwitchTeamDialog(JoinedContest contest, MyTeamDetails currentTeamDetail) {
     // Get available teams (exclude teams already used in this contest)
@@ -2566,9 +4068,9 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -2623,7 +4125,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                           color: Color(0xFF2A2A2A),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Color(0xFF22C55E).withOpacity(0.3),
+                            color: Color(0xFF22C55E).withValues(alpha: 0.3),
                           ),
                         ),
                         child: ListTile(
@@ -2752,9 +4254,9 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2798,9 +4300,9 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Color(0xFF22C55E).withOpacity(0.1),
+                  color: Color(0xFF22C55E).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Color(0xFF22C55E).withOpacity(0.3)),
+                  border: Border.all(color: Color(0xFF22C55E).withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2926,6 +4428,5 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
       _showErrorDialog('Failed to switch team: ${e.toString()}');
     }
   }
-
 
 }

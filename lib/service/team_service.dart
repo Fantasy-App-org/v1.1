@@ -347,6 +347,34 @@ class TeamService {
     }
   }
 
+  /// NEW METHOD: Get lineup for a match
+  Future<int?> getLineupForMatch({
+    required int seriesId,
+    required int matchId,
+  }) async {
+    try {
+      _isLoading = true;
+      _lastError = null;
+
+      await _ensureAuthenticated();
+
+      print('Fetching lineup for match $matchId, series $seriesId');
+      final lineup = await TeamApi.getLineup(
+        seriesId: seriesId,
+        matchId: matchId,
+      );
+
+      print('✅ Lineup fetched: $lineup');
+      return lineup;
+    } catch (e) {
+      _lastError = e.toString();
+      print('TeamService.getLineupForMatch Error: $e');
+      throw Exception('Service error: $e');
+    } finally {
+      _isLoading = false;
+    }
+  }
+
   static bool _parseBool(dynamic value) {
     if (value == null) return false;
     if (value is bool) return value;

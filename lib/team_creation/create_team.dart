@@ -6,12 +6,14 @@ import '../service/team_service.dart';
 
 class CreateTeamPage extends StatefulWidget {
   final FixtureModel fixture;
-  final UserTeam? existingTeam; // Add this for editing existing teams
+  final UserTeam? existingTeam; // For editing existing teams
+  final UserTeam? teamToCopy; // For copying teams
 
   const CreateTeamPage({
     Key? key,
     required this.fixture,
     this.existingTeam, // Optional parameter for editing
+    this.teamToCopy, // Optional parameter for copying
   }) : super(key: key);
 
   @override
@@ -45,9 +47,10 @@ class _CreateTeamPageState extends State<CreateTeamPage>
   List<Player> _allRounders = [];
   List<Player> _bowlers = [];
 
-  // Edit mode properties
+  // Mode properties
   bool get _isEditMode => widget.existingTeam != null;
-  String get _pageTitle => _isEditMode ? "Edit Team" : "Create Team";
+  bool get _isCopyMode => widget.teamToCopy != null;
+  String get _pageTitle => _isEditMode ? "Edit Team" : _isCopyMode ? "Copy Team" : "Create Team";
 
   @override
   void initState() {
@@ -79,6 +82,10 @@ class _CreateTeamPageState extends State<CreateTeamPage>
         if (_isEditMode && widget.existingTeam != null) {
           _populateExistingTeam(widget.existingTeam!);
         }
+        // If copying, pre-populate the team but don't set captain/vice-captain
+        else if (_isCopyMode && widget.teamToCopy != null) {
+          _populateCopyTeam(widget.teamToCopy!);
+        }
 
         _isLoading = false;
       });
@@ -93,7 +100,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
     }
   }
 
-  // New method to populate existing team data
+  // Method to populate existing team data for editing
   void _populateExistingTeam(UserTeam existingTeam) {
     print('Populating existing team: ${existingTeam.teamName}');
 
@@ -129,6 +136,40 @@ class _CreateTeamPageState extends State<CreateTeamPage>
     _calculateCreditsLeft();
     print('Populated team with ${_selectedPlayers.length} players');
     print('Captain: ${_captain?.playerName}, Vice Captain: ${_viceCaptain?.playerName}');
+  }
+
+  // New method to populate team for copying (without captain/vice-captain)
+  void _populateCopyTeam(UserTeam teamToCopy) {
+    print('Populating team to copy: ${teamToCopy.teamName}');
+
+    if (teamToCopy.teamPlayers == null || teamToCopy.teamPlayers!.isEmpty) {
+      print('No players found in team to copy');
+      return;
+    }
+
+    _selectedPlayers.clear();
+
+    for (Player existingPlayer in teamToCopy.teamPlayers!) {
+      // Find matching player in the loaded squad
+      Player? matchingPlayer = _allPlayers.firstWhere(
+            (player) => player.id == existingPlayer.id ||
+            player.playerName == existingPlayer.playerName,
+        orElse: () => existingPlayer,
+      );
+
+      if (matchingPlayer != null) {
+        matchingPlayer.isSelected = true;
+        _selectedPlayers.add(matchingPlayer);
+      }
+    }
+
+    // DON'T set captain and vice captain for copy mode - let user choose new ones
+    _captain = null;
+    _viceCaptain = null;
+
+    _calculateCreditsLeft();
+    print('Populated copy team with ${_selectedPlayers.length} players');
+    print('Captain and Vice Captain will be selected by user');
   }
 
   void _categorizePlayersByPosition() {
@@ -305,7 +346,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
 
       final playerIds = _selectedPlayers.map((p) => p.id!).toList();
 
-      // Use existing team ID if editing, empty string if creating new
+      // Use existing team ID if editing, empty string if creating new or copying
       String teamId = _isEditMode && widget.existingTeam?.teamId != null
           ? widget.existingTeam!.teamId.toString()
           : "";
@@ -316,7 +357,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
         matchId: widget.fixture.id,
         sportsId: 1, // Cricket sport ID
         playerIds: playerIds,
-        teamId: teamId, // Pass team ID for editing, empty for new team
+        teamId: teamId, // Pass team ID for editing, empty for new team or copy
         seriesId: widget.fixture.seriesId,
       );
 
@@ -325,14 +366,14 @@ class _CreateTeamPageState extends State<CreateTeamPage>
         _currentView = 3; // Show success view
       });
 
-      String actionText = _isEditMode ? 'updated' : 'created';
+      String actionText = _isEditMode ? 'updated' : _isCopyMode ? 'copied' : 'created';
       print('Team $actionText successfully: ${response}');
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
 
-      String actionText = _isEditMode ? 'update' : 'create';
+      String actionText = _isEditMode ? 'update' : _isCopyMode ? 'copy' : 'create';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to $actionText team: ${e.toString()}'),
@@ -368,7 +409,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
           children: [
             Text(
               _currentView == 3
-                  ? (_isEditMode ? "Team Updated" : "Team Created")
+                  ? (_isEditMode ? "Team Updated" : _isCopyMode ? "Team Copied" : "Team Created")
                   : _pageTitle,
               style: TextStyle(color: Colors.white, fontSize: 18),
             ),
@@ -384,20 +425,32 @@ class _CreateTeamPageState extends State<CreateTeamPage>
             margin: EdgeInsets.all(8),
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: _isEditMode ? Colors.orange : Color(0xFF8B1538),
+              color: _isEditMode
+                  ? Colors.orange
+                  : _isCopyMode
+                  ? Colors.blue
+                  : Color(0xFF8B1538),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                    _isEditMode ? Icons.edit : Icons.sports_cricket,
+                    _isEditMode
+                        ? Icons.edit
+                        : _isCopyMode
+                        ? Icons.copy
+                        : Icons.sports_cricket,
                     color: Colors.white,
                     size: 16
                 ),
                 SizedBox(width: 4),
                 Text(
-                    _isEditMode ? "Edit" : "Fantasy",
+                    _isEditMode
+                        ? "Edit"
+                        : _isCopyMode
+                        ? "Copy"
+                        : "Fantasy",
                     style: TextStyle(color: Colors.white, fontSize: 12)
                 ),
               ],
@@ -506,43 +559,75 @@ class _CreateTeamPageState extends State<CreateTeamPage>
               colors: [Color(0xFF2A2A2A), Color(0xFF1A1A1A)],
             ),
           ),
-          child: Row(
+          child: Column(
             children: [
-              _buildTeamInfo(widget.fixture.teamAShort, "0"),
-              Expanded(
-                child: Column(
-                  children: [
-                    Text(
-                      widget.fixture.matchTitle,
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                      textAlign: TextAlign.center,
-                    ),
-                    Container(
-                      margin: EdgeInsets.symmetric(vertical: 8),
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[800],
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                      child: Row(
-                        children: List.generate(11, (index) =>
-                            Expanded(
-                              child: Container(
-                                margin: EdgeInsets.symmetric(horizontal: 1),
-                                decoration: BoxDecoration(
-                                  color: index < _selectedPlayers.length ? Color(0xFF8B1538) : Colors.grey[800],
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                              ),
-                            ),
+              // Copy mode notification
+              if (_isCopyMode) ...[
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.copy, color: Colors.blue, size: 16),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Copying Team ${widget.teamToCopy!.teamName} - Select new Captain and Vice Captain',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    ),
-                    Text("${_selectedPlayers.length}/11", style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
-                  ],
+                    ],
+                  ),
                 ),
+                SizedBox(height: 16),
+              ],
+              Row(
+                children: [
+                  _buildTeamInfo(widget.fixture.teamAShort, "0"),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          widget.fixture.matchTitle,
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                        Container(
+                          margin: EdgeInsets.symmetric(vertical: 8),
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[800],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Row(
+                            children: List.generate(11, (index) =>
+                                Expanded(
+                                  child: Container(
+                                    margin: EdgeInsets.symmetric(horizontal: 1),
+                                    decoration: BoxDecoration(
+                                      color: index < _selectedPlayers.length ? Color(0xFF8B1538) : Colors.grey[800],
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                  ),
+                                ),
+                            ),
+                          ),
+                        ),
+                        Text("${_selectedPlayers.length}/11", style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                  _buildTeamInfo(widget.fixture.teamBShort, "0"),
+                ],
               ),
-              _buildTeamInfo(widget.fixture.teamBShort, "0"),
             ],
           ),
         ),
@@ -686,7 +771,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                 Icon(Icons.check_circle, color: Colors.white, size: 16),
                 SizedBox(width: 8),
                 Text(
-                  "Playing XI Announced",
+                  "Announced",
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ],
@@ -711,7 +796,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                 Icon(Icons.warning, color: Colors.white, size: 16),
                 SizedBox(width: 8),
                 Text(
-                  "Not Confirmed",
+                  "Unannounced",
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ],
@@ -913,7 +998,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
     );
   }
 
-  // MISSING METHOD 1: Team Preview
+  // Team Preview
   Widget _buildTeamPreview() {
     // Organize selected players by position
     List<Player> selectedWK = _selectedPlayers.where((p) => _isWicketKeeper(p)).toList();
@@ -1173,7 +1258,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
     );
   }
 
-  // MISSING METHOD 2: Captain Selection
+  // Captain Selection
   Widget _buildCaptainSelection() {
     return Container(
       padding: EdgeInsets.all(16),
@@ -1184,7 +1269,11 @@ class _CreateTeamPageState extends State<CreateTeamPage>
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF8B1538), Color(0xFFA91B47)],
+                colors: _isCopyMode
+                    ? [Colors.blue, Colors.blue.shade700]
+                    : _isEditMode
+                    ? [Colors.orange, Colors.orange.shade700]
+                    : [Color(0xFF8B1538), Color(0xFFA91B47)],
               ),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -1192,12 +1281,16 @@ class _CreateTeamPageState extends State<CreateTeamPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Choose Captain & Vice Captain",
+                  _isCopyMode
+                      ? "Choose New Captain & Vice Captain"
+                      : "Choose Captain & Vice Captain",
                   style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  "Captain gets 2x points, Vice Captain gets 1.5x points",
+                  _isCopyMode
+                      ? "Select different captain and vice captain for your copied team. Captain gets 2x points, Vice Captain gets 1.5x points"
+                      : "Captain gets 2x points, Vice Captain gets 1.5x points",
                   style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
@@ -1216,7 +1309,11 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: (_captain == player || _viceCaptain == player)
-                          ? [Color(0xFF8B1538), Color(0xFFA91B47)]
+                          ? _isCopyMode
+                          ? [Colors.blue, Colors.blue.shade700]
+                          : _isEditMode
+                          ? [Colors.orange, Colors.orange.shade700]
+                          : [Color(0xFF8B1538), Color(0xFFA91B47)]
                           : [Color(0xFF2A2A2A), Color(0xFF1E1E1E)],
                     ),
                     borderRadius: BorderRadius.circular(12),
@@ -1340,12 +1437,14 @@ class _CreateTeamPageState extends State<CreateTeamPage>
               gradient: LinearGradient(
                 colors: _isEditMode
                     ? [Colors.orange, Colors.orange.shade700]
+                    : _isCopyMode
+                    ? [Colors.blue, Colors.blue.shade700]
                     : [Colors.green, Colors.green.shade700],
               ),
               borderRadius: BorderRadius.circular(60),
             ),
             child: Icon(
-              _isEditMode ? Icons.check_circle : Icons.check_circle,
+              Icons.check_circle,
               color: Colors.white,
               size: 60,
             ),
@@ -1354,6 +1453,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
           Text(
             _isEditMode
                 ? "Team Updated Successfully!"
+                : _isCopyMode
+                ? "Team Copied Successfully!"
                 : "Team Created Successfully!",
             style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
@@ -1362,6 +1463,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
           Text(
             _isEditMode
                 ? "Your team changes have been saved with ${_selectedPlayers.length} players"
+                : _isCopyMode
+                ? "Your new team has been created with ${_selectedPlayers.length} players from the copied team"
                 : "Your team has been saved with ${_selectedPlayers.length} players",
             style: TextStyle(color: Colors.white70, fontSize: 16),
             textAlign: TextAlign.center,
@@ -1371,7 +1474,11 @@ class _CreateTeamPageState extends State<CreateTeamPage>
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF8B1538), Color(0xFFA91B47)],
+                colors: _isCopyMode
+                    ? [Colors.blue, Colors.blue.shade700]
+                    : _isEditMode
+                    ? [Colors.orange, Colors.orange.shade700]
+                    : [Color(0xFF8B1538), Color(0xFFA91B47)],
               ),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -1422,17 +1529,21 @@ class _CreateTeamPageState extends State<CreateTeamPage>
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pop(context, true); // Return true to indicate successful edit
+                Navigator.pop(context, true); // Return true to indicate successful action
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: _isEditMode ? Colors.orange : Colors.green,
+                backgroundColor: _isEditMode
+                    ? Colors.orange
+                    : _isCopyMode
+                    ? Colors.blue
+                    : Colors.green,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: Text(
-                _isEditMode ? "Go Back" : "Go to Contests",
+                _isEditMode ? "Go Back" : _isCopyMode ? "View New Team" : "Go to Contests",
                 style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
@@ -1531,7 +1642,9 @@ class _CreateTeamPageState extends State<CreateTeamPage>
             Container(
               decoration: BoxDecoration(
                 gradient: (_captain != null && _viceCaptain != null)
-                    ? LinearGradient(colors: _isEditMode
+                    ? LinearGradient(colors: _isCopyMode
+                    ? [Colors.blue, Colors.blue.shade700]
+                    : _isEditMode
                     ? [Colors.orange, Colors.orange.shade700]
                     : [Colors.green, Colors.green.shade700])
                     : null,
@@ -1557,7 +1670,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                   ),
                 )
                     : Text(
-                  _isEditMode ? "Update Team" : "Save Team",
+                  _isEditMode ? "Update Team" : _isCopyMode ? "Save Copy" : "Save Team",
                   style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),

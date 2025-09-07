@@ -1,3 +1,4 @@
+// /body/homescreen.dart
 import 'package:fantasy/drawe_pages/about_us.dart';
 import 'package:fantasy/drawe_pages/profile.dart';
 import 'package:fantasy/body/refral.dart';
@@ -6,7 +7,7 @@ import 'package:fantasy/body/wallet.dart';
 import 'package:fantasy/model/fixture.dart';
 import 'package:fantasy/service/fixture_service.dart';
 import 'package:fantasy/service/user_service.dart';
-import 'package:fantasy/drawe_pages/fantasy point system.dart';
+import 'package:fantasy/drawe_pages/fantasy_point_system.dart';
 import 'package:fantasy/drawe_pages/transection_history.dart';
 import 'package:fantasy/drawe_pages/FAQ.dart';
 import 'package:fantasy/drawe_pages/Legality_pages.dart';
@@ -21,6 +22,7 @@ import 'package:fantasy/auth/login.dart';
 import 'mygame.dart';
 import 'package:fantasy/config/debug_config.dart';
 import 'package:fantasy/body/live_match_scorecard.dart';
+import 'package:fantasy/service/team_service.dart';
 
 // Helper function for flags
 String _flagFor(String short) {
@@ -150,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // API Integration variables
   final LiveMatchService _liveMatchService = LiveMatchService();
+  final TeamService _teamService = TeamService();
   List<FixtureModel> _liveMatches = [];
   List<FixtureModel> _fixtures = [];
   List<FixtureModel> _upcomingMatches = [];
@@ -158,9 +161,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _currentPage = 1;
   bool _isAuthenticated = false;
 
+  // NEW: State variable to store lineup status for each match
+  Map<int, int?> _lineupStatus = {};
+
   // Dynamic data variables
   int _notificationCount = 0;
-  double _walletBalance = 0.0;
   Map<String, dynamic> _userStats = {
     'matches': 0,
     'wins': 0,
@@ -255,7 +260,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         setState(() {
           _userName = userData['name'] ?? 'Debug User';
-          _walletBalance = double.tryParse(userData['wallet_balance']?.toString() ?? '0') ?? 1250.50;
           _notificationCount = int.tryParse(userData['notification_count']?.toString() ?? '0') ?? 3;
           _isPremiumUser = userData['is_premium'] ?? false;
 
@@ -276,7 +280,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         setState(() {
           _userName = userData['name'] ?? userData['username'] ?? userData['mobile_number'] ?? userData['email'] ?? 'User';
-          _walletBalance = double.tryParse(userData['wallet_balance']?.toString() ?? '0') ?? 0.0;
           _notificationCount = int.tryParse(userData['notification_count']?.toString() ?? '0') ?? 0;
           _isPremiumUser = userData['is_premium'] ?? false;
 
@@ -336,6 +339,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _fixtures = DebugConfig.mockFixtures.map((data) => FixtureModel.fromJson(data)).toList();
         _upcomingMatches = _fixtures.where((f) => f.status == 'upcoming').toList();
 
+        // NEW: Fetch lineup status for the upcoming matches
+        _fetchLineupStatusForUpcomingMatches();
+
         // Load live matches separately
         final liveMatchesFromService = await _liveMatchService.getLiveMatches();
         _liveMatches = liveMatchesFromService;
@@ -363,6 +369,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final fixtures = await FixtureService.getFixtures(page: _currentPage);
       _fixtures = fixtures;
       _upcomingMatches = FixtureService.filterUpcomingMatches(fixtures);
+
+      // NEW: Fetch lineup status for the upcoming matches
+      _fetchLineupStatusForUpcomingMatches();
 
       // Load live matches separately
       final liveMatchesFromService = await _liveMatchService.getLiveMatches();
@@ -393,6 +402,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     }
   }
+
+  Future<void> _fetchLineupStatusForUpcomingMatches() async {
+    if (_upcomingMatches.isEmpty) return;
+
+    Map<int, int?> newLineupStatus = {};
+
+    // Use Future.wait for concurrent API calls
+    await Future.wait(_upcomingMatches.map((match) async {
+      try {
+        // NOTE: Ensure your FixtureModel has `seriesId` and `fixtureId`
+        final lineup = await _teamService.getLineupForMatch(
+          seriesId: match.seriesId,
+          matchId: match.id,
+        );
+        newLineupStatus[match.id] = lineup;
+      } catch (e) {
+        print('Error fetching lineup for match ${match.id}: $e');
+        newLineupStatus[match.id] = null; // Store null on error
+      }
+    }));
+
+    // Update the state once all calls are complete
+    if (mounted) {
+      setState(() {
+        _lineupStatus.addAll(newLineupStatus);
+      });
+    }
+  }
+
 
   Future<void> _handleLogout() async {
     try {
@@ -843,38 +881,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         boxShadow: [BoxShadow(color: const Color(0xFF1E293B).withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 4))],
         border: Border.all(color: const Color(0xFFF1F5F9)),
       ),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: const Color(0xFF10B981).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))],
-          ),
-          child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 18),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Total Balance', style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w400)),
-            const SizedBox(height: 2),
-            Text('₹${_walletBalance.toStringAsFixed(2)}', style: const TextStyle(color: Color(0xFF0F172A), fontSize: 18, fontWeight: FontWeight.w700)),
-          ]),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [const Color(0xFF10B981).withOpacity(0.1), const Color(0xFF059669).withOpacity(0.05)]),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
-          ),
-          child: const Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.add_rounded, color: Color(0xFF10B981), size: 14),
-            SizedBox(width: 4),
-            Text('Add Money', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w600)),
-          ]),
-        ),
-      ]),
+      // child: Row(children: [
+      //   Container(
+      //     padding: const EdgeInsets.all(12),
+      //     decoration: BoxDecoration(
+      //       gradient: const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)]),
+      //       borderRadius: BorderRadius.circular(12),
+      //       boxShadow: [BoxShadow(color: const Color(0xFF10B981).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))],
+      //     ),
+      //     child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 18),
+      //   ),
+      //   const SizedBox(width: 12),
+      //   Expanded(
+      //     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      //       const Text('Total Balance', style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w400)),
+      //       const SizedBox(height: 2),
+      //       Text('₹${_walletBalance.toStringAsFixed(2)}', style: const TextStyle(color: Color(0xFF0F172A), fontSize: 18, fontWeight: FontWeight.w700)),
+      //     ]),
+      //   ),
+      //   Container(
+      //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      //     decoration: BoxDecoration(
+      //       gradient: LinearGradient(colors: [const Color(0xFF10B981).withOpacity(0.1), const Color(0xFF059669).withOpacity(0.05)]),
+      //       borderRadius: BorderRadius.circular(10),
+      //       border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
+      //     ),
+      //     child: const Row(mainAxisSize: MainAxisSize.min, children: [
+      //       Icon(Icons.add_rounded, color: Color(0xFF10B981), size: 14),
+      //       SizedBox(width: 4),
+      //       Text('Add Money', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w600)),
+      //     ]),
+      //   ),
+      // ]),
     );
   }
 
@@ -885,9 +923,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Column(
       children: [
         _buildSectionHeader('Live Matches', 'See All', () {
+          // Navigate to MyMatchesScreen with Live tab selected and showAllMatches enabled
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => AllLiveMatchesPage()),
+            MaterialPageRoute(
+              builder: (context) => MyMatchesScreen(
+                initialTabIndex: 1, // Live tab
+                showAllMatches: true,
+              ),
+            ),
           );
         }),
         if (_liveMatches.isEmpty && !_isLoading)
@@ -964,9 +1008,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Column(
       children: [
         _buildSectionHeader('Upcoming Matches', 'View All', () {
+          // Navigate to MyMatchesScreen with Upcoming tab selected and showAllMatches enabled
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => AllUpcomingMatchesPage()),
+            MaterialPageRoute(
+              builder: (context) => MyMatchesScreen(
+                initialTabIndex: 0, // Upcoming tab
+                showAllMatches: true,
+              ),
+            ),
           );
         }),
         if (_upcomingMatches.isEmpty && !_isLoading)
@@ -1004,6 +1054,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             itemBuilder: (context, index) {
               final match = _upcomingMatches[index];
               final timeLeft = FixtureService.formatTimeLeft(match.matchDate);
+              final lineupValue = _lineupStatus[match.id];
+
               return GestureDetector(
                 onTap: () => _navigateToContests(match),
                 child: _buildUpcomingMatchCard(
@@ -1017,6 +1069,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   team1Color: index == 0 ? const Color(0xFF3B82F6) : const Color(0xFFEF4444),
                   team2Color: index == 0 ? const Color(0xFF8B5CF6) : const Color(0xFFFBBF24),
                   match: match,
+                  lineupStatus: lineupValue, // NEW: Pass lineup status to the card
                 ),
               );
             },
@@ -1173,6 +1226,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     required Color team1Color,
     required Color team2Color,
     required FixtureModel match,
+    int? lineupStatus,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1193,7 +1247,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(match.matchType, style: const TextStyle(color: Color(0xFF3B82F6), fontSize: 11, fontWeight: FontWeight.w600)),
-                Text('Cricket Match', style: const TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                const SizedBox(height: 2),
+                // NEW: Conditionally display "Lineup Out" badge
+                if (lineupStatus == 1)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981), // Green color
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Lineup Out',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                else
+                  Text('Cricket Match', style: const TextStyle(color: Color(0xFF64748B), fontSize: 10)),
               ]),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1423,27 +1496,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           BottomNavigationBarItem(icon: Icon(Icons.share, size: 20), label: 'Refer'),
         ],
       ),
-    );
-  }
-}
-
-// Placeholder classes for navigation
-class AllLiveMatchesPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('All Live Matches')),
-      body: Center(child: Text('Live Matches Page')),
-    );
-  }
-}
-
-class AllUpcomingMatchesPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('All Upcoming Matches')),
-      body: Center(child: Text('Upcoming Matches Page')),
     );
   }
 }

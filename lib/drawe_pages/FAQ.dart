@@ -9,7 +9,7 @@ class Start25ProFAQPage extends StatelessWidget {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
-          'Start25Pro FAQ',
+          'Start25Pro FAQ (Entertainment Only)',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -27,7 +27,7 @@ class Start25ProFAQPage extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20.0),
-              margin: const EdgeInsets.only(bottom: 20.0),
+              margin: const EdgeInsets.only(bottom: 12.0),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF16213E), Color(0xFF0F3460)],
@@ -73,45 +73,97 @@ class Start25ProFAQPage extends StatelessWidget {
               ),
             ),
 
-            // FAQ Items
+            // Entertainment disclaimer
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info, color: Colors.blue.shade700, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Start25Pro is for entertainment purposes only. '
+                          'Points are virtual and have no monetary (cash) value. '
+                          'Any fee refers to access/participation for gameplay, not a stake or wager.',
+                      style: TextStyle(color: Colors.blue.shade800, height: 1.35),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // FAQ Items (updated copy)
             const FAQItem(
               question: '1. What is Fantasy Sports?',
-              answer: 'Fantasy sports is a strategy-based online sports game where you can create a virtual team of real players participating in live matches worldwide. You earn points and win cash prizes based on the performance of these players in actual matches.',
+              answer:
+              'Fantasy sports on Start25Pro is a strategy-based, entertainment-only experience where you create a virtual team of real players in live matches. '
+                  'You earn points based on real match performance. Points are virtual and cannot be redeemed for cash.',
             ),
 
             const FAQItem(
-              question: '2. Is it safe to add money to Start25Pro?',
-              answer: 'Yes! Adding money to your Start25Pro account is completely safe and hassle-free. We provide multiple secure payment options to ensure your personal details remain protected. Once your personal details are verified, you can easily withdraw your winnings directly to your bank account.',
+              question: '2. Is it safe to make payments on Start25Pro?',
+              answer:
+              'Yes. We use secure payment options for access/participation fees so you can play hassle-free. '
+                  'Payments are solely for gameplay access. There are no cash withdrawals and no monetary winnings on Start25Pro.',
             ),
 
             const FAQItem(
               question: '3. How are Start25Pro points calculated?',
-              answer: 'Start25Pro points are calculated based on a player\'s performance in a real match. Check out the Start25Pro Fantasy Points System for more details on different sports.',
+              answer:
+              'Points are calculated based on a player’s performance in the real match. '
+                  'Check out the Start25Pro Fantasy Points System to see the full breakdown across formats.',
             ),
 
             const FAQItem(
-              question: '4. When do I receive my winnings?',
-              answer: 'If you request a withdrawal via IMPS, your winnings should be credited almost instantly or within 3 working days. Withdrawals via NEFT take up to 3 working days. For more details, visit our helpdesk.',
+              question: '4. Are there cash winnings or withdrawals?',
+              answer:
+              'No. Start25Pro is for entertainment only. '
+                  'Points and leaderboard ranks do not convert to cash, rupees, or any monetary reward, and cannot be withdrawn.',
             ),
 
             const FAQItem(
               question: '5. How do I use a Start25Pro discount coupon code?',
-              answer: 'Follow these simple steps to apply a discount coupon code:\n\n• Go to \'Rewards\' at the bottom right corner.\n• Click on \'My Rewards\' and tap on \'Have a discount coupon code?\'\n• Enter your code and tap \'Apply Now\'.\n• Enter any contest and enjoy your discount!',
+              answer:
+              'Follow these steps to apply a discount coupon code:\n\n'
+                  '• Go to “Rewards”.\n'
+                  '• Tap “My Rewards” → “Have a discount coupon code?”\n'
+                  '• Enter your code and tap “Apply Now”.\n'
+                  '• Join a contest and enjoy your discount on participation fees.',
             ),
 
             const FAQItem(
               question: '6. How can I download the Start25Pro app?',
-              answer: 'There are three ways to download the Start25Pro app:\n\n1. Visit www.start25pro.com on your desktop or mobile browser and enter your mobile number to get the download link.\n2. Download the app from our official website.\n3. Follow the instructions provided in our app download section.',
+              answer:
+              'You can:\n\n'
+                  '1) Visit www.start25pro.com and enter your mobile number to get the download link.\n'
+                  '2) Download from our official website.\n'
+                  '3) Follow the instructions given in the app download section.',
             ),
 
             const FAQItem(
               question: '7. What types of contests can I join?',
-              answer: 'You can participate in a variety of contests, including:\n\n• Public Contests – Compete against multiple players.\n• Private Contests – Create a contest and invite your friends.\n• Head-to-Head Contests – Challenge one other player.\n• Mega Contests – Join high-reward contests with multiple participants.\n• Practice Contests – Hone your skills before competing for real prizes.',
+              answer:
+              'You can participate in:\n\n'
+                  '• Public Contests – Compete with many players on a shared leaderboard.\n'
+                  '• Private Contests – Create a contest and invite friends.\n'
+                  '• Head-to-Head – Challenge one other player.\n'
+                  '• Mega Contests – Larger leaderboards and higher point caps.\n'
+                  '• Practice Contests – Hone your skills before playing public contests.',
             ),
 
             const FAQItem(
               question: '8. How do I play on the Start25Pro app?',
-              answer: 'Visit our How to Play section to get a step-by-step guide on how to create teams, join contests, and win exciting prizes.',
+              answer:
+              'Visit the “How to Play” section for a step-by-step guide on creating teams, joining contests, and competing on leaderboards. '
+                  'Remember: it’s for entertainment only and points have no cash value.',
             ),
 
             // Footer
@@ -264,7 +316,7 @@ class _FAQItemState extends State<FAQItem>
               child: Row(
                 children: [
                   Expanded(
-                    child:                     Text(
+                    child: Text(
                       widget.question,
                       style: const TextStyle(
                         fontSize: 16,
@@ -276,7 +328,7 @@ class _FAQItemState extends State<FAQItem>
                   AnimatedRotation(
                     turns: _isExpanded ? 0.5 : 0.0,
                     duration: const Duration(milliseconds: 300),
-                    child:                     Icon(
+                    child: Icon(
                       Icons.keyboard_arrow_down,
                       color: Colors.grey[600],
                     ),

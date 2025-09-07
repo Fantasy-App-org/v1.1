@@ -102,6 +102,48 @@ class ContestApi {
     }
   }
 
+  static Future<int?> getContestIdByMatchId(int matchId) async {
+    try {
+      final token = _userService.authToken;
+      if (token == null) {
+        throw Exception('Authentication token not available');
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/web-services/joined-contest-list'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'match_id': matchId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        // Extract contest_id from the response
+        if (responseData['status'] == true &&
+            responseData['data'] != null &&
+            responseData['data']['joined_contest'] != null &&
+            responseData['data']['joined_contest'].isNotEmpty) {
+
+          final contestId = responseData['data']['joined_contest'][0]['contest_id'];
+          return contestId is int ? contestId : int.tryParse(contestId.toString());
+        } else {
+          print('No joined contests found for match ID: $matchId');
+          return null;
+        }
+      } else {
+        throw Exception('Failed to load joined contest list: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('ContestApi.getContestIdByMatchId Error: $e');
+      throw Exception('Service error: $e');
+    }
+  }
+
   // Get joined contest details
   static Future<Map<String, dynamic>> getJoinedContestDetails(Map<String, dynamic> requestData) async {
     try {

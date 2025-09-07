@@ -5,7 +5,7 @@ import 'package:fantasy/body/wallet.dart';
 import 'package:fantasy/model/fixture.dart';
 import 'package:fantasy/service/fixture_service.dart';
 import 'package:fantasy/service/user_service.dart';
-import 'package:fantasy/drawe_pages/fantasy point system.dart';
+import 'package:fantasy/drawe_pages/fantasy_point_system.dart';
 import 'package:fantasy/drawe_pages/transection_history.dart';
 
 import 'package:flutter/material.dart';

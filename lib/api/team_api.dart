@@ -32,22 +32,16 @@ class TeamApi {
           'contest_id': contestId,
         }),
       );
-
-      print('getUserTeam Response Status: ${response.statusCode}');
-      print('getUserTeam Response Body: ${response.body}');
-
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
         throw Exception('Failed to load user team: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('TeamApi.getUserTeam Error: $e');
       throw Exception('Service error: $e');
     }
   }
 
-  // NEW METHOD: Get detailed team information by team ID
   static Future<Map<String, dynamic>> getUserTeamById({
     required String teamId,  // Accept as String
     required int seriesId,
@@ -57,8 +51,6 @@ class TeamApi {
       if (token == null) {
         throw Exception('Authentication token not available');
       }
-
-      print('🔍 getUserTeamById - TeamId: $teamId (${teamId.runtimeType}), SeriesId: $seriesId (${seriesId.runtimeType})');
 
       final response = await http.post(
         Uri.parse('$baseUrl/web-services/getuserteambyid'),
@@ -71,9 +63,6 @@ class TeamApi {
           'series_id': seriesId, // Send as int
         }),
       );
-
-      print('getUserTeamById Response Status: ${response.statusCode}');
-      print('getUserTeamById Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -92,7 +81,6 @@ class TeamApi {
         throw Exception('HTTP ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
-      print('❌ TeamApi.getUserTeamById Error: $e');
       throw Exception('Service error: $e');
     }
   }
@@ -109,9 +97,6 @@ class TeamApi {
       if (token == null) {
         throw Exception('Authentication token not available');
       }
-
-      print('🔄 switchTeam - MatchId: $matchId, ContestId: $contestId, OldTeam: $oldTeamId, NewTeam: $newTeamId');
-
       final response = await http.post(
         Uri.parse('$baseUrl/web-services/switchteam'),
         headers: {
@@ -126,9 +111,6 @@ class TeamApi {
         }),
       );
 
-      print('switchTeam Response Status: ${response.statusCode}');
-      print('switchTeam Response Body: ${response.body}');
-
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
@@ -141,7 +123,6 @@ class TeamApi {
         throw Exception('HTTP ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
-      print('❌ TeamApi.switchTeam Error: $e');
       throw Exception('Service error: $e');
     }
   }
@@ -169,15 +150,12 @@ class TeamApi {
         }),
       );
 
-      print('getSquadList Response Status: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
         throw Exception('Failed to load squad list: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('TeamApi.getSquadList Error: $e');
       throw Exception('Service error: $e');
     }
   }
@@ -202,9 +180,6 @@ class TeamApi {
         body: jsonEncode(requestBody),
       );
 
-      print('Create Team Response Status: ${response.statusCode}');
-      print('Create Team Response Body: ${response.body}');
-
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
@@ -217,8 +192,48 @@ class TeamApi {
         throw Exception('Failed to create user team: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('TeamApi.createUserTeam Error: $e');
       throw Exception('Service error: $e');
     }
   }
+
+  // In lib/api/team_api.dart
+
+  // NEW METHOD: Get only lineup value
+  static Future<int?> getLineup({
+    required int seriesId,
+    required int matchId,
+  }) async {
+    try {
+      final token = _userService.authToken;
+      if (token == null) {
+        throw Exception('Authentication token not available');
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/web-services/squadlist'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'series_id': seriesId,
+          'match_id': matchId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded['status'] == true && decoded['data'] != null) {
+          return int.tryParse(decoded['data']['lineup'].toString());
+        }
+        throw Exception(decoded['message'] ?? 'No lineup found');
+      } else {
+        throw Exception('Failed to load lineup: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      print('❌ TeamApi.getLineup Error: $e');
+      throw Exception('Service error: $e');
+    }
+  }
+
 }

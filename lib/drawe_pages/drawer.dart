@@ -5,7 +5,7 @@ import '../drawe_pages/profile.dart';
 import '../body/refral.dart';
 import '../body/wallet.dart';
 import '../drawe_pages/Legality_pages.dart';
-import '../drawe_pages/fantasy point system.dart';
+import '../drawe_pages/fantasy_point_system.dart';
 import '../drawe_pages/how_to_play.dart';
 import '../drawe_pages/transection_history.dart';
 

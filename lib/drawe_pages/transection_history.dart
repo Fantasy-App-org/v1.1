@@ -26,6 +26,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
   int totalTransactions = 0;
   ScrollController _scrollController = ScrollController();
 
+  // --- Formatter: show values as points (UI-only change) ---
+  String _formatPts(num v) => '${v.toStringAsFixed(0)} pts';
+
   @override
   void initState() {
     super.initState();
@@ -797,7 +800,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
               Expanded(
                 child: _buildStatCard(
                   'Total Bets',
-                  '₹${totalBetAmount.toStringAsFixed(0)}',
+                  _formatPts(totalBetAmount),
                   Icons.sports_cricket,
                   Colors.white.withOpacity(0.9),
                   true,
@@ -808,7 +811,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
               Expanded(
                 child: _buildStatCard(
                   'Winnings',
-                  '₹${totalWinnings.toStringAsFixed(0)}',
+                  _formatPts(totalWinnings),
                   Icons.trending_up,
                   Colors.white.withOpacity(0.9),
                   true,
@@ -820,7 +823,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
           SizedBox(height: isSmallScreen ? 8 : 12),
           _buildStatCard(
             'Net P&L',
-            '₹${(totalWinnings - totalBetAmount).toStringAsFixed(0)}',
+            _formatPts(totalWinnings - totalBetAmount),
             (totalWinnings - totalBetAmount) >= 0
                 ? Icons.arrow_upward
                 : Icons.arrow_downward,
@@ -1066,6 +1069,10 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
       ) {
     final isSmallScreen = MediaQuery.of(context).size.width < 375;
 
+    // Amount text as points (keep sign semantics: + for positive; none for negative, like original)
+    final String amountTxt =
+        '${transaction.amount >= 0 ? '+' : ''}${_formatPts(transaction.amount.abs())}';
+
     return Container(
       padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
       child: Row(
@@ -1119,7 +1126,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
                   runSpacing: 4,
                   children: [
                     Text(
-                      transaction.txnType,
+                      transaction.txnType, // unchanged (backend label)
                       style: TextStyle(
                         color: Color(0xFF64748B),
                         fontSize: isSmallScreen ? 11 : 12,
@@ -1146,7 +1153,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
                 if (transaction.winAmount > 0) ...[
                   SizedBox(height: 4),
                   Text(
-                    '+₹${transaction.winAmount.toStringAsFixed(0)} won',
+                    '+${_formatPts(transaction.winAmount)} won',
                     style: TextStyle(
                       color: Color(0xFF10B981),
                       fontSize: isSmallScreen ? 11 : 12,
@@ -1162,7 +1169,7 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage>
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${transaction.amount >= 0 ? '+' : ''}₹${transaction.amount.abs().toStringAsFixed(0)}',
+                amountTxt,
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: isSmallScreen ? 14 : 16,

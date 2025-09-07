@@ -5,14 +5,23 @@ import 'dart:async';
 import 'package:fantasy/model/fixture.dart';
 import 'package:fantasy/model/scorecard_model.dart';
 import 'package:fantasy/api/contest_api.dart';
+import 'package:fantasy/api/contest_match_api.dart';
+import 'package:fantasy/api/leaderboard_api.dart';
 import 'package:fantasy/config/debug_config.dart';
+import 'package:fantasy/widgets/match_header_widget.dart';
+import 'package:fantasy/widgets/live_score_widget.dart';
+import 'package:fantasy/widgets/player_stats_widget.dart';
+import 'package:fantasy/widgets/scorecard_tabs_widget.dart';
+import 'package:fantasy/body/leaderboard.dart';
 
 class LiveMatchScorecardPage extends StatefulWidget {
   final FixtureModel match;
+  final String? contestId; // Optional contest ID for player stats
 
   const LiveMatchScorecardPage({
     Key? key,
     required this.match,
+    this.contestId,
   }) : super(key: key);
 
   @override
@@ -22,17 +31,28 @@ class LiveMatchScorecardPage extends StatefulWidget {
 class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
     with TickerProviderStateMixin {
   ScorecardModel? _scorecard;
+  Map<String, dynamic>? _fullScorecardData;
+  Map<String, dynamic>? _playerStatsData;
+  List<Map<String, dynamic>> _userTeams = [];
+  int? _contestId;
   bool _isLoading = true;
+  bool _isLoadingUserTeams = false;
   String? _errorMessage;
   Timer? _refreshTimer;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  late TabController _tabController;
+
+  // Track which detailed view is currently shown
+  bool _showingDetailedView = false;
+  String _currentDetailView = 'main'; // 'main', 'scorecard', 'stats'
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-    _loadScorecard();
+    _tabController = TabController(length: 4, vsync: this);
+    _initializeData();
     _startAutoRefresh();
   }
 
@@ -40,6 +60,7 @@ class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
   void dispose() {
     _refreshTimer?.cancel();
     _pulseController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -58,10 +79,90 @@ class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
     ));
   }
 
+  Future<void> _initializeData() async {
+    await _getContestId();
+    await _loadScorecard();
+    if (_contestId != null) {
+      await _loadUserTeams();
+    }
+  }
+
+  Future<void> _getContestId() async {
+    try {
+      if (widget.contestId != null) {
+        _contestId = widget.contestId as int?;
+        return;
+      }
+
+      DebugConfig.debugPrint('Fetching contest ID for match: ${widget.match.id}');
+      final contestId = await ContestApi.getContestIdByMatchId(widget.match.id);
+
+      if (contestId != null) {
+        setState(() {
+          _contestId = contestId;
+        });
+        DebugConfig.debugPrint('Contest ID found: $contestId');
+      } else {
+        DebugConfig.debugPrint('No contest ID found for match: ${widget.match.id}');
+      }
+    } catch (e) {
+      DebugConfig.debugPrint('Error getting contest ID: $e');
+    }
+  }
+
+  Future<void> _loadUserTeams() async {
+    if (_contestId == null) return;
+
+    try {
+      setState(() {
+        _isLoadingUserTeams = true;
+      });
+
+      DebugConfig.debugPrint('Loading user teams for match: ${widget.match.id}, contest: $_contestId');
+
+      final response = await LeaderboardApi.getUserTeamsSummary(
+        matchId: widget.match.id.toString(),
+        contestId: _contestId.toString(),
+      );
+
+      if (response['status'] == true && mounted) {
+        setState(() {
+          _userTeams = List<Map<String, dynamic>>.from(response['userTeams'] ?? []);
+          _isLoadingUserTeams = false;
+        });
+
+        DebugConfig.debugPrint('Loaded ${_userTeams.length} user teams');
+      } else {
+        if (mounted) {
+          setState(() {
+            _userTeams = [];
+            _isLoadingUserTeams = false;
+          });
+        }
+        DebugConfig.debugPrint('Failed to load user teams: ${response['error']}');
+      }
+    } catch (e) {
+      DebugConfig.debugPrint('Error loading user teams: $e');
+      if (mounted) {
+        setState(() {
+          _userTeams = [];
+          _isLoadingUserTeams = false;
+        });
+      }
+    }
+  }
+
   void _startAutoRefresh() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) {
         _loadScorecard(silent: true);
+        if (_contestId != null) {
+          _loadUserTeams();
+        }
+        // Also refresh detailed data if showing detailed view
+        if (_showingDetailedView) {
+          _loadDetailedData(silent: true);
+        }
       }
     });
   }
@@ -108,6 +209,44 @@ class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
     }
   }
 
+  Future<void> _loadDetailedData({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
+
+    try {
+      // Load full scorecard first
+      final fullScorecardResult = await ContestApi.getFullScorecard(widget.match.id.toString());
+
+      // Load player stats second
+      final playerStatsResult = await ContestMatchApi.getMatchPlayerStats(
+        matchId: widget.match.id.toString(),
+      );
+
+      if (mounted) {
+        setState(() {
+          _fullScorecardData = fullScorecardResult;
+          _playerStatsData = playerStatsResult;
+          _isLoading = false;
+          _errorMessage = null;
+        });
+      }
+    } catch (e) {
+      DebugConfig.debugPrint('Error loading detailed data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          if (!silent) {
+            _errorMessage = e.toString();
+          }
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,15 +262,26 @@ class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle.light,
       leading: IconButton(
-        onPressed: () => Navigator.pop(context),
+        onPressed: () {
+          if (_showingDetailedView) {
+            setState(() {
+              _showingDetailedView = false;
+              _currentDetailView = 'main';
+            });
+          } else {
+            Navigator.pop(context);
+          }
+        },
         icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Live Match',
-            style: TextStyle(
+          Text(
+            _showingDetailedView
+                ? (_currentDetailView == 'scorecard' ? 'Full Scorecard' : 'Player Stats')
+                : 'Live Match',
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -148,6 +298,12 @@ class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
         ],
       ),
       actions: [
+        if (_showingDetailedView) ...[
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: () => _loadDetailedData(),
+          ),
+        ],
         AnimatedBuilder(
           animation: _pulseAnimation,
           builder: (context, child) {
@@ -200,15 +356,20 @@ class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
   }
 
   Widget _buildBody() {
-    if (_isLoading && _scorecard == null) {
+    if (_isLoading && (_scorecard == null || (_showingDetailedView && _fullScorecardData == null))) {
       return _buildLoadingState();
     }
 
-    if (_errorMessage != null && _scorecard == null) {
+    if (_errorMessage != null && (_scorecard == null || (_showingDetailedView && _fullScorecardData == null))) {
       return _buildErrorState();
     }
 
+    if (_showingDetailedView) {
+      return _buildDetailedView();
+    }
+
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
@@ -216,24 +377,389 @@ class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
           const SizedBox(height: 24),
           _buildScorecard(),
           const SizedBox(height: 24),
+          // User Teams Section
+          if (_contestId != null) ...[
+            _buildUserTeamsSection(),
+            const SizedBox(height: 24),
+          ],
           _buildActionButtons(),
         ],
       ),
     );
   }
 
+  Widget _buildUserTeamsSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2D3748), Color(0xFF1A202C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF10B981), Color(0xFF059669)],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.emoji_events,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'My Teams',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              if (_userTeams.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${_userTeams.length} Team${_userTeams.length > 1 ? 's' : ''}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (_isLoadingUserTeams)
+            const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+              ),
+            )
+          else if (_userTeams.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.white70,
+                    size: 20,
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'No teams found in this contest',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Column(
+              children: [
+                // Show top 3 user teams or all if less than 3
+                ...(_userTeams.take(3).map((team) => _buildUserTeamItem(team))),
+                if (_userTeams.length > 3) ...[
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () => _showFullLeaderboard(),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '+${_userTeams.length - 3} more teams',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            color: Colors.white70,
+                            size: 14,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserTeamItem(Map<String, dynamic> team) {
+    final rank = team['rank'] ?? 0;
+    final points = team['points']?.toString() ?? '0';
+    final teamNumber = team['teamNumber'] ?? 1;
+    final winningAmount = team['winningAmount'] ?? 0;
+    final inWinningZone = team['inWinningZone'] ?? false;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: inWinningZone ? const Color(0xFF10B981) : Colors.transparent,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Rank
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: rank <= 3
+                  ? (rank == 1 ? const Color(0xFFD97706) :
+              rank == 2 ? const Color(0xFF6B7280) :
+              const Color(0xFFF59E0B))
+                  : const Color(0xFF3B82F6),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Text(
+                '#$rank',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Team Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'T$teamNumber',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (inWinningZone)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'In Winning Zone',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      '$points Pts',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                    if (winningAmount > 0) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '• ₹$winningAmount',
+                        style: const TextStyle(
+                          color: Color(0xFF10B981),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailedView() {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: NestedScrollView(
+        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+          return <Widget>[
+            SliverToBoxAdapter(
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Match Header (converted to white theme)
+                    if (_fullScorecardData != null)
+                      _buildWhiteMatchHeader(),
+
+                    // Live Score (converted to white theme)
+                    if (_fullScorecardData != null)
+                      _buildWhiteLiveScore(),
+                  ],
+                ),
+              ),
+            ),
+
+            // Tabs (only show if we have player stats data)
+            if (_currentDetailView == 'stats' && _playerStatsData != null)
+              SliverPersistentHeader(
+                delegate: _TabBarDelegate(
+                  TabBar(
+                    controller: _tabController,
+                    isScrollable: true,
+                    labelColor: Colors.blue,
+                    unselectedLabelColor: Colors.grey[600],
+                    indicatorColor: Colors.blue,
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    unselectedLabelStyle: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                    tabs: const [
+                      Tab(text: 'All Players'),
+                      Tab(text: 'Player Stats'),
+                      Tab(text: 'Team A'),
+                      Tab(text: 'Team B'),
+                    ],
+                  ),
+                ),
+                pinned: true,
+              ),
+          ];
+        },
+        body: Container(
+          color: Colors.white,
+          child: _currentDetailView == 'scorecard'
+              ? ScorecardTabsWidget(scorecardData: _fullScorecardData)
+              : _currentDetailView == 'stats' && _playerStatsData != null
+              ? TabBarView(
+            controller: _tabController,
+            children: [
+              ScorecardTabsWidget(scorecardData: _fullScorecardData),
+              PlayerStatsWidget(
+                playerStatsData: _playerStatsData,
+                scorecardData: _fullScorecardData,
+              ),
+              PlayerStatsWidget(
+                playerStatsData: _playerStatsData,
+                scorecardData: _fullScorecardData,
+                teamFilter: 'team_a',
+              ),
+              PlayerStatsWidget(
+                playerStatsData: _playerStatsData,
+                scorecardData: _fullScorecardData,
+                teamFilter: 'team_b',
+              ),
+            ],
+          )
+              : const Center(
+            child: Text(
+              'Player stats require contest ID',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWhiteMatchHeader() {
+    if (_fullScorecardData == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: MatchHeaderWidget(scorecardData: _fullScorecardData!),
+    );
+  }
+
+  Widget _buildWhiteLiveScore() {
+    if (_fullScorecardData == null) return const SizedBox.shrink();
+
+    return LiveScoreWidget(scorecardData: _fullScorecardData!);
+  }
+
   Widget _buildLoadingState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
+          const CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
-            'Loading live scores...',
-            style: TextStyle(
+            _showingDetailedView ? 'Loading detailed data...' : 'Loading live scores...',
+            style: const TextStyle(
               color: Colors.white70,
               fontSize: 16,
             ),
@@ -254,9 +780,9 @@ class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
             color: Colors.red,
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Failed to load scorecard',
-            style: TextStyle(
+          Text(
+            _showingDetailedView ? 'Failed to load detailed data' : 'Failed to load scorecard',
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -273,7 +799,13 @@ class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => _loadScorecard(),
+            onPressed: () {
+              if (_showingDetailedView) {
+                _loadDetailedData();
+              } else {
+                _loadScorecard();
+              }
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3B82F6),
             ),
@@ -527,7 +1059,6 @@ class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
             colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
           ),
           onTap: () {
-            // Navigate to full scorecard page
             _showFullScorecard();
           },
         ),
@@ -540,10 +1071,22 @@ class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
             colors: [Color(0xFF10B981), Color(0xFF059669)],
           ),
           onTap: () {
-            // Navigate to player stats page
             _showPlayerStats();
           },
         ),
+        const SizedBox(height: 12),
+        if (_contestId != null)
+          _buildActionButton(
+            icon: Icons.emoji_events_outlined,
+            title: 'View Leaderboard',
+            subtitle: 'Complete contest rankings',
+            gradient: const LinearGradient(
+              colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+            ),
+            onTap: () {
+              _showFullLeaderboard();
+            },
+          ),
       ],
     );
   }
@@ -619,41 +1162,135 @@ class _LiveMatchScorecardPageState extends State<LiveMatchScorecardPage>
     );
   }
 
-  void _showFullScorecard() {
+  void _showFullScorecard() async {
     // Show loading dialog while fetching full scorecard
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => const AlertDialog(
+        backgroundColor: Color(0xFF2D3748),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+            ),
             SizedBox(height: 16),
-            Text('Loading full scorecard...'),
+            Text(
+              'Loading full scorecard...',
+              style: TextStyle(color: Colors.white),
+            ),
           ],
         ),
       ),
     );
 
-    // Simulate API call - replace with actual full scorecard navigation
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      await _loadDetailedData();
+      Navigator.pop(context); // Close loading dialog
+
+      setState(() {
+        _showingDetailedView = true;
+        _currentDetailView = 'scorecard';
+      });
+    } catch (e) {
       Navigator.pop(context); // Close loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Full scorecard feature coming soon!'),
-          backgroundColor: Color(0xFF3B82F6),
+        SnackBar(
+          content: Text('Failed to load scorecard: $e'),
+          backgroundColor: Colors.red,
         ),
       );
-    });
+    }
   }
 
-  void _showPlayerStats() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Player stats feature coming soon!'),
-        backgroundColor: Color(0xFF10B981),
+  void _showPlayerStats() async {
+    // Show loading dialog while fetching player stats
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        backgroundColor: Color(0xFF2D3748),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Loading player stats...',
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
       ),
     );
+
+    try {
+      await _loadDetailedData();
+      Navigator.pop(context); // Close loading dialog
+
+      setState(() {
+        _showingDetailedView = true;
+        _currentDetailView = 'stats';
+      });
+    } catch (e) {
+      Navigator.pop(context); // Close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load player stats: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showFullLeaderboard() {
+    if (_contestId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Contest information not available'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LeaderboardPage(
+          matchId: widget.match.id.toString(),
+          contestId: _contestId.toString(),
+        ),
+      ),
+    );
+  }
+}
+
+// Helper class for persistent tab bar
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  _TabBarDelegate(this._tabBar);
+
+  final TabBar _tabBar;
+
+  @override
+  double get minExtent => _tabBar.preferredSize.height;
+
+  @override
+  double get maxExtent => _tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Colors.white,
+      child: _tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_TabBarDelegate oldDelegate) {
+    return false;
   }
 }

@@ -57,10 +57,11 @@ class _HowToPlayPageState extends State<HowToPlayPage>
           child: Column(
             children: [
               _buildHeader(),
+              _buildDisclaimerBanner(),
               _buildStepsSection(),
               _buildTeamCombinationsSection(),
               _buildMultipleTeamsSection(),
-              _buildWalletSection(),
+              _buildPointsSection(),
               _buildStartButton(),
               SizedBox(height: 30),
             ],
@@ -99,7 +100,7 @@ class _HowToPlayPageState extends State<HowToPlayPage>
           ),
           SizedBox(height: 8),
           Text(
-            'Create your dream team and show-off your skills!',
+            'Entertainment-only. Earn virtual points (redeemable for items) and show off your skills!',
             style: TextStyle(
               color: Colors.white.withOpacity(0.9),
               fontSize: 16,
@@ -111,36 +112,63 @@ class _HowToPlayPageState extends State<HowToPlayPage>
     );
   }
 
+  Widget _buildDisclaimerBanner() {
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info, color: Colors.blue.shade700, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Your11 is for entertainment purposes only. Points are virtual and not cash. '
+                  'You can redeem points for items in the in-app Rewards Store (subject to availability and program terms). No cash withdrawals.',
+              style: TextStyle(color: Colors.blue.shade800, height: 1.35),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStepsSection() {
     final steps = [
       {
         'title': 'Select A Match',
-        'description': 'Choose the match you want to play and show-off your skills.',
+        'description': 'Choose the match you want to play and show off your skills.',
         'icon': Icons.sports_cricket,
         'color': Color(0xFF4CAF50),
       },
       {
         'title': 'Cleverly Pick Your Playing 11',
-        'description': 'Create your own team by selecting different players within a defined virtual credit point using the best combination.',
+        'description': 'Create your team by selecting players within a defined virtual credit budget using the best combination.',
         'icon': Icons.group_add,
         'color': Color(0xFF2196F3),
       },
       {
         'title': 'Choose Your Captain & Vice Captain',
-        'description': '2x points for your Captain & 1.5x points for your Vice-Captain based on their on-field performance.',
+        'description': '2x points for your Captain & 1.5x points for your Vice-Captain based on on-field performance.',
         'icon': Icons.star,
         'color': Color(0xFFFF9800),
       },
       {
-        'title': 'Become A Part of A League',
-        'description': 'Join a league or contest to compete with other users or create private leagues with friends.',
+        'title': 'Join A League',
+        'description': 'Join a league/contest to compete with others or create private leagues with friends.',
         'icon': Icons.emoji_events,
         'color': Color(0xFF9C27B0),
       },
       {
-        'title': 'Become A Winner',
-        'description': 'Use your skills cleverly to choose the best team and win contests with the scores your created team achieves.',
-        'icon': Icons.emoji_events,
+        'title': 'Climb The Leaderboard',
+        'description': 'Use your skills to score points and climb leaderboards. Points can be redeemed for items (no cash prizes).',
+        'icon': Icons.leaderboard,
         'color': Color(0xFFE91E63),
       },
     ];
@@ -395,17 +423,17 @@ class _HowToPlayPageState extends State<HowToPlayPage>
           ),
           SizedBox(height: 16),
           Text(
-            'Increase your winning chances with Multiple Entries. Join a "Multiple Entry" League with a maximum of 6 different teams.',
+            'Increase your chances to score more points with Multiple Entries. Join a "Multiple Entry" League with a maximum of 6 different teams.',
             style: TextStyle(
               fontSize: 16,
               color: Colors.white.withOpacity(0.9),
             ),
           ),
           SizedBox(height: 16),
-          _buildMultipleTeamPoint('You can create a maximum of 6 teams for joining a single "Multiple Entry(M)" contest'),
-          _buildMultipleTeamPoint('You need to create the best team with efficient players within limited budget'),
-          _buildMultipleTeamPoint('You can make changes to your team only until the match begins'),
-          _buildMultipleTeamPoint('Your score depends on the on-field performance of your chosen players'),
+          _buildMultipleTeamPoint('You can create a maximum of 6 teams for a single "Multiple Entry (M)" contest.'),
+          _buildMultipleTeamPoint('Create the best team within the limited virtual credit budget.'),
+          _buildMultipleTeamPoint('You can make changes to your team only until the match begins.'),
+          _buildMultipleTeamPoint('Your score depends on the on-field performance of your chosen players.'),
         ],
       ),
     );
@@ -433,7 +461,8 @@ class _HowToPlayPageState extends State<HowToPlayPage>
     );
   }
 
-  Widget _buildWalletSection() {
+  // Renamed and rewritten: no mentions of cash, deposits, or fees.
+  Widget _buildPointsSection() {
     return Container(
       margin: EdgeInsets.all(20),
       padding: EdgeInsets.all(20),
@@ -454,10 +483,10 @@ class _HowToPlayPageState extends State<HowToPlayPage>
         children: [
           Row(
             children: [
-              Icon(Icons.account_balance_wallet, color: Color(0xFF2E3192), size: 28),
+              Icon(Icons.card_membership, color: Color(0xFF2E3192), size: 28),
               SizedBox(width: 12),
               Text(
-                'Your11 Wallet',
+                'Points & Rewards',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -467,36 +496,52 @@ class _HowToPlayPageState extends State<HowToPlayPage>
             ],
           ),
           SizedBox(height: 16),
-          _buildWalletItem(
-            'Deposited',
-            'Amount added by you via Credit card, Debit Card, Net Banking, and wallets. Unutilized amount cannot be withdrawn.',
-            Icons.credit_card,
-            Color(0xFF4CAF50),
-          ),
-          _buildWalletItem(
-            'Winnings',
-            'Amount you have won by participating in different leagues. This amount can be easily withdrawn.',
+          _buildPointsItem(
+            'Points',
+            'Earned from contests and activities. Points are virtual and can be redeemed for items in the Rewards Store. Not cash.',
             Icons.emoji_events,
             Color(0xFFFFD700),
           ),
-          _buildWalletItem(
-            'Bonus',
-            'Cash bonus awarded under various schemes and promotional offers. Can only be used to pay 10% of total entry fee.',
+          _buildPointsItem(
+            'Promo Points',
+            'Promotional points from offers and events. Usable as per offer terms on select redemptions. Not cash.',
             Icons.card_giftcard,
             Color(0xFFFF5722),
           ),
-          _buildWalletItem(
-            'Total Balance',
-            'Sum of all amounts: Deposited + Winnings + Bonus.',
+          _buildPointsItem(
+            'Overview',
+            'Summary of your Points and Promo Points. Points cannot be exchanged for money or withdrawn.',
             Icons.account_balance,
             Color(0xFF2E3192),
+          ),
+          SizedBox(height: 8),
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, size: 18, color: Colors.blue.shade700),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Redemptions are subject to availability and program terms. Any taxes, shipping, or fees (if applicable) are shown before you confirm.',
+                    style: TextStyle(fontSize: 12, color: Colors.blue.shade800, height: 1.35),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildWalletItem(String title, String description, IconData icon, Color color) {
+  Widget _buildPointsItem(String title, String description, IconData icon, Color color) {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
