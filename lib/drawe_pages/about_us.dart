@@ -61,7 +61,7 @@ class AboutUsPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Showcase your cricket knowledge and win prizes',
+                    'Showcase your cricket knowledge for entertainment purposes',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white70,
@@ -78,7 +78,11 @@ class AboutUsPage extends StatelessWidget {
             _buildSection(
               title: 'What We Do',
               icon: Icons.info_outline,
-              content: 'Star25Pro is an online fantasy game owned and operated by Dayasara Entertainment Private Limited. Star25Pro allows users to showcase their knowledge and interest in Cricket, apply their skills, and win prizes. Users can create a team of eleven players of their choice, who will score runs, take wickets, and earn points.\n\nNot just as spectators, users can actively manage their teams. Star25Pro is managed by a team of skilled professionals.',
+              content:
+              'Star25Pro is an online fantasy game owned and operated by Dayasara Entertainment Private Limited. '
+                  'Star25Pro allows users to showcase their knowledge and interest in Cricket, apply their skills, and play for entertainment purposes. '
+                  'Users can create a team of eleven players of their choice, who will score runs, take wickets, and gain points.\n\n'
+                  'Not just as spectators, users can actively manage their teams. Star25Pro is managed by a team of skilled professionals.',
             ),
 
             const SizedBox(height: 24),
@@ -87,7 +91,10 @@ class AboutUsPage extends StatelessWidget {
             _buildSection(
               title: 'Our Contests',
               icon: Icons.emoji_events,
-              content: 'Users can install the application from Google Play and create multiple teams for a single cricket match. They can experiment with different team combinations, select captains, predict the best player of the match, and choose their favorite bowlers, all-rounders, and wicketkeepers.\n\nUsers can also invite their friends and family to participate in contests.',
+              content:
+              'Users can install the application from Google Play and create multiple teams for a single cricket match. '
+                  'They can experiment with different team combinations, select captains, predict the best player of the match, and choose their favorite bowlers, all-rounders, and wicketkeepers.\n\n'
+                  'Users can also invite their friends and family to participate in contests for entertainment purposes.',
             ),
 
             const SizedBox(height: 24),
@@ -99,7 +106,8 @@ class AboutUsPage extends StatelessWidget {
                   child: _buildInfoCard(
                     title: 'Entry Fees',
                     icon: Icons.payment,
-                    content: 'Each contest has a fixed entry fee determined by our management team. While users can create teams for free, an entry fee is required to join a contest.',
+                    content:
+                    'Each contest has a fixed entry fee determined by our management team. While users can create teams for free, an entry fee is required to join a contest.',
                     color: Colors.grey[200]!,
                     iconColor: Colors.black,
                   ),
@@ -109,7 +117,8 @@ class AboutUsPage extends StatelessWidget {
                   child: _buildInfoCard(
                     title: 'Rewards',
                     icon: Icons.card_giftcard,
-                    content: 'Simply play based on your skills! If your team wins and secures the first rank, you will receive the allocated prize.',
+                    content:
+                    'Simply play for entertainment purposes! If your team secures the first rank, you will receive the allocated points.',
                     color: Colors.grey[300]!,
                     iconColor: Colors.black,
                   ),
@@ -123,7 +132,11 @@ class AboutUsPage extends StatelessWidget {
             _buildSection(
               title: 'Consolation Prizes',
               icon: Icons.star,
-              content: 'We appreciate every player who participates, even if they don\'t win a prize. Star25Pro values your skills, efforts, and trust. That\'s why we provide consolation prizes to users who join contests but don\'t secure a winning rank.\n\nWith us, there\'s nothing to lose—it\'s always a win-win!\n\nAll rewards, including winnings and consolation prizes, will be credited to the user\'s wallet, which they can withdraw anytime.',
+              content:
+              'We appreciate every player who participates, even if they don\'t secure top points. '
+                  'Star25Pro values your skills, efforts, and trust. That\'s why we provide consolation points to users who join contests but don\'t secure a winning rank.\n\n'
+                  'With us, there\'s nothing to lose—it\'s always a win-win!\n\n'
+                  'All points, including winnings and consolation points, will be credited to the user\'s wallet, which they can withdraw anytime.',
             ),
 
             const SizedBox(height: 24),
@@ -138,39 +151,19 @@ class AboutUsPage extends StatelessWidget {
                 children: [
                   _buildLegalItem(
                     title: 'Is playing Star25Pro legal?',
-                    description: 'Yes, it is absolutely safe. Star25Pro is a game of skill. Indian law clearly distinguishes between games of skill and games of chance. Unlike gambling, games that require skill are completely legal.',
+                    description:
+                    'Yes, it is absolutely safe. Star25Pro is a game of skill. '
+                        'Indian law clearly distinguishes between games of skill and games of chance. '
+                        'Unlike gambling, games that require skill are completely legal.',
                   ),
                   const SizedBox(height: 16),
                   _buildLegalItem(
                     title: 'Compliance & Monitoring',
-                    description: 'All contests hosted by Star25Pro are carefully designed, and we strictly monitor the jurisdiction of prize winners to ensure compliance with the relevant laws in India.',
+                    description:
+                    'All contests hosted by Star25Pro are carefully designed, and we strictly monitor the jurisdiction of participants to ensure compliance with the relevant laws in India.',
                   ),
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red[200]!),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.warning, color: Colors.red[600], size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Users from the states of Assam, Sikkim, Nagaland, Odisha, Telangana, Andhra Pradesh, and Tamil Nadu are not allowed to play Star25Pro.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.red[800],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+
                 ],
               ),
             ),
@@ -367,5 +360,3 @@ class AboutUsPage extends StatelessWidget {
     );
   }
 }
-
-// Example usage in main.dart

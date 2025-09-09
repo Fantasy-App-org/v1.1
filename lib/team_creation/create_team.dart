@@ -33,7 +33,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
   List<Player> _selectedPlayers = [];
   Player? _captain;
   Player? _viceCaptain;
-  double _creditsLeft = 100.0;
+  double _creditsLeft = 100.0; // kept variable name; only labels changed to "Points"
   int _currentView = 0; // 0: Player Selection, 1: Team Preview, 2: Captain Selection, 3: Team Saved View
 
   // Backend data
@@ -50,7 +50,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
   // Mode properties
   bool get _isEditMode => widget.existingTeam != null;
   bool get _isCopyMode => widget.teamToCopy != null;
-  String get _pageTitle => _isEditMode ? "Edit Team" : _isCopyMode ? "Copy Team" : "Create Team";
+  String get _pageTitle =>
+      _isEditMode ? "Edit Team" : _isCopyMode ? "Copy Team" : "Create Team";
 
   @override
   void initState() {
@@ -67,7 +68,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
         _errorMessage = null;
       });
 
-      print('Loading players for match ID: ${widget.fixture.id}, series ID: ${widget.fixture.seriesId}');
+      print(
+          'Loading players for match ID: ${widget.fixture.id}, series ID: ${widget.fixture.seriesId}');
 
       final players = await _teamService.getSquadListForMatch(
         seriesId: widget.fixture.seriesId,
@@ -114,7 +116,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
     for (Player existingPlayer in existingTeam.teamPlayers!) {
       // Find matching player in the loaded squad
       Player? matchingPlayer = _allPlayers.firstWhere(
-            (player) => player.id == existingPlayer.id ||
+            (player) =>
+        player.id == existingPlayer.id ||
             player.playerName == existingPlayer.playerName,
         orElse: () => existingPlayer,
       );
@@ -135,7 +138,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
 
     _calculateCreditsLeft();
     print('Populated team with ${_selectedPlayers.length} players');
-    print('Captain: ${_captain?.playerName}, Vice Captain: ${_viceCaptain?.playerName}');
+    print(
+        'Captain: ${_captain?.playerName}, Vice Captain: ${_viceCaptain?.playerName}');
   }
 
   // New method to populate team for copying (without captain/vice-captain)
@@ -152,7 +156,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
     for (Player existingPlayer in teamToCopy.teamPlayers!) {
       // Find matching player in the loaded squad
       Player? matchingPlayer = _allPlayers.firstWhere(
-            (player) => player.id == existingPlayer.id ||
+            (player) =>
+        player.id == existingPlayer.id ||
             player.playerName == existingPlayer.playerName,
         orElse: () => existingPlayer,
       );
@@ -173,30 +178,45 @@ class _CreateTeamPageState extends State<CreateTeamPage>
   }
 
   void _categorizePlayersByPosition() {
-    _wicketKeepers = _allPlayers.where((p) => p.role?.toLowerCase().contains('wk') == true ||
-        p.role?.toLowerCase().contains('wk') == true).toList();
+    _wicketKeepers = _allPlayers
+        .where((p) =>
+    p.role?.toLowerCase().contains('wk') == true ||
+        p.role?.toLowerCase().contains('wk') == true)
+        .toList();
 
-    _batsmen = _allPlayers.where((p) => p.role?.toLowerCase().contains('bat') == true ||
-        p.role?.toLowerCase().contains('bat') == true).toList();
+    _batsmen = _allPlayers
+        .where((p) =>
+    p.role?.toLowerCase().contains('bat') == true ||
+        p.role?.toLowerCase().contains('bat') == true)
+        .toList();
 
-    _allRounders = _allPlayers.where((p) => p.role?.toLowerCase().contains('allrounder') == true ||
+    _allRounders = _allPlayers
+        .where((p) =>
+    p.role?.toLowerCase().contains('allrounder') == true ||
         p.role?.toLowerCase().contains('all-rounder') == true ||
-        p.role?.toLowerCase().contains('ar') == true).toList();
+        p.role?.toLowerCase().contains('ar') == true)
+        .toList();
 
-    _bowlers = _allPlayers.where((p) => p.role?.toLowerCase().contains('bowler') == true ||
-        p.role?.toLowerCase().contains('bowl') == true).toList();
+    _bowlers = _allPlayers
+        .where((p) =>
+    p.role?.toLowerCase().contains('bowler') == true ||
+        p.role?.toLowerCase().contains('bowl') == true)
+        .toList();
 
     // Sort each category by credits in descending order
-    _wicketKeepers.sort((a, b) => (b.credits ?? 0.0).compareTo(a.credits ?? 0.0));
+    _wicketKeepers
+        .sort((a, b) => (b.credits ?? 0.0).compareTo(a.credits ?? 0.0));
     _batsmen.sort((a, b) => (b.credits ?? 0.0).compareTo(a.credits ?? 0.0));
     _allRounders.sort((a, b) => (b.credits ?? 0.0).compareTo(a.credits ?? 0.0));
     _bowlers.sort((a, b) => (b.credits ?? 0.0).compareTo(a.credits ?? 0.0));
 
-    print('Categorized players: WK:${_wicketKeepers.length}, BAT:${_batsmen.length}, AR:${_allRounders.length}, BOWL:${_bowlers.length}');
+    print(
+        'Categorized players: WK:${_wicketKeepers.length}, BAT:${_batsmen.length}, AR:${_allRounders.length}, BOWL:${_bowlers.length}');
   }
 
   void _calculateCreditsLeft() {
-    double usedCredits = _selectedPlayers.fold(0, (sum, player) => sum + (player.credits ?? 0.0));
+    double usedCredits = _selectedPlayers.fold(
+        0, (sum, player) => sum + (player.credits ?? 0.0));
     setState(() {
       _creditsLeft = 100.0 - usedCredits;
     });
@@ -210,8 +230,10 @@ class _CreateTeamPageState extends State<CreateTeamPage>
     int bowlCount = _selectedPlayers.where((p) => _isBowler(p)).length;
 
     // Count players by team
-    int teamACount = _selectedPlayers.where((p) => p.teamId == widget.fixture.teamAId).length;
-    int teamBCount = _selectedPlayers.where((p) => p.teamId == widget.fixture.teamBId).length;
+    int teamACount =
+        _selectedPlayers.where((p) => p.teamId == widget.fixture.teamAId).length;
+    int teamBCount =
+        _selectedPlayers.where((p) => p.teamId == widget.fixture.teamBId).length;
 
     // Validation rules
     if (wkCount < 1) return false; // At least 1 wicket keeper
@@ -230,15 +252,21 @@ class _CreateTeamPageState extends State<CreateTeamPage>
     int arCount = _selectedPlayers.where((p) => _isAllRounder(p)).length;
     int bowlCount = _selectedPlayers.where((p) => _isBowler(p)).length;
 
-    int teamACount = _selectedPlayers.where((p) => p.teamId == widget.fixture.teamAId).length;
-    int teamBCount = _selectedPlayers.where((p) => p.teamId == widget.fixture.teamBId).length;
+    int teamACount =
+        _selectedPlayers.where((p) => p.teamId == widget.fixture.teamAId).length;
+    int teamBCount =
+        _selectedPlayers.where((p) => p.teamId == widget.fixture.teamBId).length;
 
     if (wkCount < 1) return "Select at least 1 wicket keeper";
     if (batCount < 1) return "Select at least 1 batsman";
     if (arCount < 1) return "Select at least 1 all rounder";
     if (bowlCount < 1) return "Select at least 1 bowler";
-    if (teamACount == 0) return "Select at least 1 player from ${widget.fixture.teamAShort}";
-    if (teamBCount == 0) return "Select at least 1 player from ${widget.fixture.teamBShort}";
+    if (teamACount == 0) {
+      return "Select at least 1 player from ${widget.fixture.teamAShort}";
+    }
+    if (teamBCount == 0) {
+      return "Select at least 1 player from ${widget.fixture.teamBShort}";
+    }
     if (teamACount > 7) return "Maximum 7 players from ${widget.fixture.teamAShort}";
     if (teamBCount > 7) return "Maximum 7 players from ${widget.fixture.teamBShort}";
 
@@ -266,13 +294,14 @@ class _CreateTeamPageState extends State<CreateTeamPage>
         if (_captain == player) _captain = null;
         if (_viceCaptain == player) _viceCaptain = null;
       } else {
-        if (_selectedPlayers.length < 11 && _creditsLeft >= (player.credits ?? 0.0)) {
+        if (_selectedPlayers.length < 11 &&
+            _creditsLeft >= (player.credits ?? 0.0)) {
           _selectedPlayers.add(player);
           player.isSelected = true;
         } else if (_creditsLeft < (player.credits ?? 0.0)) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Not enough credits to select this player'),
+              content: Text('Not enough points to select this player'),
               backgroundColor: Colors.red,
               duration: Duration(seconds: 2),
             ),
@@ -347,7 +376,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
       final playerIds = _selectedPlayers.map((p) => p.id!).toList();
 
       // Use existing team ID if editing, empty string if creating new or copying
-      String teamId = _isEditMode && widget.existingTeam?.teamId != null
+      String teamId =
+      _isEditMode && widget.existingTeam?.teamId != null
           ? widget.existingTeam!.teamId.toString()
           : "";
 
@@ -366,14 +396,16 @@ class _CreateTeamPageState extends State<CreateTeamPage>
         _currentView = 3; // Show success view
       });
 
-      String actionText = _isEditMode ? 'updated' : _isCopyMode ? 'copied' : 'created';
+      String actionText =
+      _isEditMode ? 'updated' : _isCopyMode ? 'copied' : 'created';
       print('Team $actionText successfully: ${response}');
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
 
-      String actionText = _isEditMode ? 'update' : _isCopyMode ? 'copy' : 'create';
+      String actionText =
+      _isEditMode ? 'update' : _isCopyMode ? 'copy' : 'create';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to $actionText team: ${e.toString()}'),
@@ -409,7 +441,11 @@ class _CreateTeamPageState extends State<CreateTeamPage>
           children: [
             Text(
               _currentView == 3
-                  ? (_isEditMode ? "Team Updated" : _isCopyMode ? "Team Copied" : "Team Created")
+                  ? (_isEditMode
+                  ? "Team Updated"
+                  : _isCopyMode
+                  ? "Team Copied"
+                  : "Team Created")
                   : _pageTitle,
               style: TextStyle(color: Colors.white, fontSize: 18),
             ),
@@ -442,8 +478,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                         ? Icons.copy
                         : Icons.sports_cricket,
                     color: Colors.white,
-                    size: 16
-                ),
+                    size: 16),
                 SizedBox(width: 4),
                 Text(
                     _isEditMode
@@ -451,8 +486,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                         : _isCopyMode
                         ? "Copy"
                         : "Fantasy",
-                    style: TextStyle(color: Colors.white, fontSize: 12)
-                ),
+                    style: TextStyle(color: Colors.white, fontSize: 12)),
               ],
             ),
           ),
@@ -597,7 +631,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                       children: [
                         Text(
                           widget.fixture.matchTitle,
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                          style:
+                          TextStyle(color: Colors.white70, fontSize: 12),
                           textAlign: TextAlign.center,
                         ),
                         Container(
@@ -608,20 +643,27 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                             borderRadius: BorderRadius.circular(3),
                           ),
                           child: Row(
-                            children: List.generate(11, (index) =>
-                                Expanded(
-                                  child: Container(
-                                    margin: EdgeInsets.symmetric(horizontal: 1),
-                                    decoration: BoxDecoration(
-                                      color: index < _selectedPlayers.length ? Color(0xFF8B1538) : Colors.grey[800],
-                                      borderRadius: BorderRadius.circular(3),
-                                    ),
+                            children: List.generate(
+                              11,
+                                  (index) => Expanded(
+                                child: Container(
+                                  margin:
+                                  EdgeInsets.symmetric(horizontal: 1),
+                                  decoration: BoxDecoration(
+                                    color: index < _selectedPlayers.length
+                                        ? Color(0xFF8B1538)
+                                        : Colors.grey[800],
+                                    borderRadius: BorderRadius.circular(3),
                                   ),
                                 ),
+                              ),
                             ),
                           ),
                         ),
-                        Text("${_selectedPlayers.length}/11", style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+                        Text("${_selectedPlayers.length}/11",
+                            style: TextStyle(
+                                color: Colors.white70,
+                                fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -632,17 +674,20 @@ class _CreateTeamPageState extends State<CreateTeamPage>
           ),
         ),
 
-        // Credits Info
+        // Points Info (renamed from Credits)
         Container(
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           color: Color(0xFF2A2A2A),
           child: Row(
             children: [
-              Icon(Icons.monetization_on, color: Colors.orange, size: 20),
+              Icon(Icons.military_tech, color: Colors.orange, size: 20),
               SizedBox(width: 8),
               Text(
-                "Credits Left: ${_creditsLeft.toStringAsFixed(1)}",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                "Points Left: ${_creditsLeft.toStringAsFixed(1)}",
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16),
               ),
               Spacer(),
               Container(
@@ -674,10 +719,14 @@ class _CreateTeamPageState extends State<CreateTeamPage>
               );
             },
             tabs: [
-              _buildTabWithCount("WK", _selectedPlayers.where((p) => _isWicketKeeper(p)).length),
-              _buildTabWithCount("BAT", _selectedPlayers.where((p) => _isBatsman(p)).length),
-              _buildTabWithCount("AR", _selectedPlayers.where((p) => _isAllRounder(p)).length),
-              _buildTabWithCount("BOWL", _selectedPlayers.where((p) => _isBowler(p)).length),
+              _buildTabWithCount(
+                  "WK", _selectedPlayers.where((p) => _isWicketKeeper(p)).length),
+              _buildTabWithCount(
+                  "BAT", _selectedPlayers.where((p) => _isBatsman(p)).length),
+              _buildTabWithCount(
+                  "AR", _selectedPlayers.where((p) => _isAllRounder(p)).length),
+              _buildTabWithCount(
+                  "BOWL", _selectedPlayers.where((p) => _isBowler(p)).length),
             ],
             labelColor: Color(0xFF8B1538),
             unselectedLabelColor: Colors.white70,
@@ -713,7 +762,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          Text(label,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
           if (count > 0)
             Container(
               margin: EdgeInsets.only(top: 2),
@@ -724,7 +774,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
               ),
               child: Text(
                 count.toString(),
-                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
               ),
             ),
         ],
@@ -750,8 +801,10 @@ class _CreateTeamPageState extends State<CreateTeamPage>
     }
 
     // Separate announced and unannounced players
-    List<Player> announcedPlayers = players.where((p) => p.isAnnounced == true).toList();
-    List<Player> unannouncedPlayers = players.where((p) => p.isAnnounced == false).toList();
+    List<Player> announcedPlayers =
+    players.where((p) => p.isAnnounced == true).toList();
+    List<Player> unannouncedPlayers =
+    players.where((p) => p.isAnnounced == false).toList();
 
     return ListView(
       children: [
@@ -772,7 +825,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                 SizedBox(width: 8),
                 Text(
                   "Announced",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -797,7 +851,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                 SizedBox(width: 8),
                 Text(
                   "Unannounced",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -815,26 +870,34 @@ class _CreateTeamPageState extends State<CreateTeamPage>
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: team == widget.fixture.teamAShort ? Color(0xFF8B1538) : Color(0xFF2E5BBA),
+            color: team == widget.fixture.teamAShort
+                ? Color(0xFF8B1538)
+                : Color(0xFF2E5BBA),
             borderRadius: BorderRadius.circular(25),
             border: Border.all(color: Colors.white30, width: 2),
           ),
           child: Center(
             child: Text(
               team,
-              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
             ),
           ),
         ),
         SizedBox(width: 8),
-        Text(score, style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+        Text(score,
+            style: TextStyle(
+                color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
       ],
     );
   }
 
   Widget _buildPlayerCard(Player player) {
-    bool canSelect = _selectedPlayers.length < 11 && _creditsLeft >= (player.credits ?? 0.0);
-    String teamShort = player.teamId == widget.fixture.teamAId ? widget.fixture.teamAShort : widget.fixture.teamBShort;
+    bool canSelect =
+        _selectedPlayers.length < 11 && _creditsLeft >= (player.credits ?? 0.0);
+    String teamShort = player.teamId == widget.fixture.teamAId
+        ? widget.fixture.teamAShort
+        : widget.fixture.teamBShort;
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -848,14 +911,16 @@ class _CreateTeamPageState extends State<CreateTeamPage>
         border: player.isSelected
             ? Border.all(color: Colors.white, width: 2)
             : Border.all(color: Colors.grey[700]!, width: 1),
-        boxShadow: player.isSelected ? [
+        boxShadow: player.isSelected
+            ? [
           BoxShadow(
             color: Color(0xFF8B1538).withOpacity(0.3),
             spreadRadius: 1,
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
-        ] : null,
+        ]
+            : null,
       ),
       child: Padding(
         padding: EdgeInsets.all(16),
@@ -879,8 +944,14 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                   ),
                   child: Center(
                     child: Text(
-                      (player.playerName ?? "Unknown").split(' ').map((e) => e.isNotEmpty ? e[0] : '').join(''),
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      (player.playerName ?? "Unknown")
+                          .split(' ')
+                          .map((e) => e.isNotEmpty ? e[0] : '')
+                          .join(''),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16),
                     ),
                   ),
                 ),
@@ -919,7 +990,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding:
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: player.teamId == widget.fixture.teamAId
                               ? Color(0xFF8B1538)
@@ -928,7 +1000,10 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                         ),
                         child: Text(
                           teamShort,
-                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                       SizedBox(width: 8),
@@ -945,7 +1020,10 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                       SizedBox(width: 4),
                       Text(
                         "${player.points ?? 0} pts",
-                        style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -953,7 +1031,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
               ),
             ),
 
-            // Credits and Selection Button
+            // Points and Selection Button (renamed from Credits)
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -966,7 +1044,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                   ),
                 ),
                 Text(
-                  "Credits",
+                  "Pts",
                   style: TextStyle(color: Colors.white70, fontSize: 10),
                 ),
                 SizedBox(height: 8),
@@ -978,14 +1056,18 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                     decoration: BoxDecoration(
                       color: player.isSelected ? Colors.white : Colors.transparent,
                       border: Border.all(
-                        color: player.isSelected ? Colors.white : (canSelect ? Color(0xFF8B1538) : Colors.grey),
+                        color: player.isSelected
+                            ? Colors.white
+                            : (canSelect ? Color(0xFF8B1538) : Colors.grey),
                         width: 2,
                       ),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       player.isSelected ? Icons.check : Icons.add,
-                      color: player.isSelected ? Color(0xFF8B1538) : (canSelect ? Color(0xFF8B1538) : Colors.grey),
+                      color: player.isSelected
+                          ? Color(0xFF8B1538)
+                          : (canSelect ? Color(0xFF8B1538) : Colors.grey),
                       size: 24,
                     ),
                   ),
@@ -1001,10 +1083,14 @@ class _CreateTeamPageState extends State<CreateTeamPage>
   // Team Preview
   Widget _buildTeamPreview() {
     // Organize selected players by position
-    List<Player> selectedWK = _selectedPlayers.where((p) => _isWicketKeeper(p)).toList();
-    List<Player> selectedBAT = _selectedPlayers.where((p) => _isBatsman(p)).toList();
-    List<Player> selectedAR = _selectedPlayers.where((p) => _isAllRounder(p)).toList();
-    List<Player> selectedBOWL = _selectedPlayers.where((p) => _isBowler(p)).toList();
+    List<Player> selectedWK =
+    _selectedPlayers.where((p) => _isWicketKeeper(p)).toList();
+    List<Player> selectedBAT =
+    _selectedPlayers.where((p) => _isBatsman(p)).toList();
+    List<Player> selectedAR =
+    _selectedPlayers.where((p) => _isAllRounder(p)).toList();
+    List<Player> selectedBOWL =
+    _selectedPlayers.where((p) => _isBowler(p)).toList();
 
     return Container(
       decoration: BoxDecoration(
@@ -1031,19 +1117,25 @@ class _CreateTeamPageState extends State<CreateTeamPage>
               children: [
                 Text(
                   "TEAM PREVIEW",
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
                 ),
                 Spacer(),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      "Credits Left",
+                      "Points Left",
                       style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                     Text(
                       "${_creditsLeft.toStringAsFixed(0)}",
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -1057,9 +1149,14 @@ class _CreateTeamPageState extends State<CreateTeamPage>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("Players", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                Text("Players",
+                    style: TextStyle(color: Colors.white70, fontSize: 14)),
                 SizedBox(width: 8),
-                Text("${_selectedPlayers.length}/11", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                Text("${_selectedPlayers.length}/11",
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
                 SizedBox(width: 32),
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1067,12 +1164,17 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                     color: Color(0xFF8B1538),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text(widget.fixture.teamAShort, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Text(widget.fixture.teamAShort,
+                      style:
+                      TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
                 SizedBox(width: 8),
                 Text(
                   "${_selectedPlayers.where((p) => p.teamId == widget.fixture.teamAId).length} : ${_selectedPlayers.where((p) => p.teamId == widget.fixture.teamBId).length}",
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold),
                 ),
                 SizedBox(width: 8),
                 Container(
@@ -1081,7 +1183,9 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                     color: Color(0xFF2E5BBA),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text(widget.fixture.teamBShort, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Text(widget.fixture.teamBShort,
+                      style:
+                      TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -1099,7 +1203,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                     SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: selectedWK.map((player) => _buildFieldPlayer(player, isWK: true)).toList(),
+                      children:
+                      selectedWK.map((player) => _buildFieldPlayer(player, isWK: true)).toList(),
                     ),
                     SizedBox(height: 40),
                   ],
@@ -1112,7 +1217,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                       alignment: WrapAlignment.center,
                       spacing: 20,
                       runSpacing: 20,
-                      children: selectedBAT.map((player) => _buildFieldPlayer(player)).toList(),
+                      children:
+                      selectedBAT.map((player) => _buildFieldPlayer(player)).toList(),
                     ),
                     SizedBox(height: 40),
                   ],
@@ -1123,7 +1229,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                     SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: selectedAR.map((player) => _buildFieldPlayer(player)).toList(),
+                      children:
+                      selectedAR.map((player) => _buildFieldPlayer(player)).toList(),
                     ),
                     SizedBox(height: 40),
                   ],
@@ -1136,7 +1243,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                       alignment: WrapAlignment.center,
                       spacing: 20,
                       runSpacing: 20,
-                      children: selectedBOWL.map((player) => _buildFieldPlayer(player)).toList(),
+                      children:
+                      selectedBOWL.map((player) => _buildFieldPlayer(player)).toList(),
                     ),
                     SizedBox(height: 40),
                   ],
@@ -1158,13 +1266,16 @@ class _CreateTeamPageState extends State<CreateTeamPage>
       ),
       child: Text(
         "$title ($count)",
-        style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+        style: TextStyle(
+            color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
       ),
     );
   }
 
   Widget _buildFieldPlayer(Player player, {bool isWK = false}) {
-    String teamShort = player.teamId == widget.fixture.teamAId ? widget.fixture.teamAShort : widget.fixture.teamBShort;
+    String teamShort = player.teamId == widget.fixture.teamAId
+        ? widget.fixture.teamAShort
+        : widget.fixture.teamBShort;
 
     return Container(
       width: 80,
@@ -1192,8 +1303,14 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                 ),
                 child: Center(
                   child: Text(
-                    (player.playerName ?? "Unknown").split(' ').map((e) => e.isNotEmpty ? e[0] : '').join(''),
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                    (player.playerName ?? "Unknown")
+                        .split(' ')
+                        .map((e) => e.isNotEmpty ? e[0] : '')
+                        .join(''),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16),
                   ),
                 ),
               ),
@@ -1210,7 +1327,11 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                       border: Border.all(color: Colors.white, width: 2),
                     ),
                     child: Center(
-                      child: Text("C", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      child: Text("C",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ),
@@ -1227,7 +1348,11 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                       border: Border.all(color: Colors.white, width: 2),
                     ),
                     child: Center(
-                      child: Text("VC", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                      child: Text("VC",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ),
@@ -1244,13 +1369,14 @@ class _CreateTeamPageState extends State<CreateTeamPage>
               (player.playerName ?? "Unknown").length > 8
                   ? (player.playerName ?? "Unknown").substring(0, 6) + ".."
                   : (player.playerName ?? "Unknown"),
-              style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Colors.black, fontSize: 10, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
           ),
           SizedBox(height: 4),
           Text(
-            "${player.credits ?? 0.0} Cr",
+            "${player.credits ?? 0.0} Pts",
             style: TextStyle(color: Colors.white70, fontSize: 10),
           ),
         ],
@@ -1284,7 +1410,10 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                   _isCopyMode
                       ? "Choose New Captain & Vice Captain"
                       : "Choose Captain & Vice Captain",
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -1302,13 +1431,16 @@ class _CreateTeamPageState extends State<CreateTeamPage>
               itemCount: _selectedPlayers.length,
               itemBuilder: (context, index) {
                 Player player = _selectedPlayers[index];
-                String teamShort = player.teamId == widget.fixture.teamAId ? widget.fixture.teamAShort : widget.fixture.teamBShort;
+                String teamShort = player.teamId == widget.fixture.teamAId
+                    ? widget.fixture.teamAShort
+                    : widget.fixture.teamBShort;
 
                 return Container(
                   margin: EdgeInsets.symmetric(vertical: 6),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: (_captain == player || _viceCaptain == player)
+                      colors:
+                      (_captain == player || _viceCaptain == player)
                           ? _isCopyMode
                           ? [Colors.blue, Colors.blue.shade700]
                           : _isEditMode
@@ -1337,8 +1469,13 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                           ),
                           child: Center(
                             child: Text(
-                              (player.playerName ?? "Unknown").split(' ').map((e) => e.isNotEmpty ? e[0] : '').join(''),
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              (player.playerName ?? "Unknown")
+                                  .split(' ')
+                                  .map((e) => e.isNotEmpty ? e[0] : '')
+                                  .join(''),
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
@@ -1349,12 +1486,16 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                             children: [
                               Text(
                                 player.playerName ?? "Unknown",
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16),
                               ),
                               SizedBox(height: 4),
                               Text(
                                 "${_getPlayerPosition(player)} • $teamShort • ${player.points ?? 0} pts",
-                                style: TextStyle(color: Colors.white70, fontSize: 12),
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 12),
                               ),
                             ],
                           ),
@@ -1364,16 +1505,22 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                             GestureDetector(
                               onTap: () => _setCaptain(player),
                               child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: _captain == player ? Colors.orange : Colors.transparent,
-                                  border: Border.all(color: Colors.orange, width: 2),
+                                  color: _captain == player
+                                      ? Colors.orange
+                                      : Colors.transparent,
+                                  border:
+                                  Border.all(color: Colors.orange, width: 2),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
                                   "C",
                                   style: TextStyle(
-                                    color: _captain == player ? Colors.white : Colors.orange,
+                                    color: _captain == player
+                                        ? Colors.white
+                                        : Colors.orange,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
@@ -1384,16 +1531,21 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                             GestureDetector(
                               onTap: () => _setViceCaptain(player),
                               child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: _viceCaptain == player ? Colors.blue : Colors.transparent,
+                                  color: _viceCaptain == player
+                                      ? Colors.blue
+                                      : Colors.transparent,
                                   border: Border.all(color: Colors.blue, width: 2),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
                                   "VC",
                                   style: TextStyle(
-                                    color: _viceCaptain == player ? Colors.white : Colors.blue,
+                                    color: _viceCaptain == player
+                                        ? Colors.white
+                                        : Colors.blue,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
@@ -1456,7 +1608,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                 : _isCopyMode
                 ? "Team Copied Successfully!"
                 : "Team Created Successfully!",
-            style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 16),
@@ -1493,12 +1646,17 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                           color: Colors.orange,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text("C", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: Text("C",
+                            style: TextStyle(
+                                color: Colors.white, fontWeight: FontWeight.bold)),
                       ),
                       SizedBox(width: 12),
                       Text(
                         "Captain: ${_captain!.playerName ?? 'Unknown'}",
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -1512,12 +1670,17 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                           color: Colors.blue,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text("VC", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        child: Text("VC",
+                            style: TextStyle(
+                                color: Colors.white, fontWeight: FontWeight.bold)),
                       ),
                       SizedBox(width: 12),
                       Text(
                         "Vice Captain: ${_viceCaptain!.playerName ?? 'Unknown'}",
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -1532,11 +1695,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                 Navigator.pop(context, true); // Return true to indicate successful action
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: _isEditMode
-                    ? Colors.orange
-                    : _isCopyMode
-                    ? Colors.blue
-                    : Colors.green,
+                backgroundColor:
+                _isEditMode ? Colors.orange : _isCopyMode ? Colors.blue : Colors.green,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1544,7 +1704,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
               ),
               child: Text(
                 _isEditMode ? "Go Back" : _isCopyMode ? "View New Team" : "Go to Contests",
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -1579,18 +1740,18 @@ class _CreateTeamPageState extends State<CreateTeamPage>
               children: [
                 Text(
                   "Players ${_selectedPlayers.length}/11",
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   _selectedPlayers.length == 11 && !_validateTeamComposition()
                       ? _getValidationMessage()
-                      : "Credits left: ${_creditsLeft.toStringAsFixed(1)}",
+                      : "Points left: ${_creditsLeft.toStringAsFixed(1)}",
                   style: TextStyle(
                       color: _selectedPlayers.length == 11 && !_validateTeamComposition()
                           ? Colors.red
                           : Colors.white70,
-                      fontSize: 14
-                  ),
+                      fontSize: 14),
                 ),
               ],
             ),
@@ -1605,9 +1766,7 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                 borderRadius: BorderRadius.circular(8),
               ),
               child: ElevatedButton(
-                onPressed: isValid
-                    ? () => setState(() => _currentView = 1)
-                    : null,
+                onPressed: isValid ? () => setState(() => _currentView = 1) : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
@@ -1615,14 +1774,16 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                 ),
                 child: Text(
                   "Preview",
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
           if (_currentView == 1)
             Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Color(0xFF8B1538), Color(0xFFA91B47)]),
+                gradient:
+                LinearGradient(colors: [Color(0xFF8B1538), Color(0xFFA91B47)]),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: ElevatedButton(
@@ -1634,7 +1795,8 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                 ),
                 child: Text(
                   "Next",
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -1642,11 +1804,12 @@ class _CreateTeamPageState extends State<CreateTeamPage>
             Container(
               decoration: BoxDecoration(
                 gradient: (_captain != null && _viceCaptain != null)
-                    ? LinearGradient(colors: _isCopyMode
-                    ? [Colors.blue, Colors.blue.shade700]
-                    : _isEditMode
-                    ? [Colors.orange, Colors.orange.shade700]
-                    : [Colors.green, Colors.green.shade700])
+                    ? LinearGradient(
+                    colors: _isCopyMode
+                        ? [Colors.blue, Colors.blue.shade700]
+                        : _isEditMode
+                        ? [Colors.orange, Colors.orange.shade700]
+                        : [Colors.green, Colors.green.shade700])
                     : null,
                 color: (_captain != null && _viceCaptain != null) ? null : Colors.grey,
                 borderRadius: BorderRadius.circular(8),
@@ -1670,8 +1833,15 @@ class _CreateTeamPageState extends State<CreateTeamPage>
                   ),
                 )
                     : Text(
-                  _isEditMode ? "Update Team" : _isCopyMode ? "Save Copy" : "Save Team",
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  _isEditMode
+                      ? "Update Team"
+                      : _isCopyMode
+                      ? "Save Copy"
+                      : "Save Team",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
             ),

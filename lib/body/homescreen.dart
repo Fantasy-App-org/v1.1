@@ -1,4 +1,5 @@
 // /body/homescreen.dart
+import 'package:marquee/marquee.dart';
 import 'package:fantasy/drawe_pages/about_us.dart';
 import 'package:fantasy/drawe_pages/profile.dart';
 import 'package:fantasy/body/refral.dart';
@@ -23,6 +24,333 @@ import 'mygame.dart';
 import 'package:fantasy/config/debug_config.dart';
 import 'package:fantasy/body/live_match_scorecard.dart';
 import 'package:fantasy/service/team_service.dart';
+
+// --- TOP-LEVEL WIDGET (outside any class) ---
+class _SimpleAnimatedBanner extends StatefulWidget {
+  final String title;
+  final String subtitle;
+  final String ctaText;
+  final VoidCallback onTapCTA;
+  final Widget? leading;
+  final String? disclaimer;
+  final bool disclaimerRed; // if true -> solid red pill, else shimmer strip
+
+  const _SimpleAnimatedBanner({
+    Key? key,
+    required this.title,
+    required this.subtitle,
+    required this.ctaText,
+    required this.onTapCTA,
+    this.leading,
+    this.disclaimer,
+    this.disclaimerRed = false,
+  }) : super(key: key);
+
+  @override
+  State<_SimpleAnimatedBanner> createState() => _SimpleAnimatedBannerState();
+}
+
+class _SimpleAnimatedBannerState extends State<_SimpleAnimatedBanner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  static const List<Color> _colors = [
+    Color(0xFF4F46E5), // indigo-600
+    Color(0xFF7C3AED), // violet-600
+    Color(0xFF06B6D4), // cyan-500
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Alignment _lerpAlign(double t, Alignment a, Alignment b) {
+    return Alignment(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final t = Curves.easeInOut.transform(_controller.value);
+            final begin = _lerpAlign(t, const Alignment(-1.2, -1.0), const Alignment(1.2, -1.0));
+            final end   = _lerpAlign(t, const Alignment(1.2,  1.0), const Alignment(-1.2,  1.0));
+
+            // blink opacity (0.65–1.0)
+            final blink = 0.65 + (0.35 * (0.5 - (t - 0.5).abs()) * 2);
+
+            return Container(
+              height: 130,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(begin: begin, end: end, colors: _colors),
+                boxShadow: [
+                  BoxShadow(
+                    color: _colors[0].withOpacity(0.25),
+                    blurRadius: 24,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  // Soft moving sheen on background
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Opacity(
+                        opacity: 0.15 + 0.1 * (0.5 - (t - 0.5).abs()) * 2,
+                        child: const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment(-1.0, -0.2),
+                              end: Alignment(1.0, 0.2),
+                              colors: [Colors.white24, Colors.transparent, Colors.white24],
+                              stops: [0.0, 0.5, 1.0],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Main content row
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 44), // leave space for disclaimer strip
+                    child: Row(
+                      children: [
+                        if (widget.leading != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white.withOpacity(0.25)),
+                            ),
+                            child: widget.leading!,
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                widget.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.0,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                widget.subtitle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.95),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Material(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            onTap: widget.onTapCTA,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.play_arrow_rounded, size: 18, color: Color(0xFF1E293B)),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    widget.ctaText,
+                                    style: const TextStyle(
+                                      color: Color(0xFF1E293B),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Overflow-safe disclaimer strip
+                  // Premium silver-gold shiny disclaimer strip with indigo tex
+
+                    if (widget.disclaimer != null)
+            Positioned(
+            left: 12,
+            right: 12,
+            bottom: 10,
+            child: Container(
+            height: 32,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+            gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+            Colors.grey.shade800,
+            Colors.grey.shade400,
+            Colors.amber.shade200,
+            Colors.grey.shade300,
+            Colors.grey.shade700,
+            ],
+            stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+            ),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white.withOpacity(0.6), width: 1),
+            boxShadow: [
+            BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+            ),
+            ],
+            ),
+            child: Marquee(
+            text:
+            "Exclusively for entertainment use - You earn points, not real money",
+            style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF4F46E5), // Indigo text
+            letterSpacing: 0.5,
+            ),
+            velocity: 40.0,          // scroll speed
+            blankSpace: 40.0,        // space before repeating
+            pauseAfterRound: Duration(seconds: 1), // pause before restarting
+            startPadding: 10.0,      // padding before starting scroll
+            ),
+            ),
+            ),
+
+
+            ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _DisclaimerStrip extends StatelessWidget {
+  final String text;
+  final double shimmerT; // 0..1 from parent controller
+  final bool red;
+
+  const _DisclaimerStrip({
+    Key? key,
+    required this.text,
+    required this.shimmerT,
+    required this.red,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    if (red) {
+      // solid red pill (no shimmer)
+      return Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDC2626), // red-600
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFDC2626).withOpacity(0.35),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          softWrap: false,
+          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+        ),
+      );
+    }
+
+    // shiny glass strip + shimmering text
+    final shimmerPos = -1.0 + (shimmerT * 2.0); // -1 -> +1
+    return Container(
+      height: 28,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withOpacity(0.3)),
+      ),
+      alignment: Alignment.center,
+      child: ShaderMask(
+        blendMode: BlendMode.srcIn,
+        shaderCallback: (rect) {
+          return LinearGradient(
+            begin: Alignment(shimmerPos - 0.6, 0),
+            end: Alignment(shimmerPos + 0.6, 0),
+            colors: const [
+              Colors.white70,
+              Colors.white,
+              Colors.white70,
+            ],
+            stops: const [0.25, 0.5, 0.75],
+          ).createShader(rect);
+        },
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          softWrap: false,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 // Helper function for flags
 String _flagFor(String short) {
@@ -813,63 +1141,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+// --- INSIDE _HomeScreenState ---
+// --- INSIDE _HomeScreenState ---
   Widget _buildPremiumBanner() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF667eea), Color(0xFF764ba2), Color(0xFF667eea)], begin: Alignment.topLeft, end: Alignment.bottomRight, stops: [0.0, 0.5, 1.0]),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: const Color(0xFF667eea).withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 10))],
-      ),
-      child: Stack(children: [
-        Positioned(
-          right: -40,
-          top: -25,
-          child: Container(width: 120, height: 120, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.08))),
-        ),
-        Positioned(
-          right: 15,
-          bottom: -15,
-          child: Container(width: 60, height: 60, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.05))),
-        ),
-        Positioned(
-          left: -20,
-          top: 20,
-          child: Container(width: 40, height: 40, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.06))),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Welcome Back, ${_userName.split(' ').first}! 👋', style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12, fontWeight: FontWeight.w400)),
-                  const SizedBox(height: 6),
-                  const Text('Build Your\nDream Team', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700, height: 1.1)),
-                ]),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: _SimpleAnimatedBanner(
+        title: "Build your Dream Team",
+        subtitle: "Join upcoming matches and win big!",
+        ctaText: "Explore Contests",
+        onTapCTA: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MyMatchesScreen(
+                initialTabIndex: 0,
+                showAllMatches: true,
               ),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withOpacity(0.3)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
-                ),
-                child: const Icon(Icons.emoji_events_rounded, color: Color(0xFFFBBF24), size: 24),
-              ),
-            ]),
-            const SizedBox(height: 15),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white.withOpacity(0.25))),
-              child: Text('🏆 Join upcoming matches and win big!', style: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 11, fontWeight: FontWeight.w400)),
             ),
-          ]),
+          );
+        },
+        leading: Row(
+          children: [
+            const Icon(Icons.sports_cricket, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              'Hi, ${_userName.split(' ').first} 👋',
+              style: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ],
         ),
-      ]),
+        // your legal line
+        disclaimer: "⚠️ Entertainment only — You earn points, not real money",
+        // set to true if you want solid red instead of shimmer-on-glass
+        disclaimerRed: false,
+      ),
     );
   }
+
+
+
 
   Widget _buildBalanceCard() {
     return Container(

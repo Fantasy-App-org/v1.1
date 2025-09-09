@@ -58,7 +58,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
   void _shareOnWhatsApp() {
     if (_inviteCode != null && _inviteCode != 'Loading...' && _inviteCode != 'N/A') {
-      final message = "Download the exciting gaming app Star 25 pro from https://start25pro.com/ and use my invite code $_inviteCode to Play.";
+      final message =
+          "Download the exciting gaming app Star 25 Pro from https://start25pro.com/ and use my invite code $_inviteCode to play.";
 
       Share.share(
         message,
@@ -69,7 +70,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
   void _shareMoreOptions() {
     if (_inviteCode != null && _inviteCode != 'Loading...' && _inviteCode != 'N/A') {
-      final message = "Download the exciting gaming app Star 25 pro from https://start25pro.com/ and use my invite code $_inviteCode to Play.";
+      final message =
+          "Download the exciting gaming app Star 25 Pro from https://start25pro.com/ and use my invite code $_inviteCode to play.";
 
       Share.share(
         message,
@@ -136,23 +138,23 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   vertical: screenHeight * 0.01,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green[50],
+                  color: Colors.amber[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green[200]!),
+                  border: Border.all(color: Colors.amber[200]!),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.currency_rupee,
+                      Icons.stars_rounded,
                       size: isTablet ? 18 : 16,
-                      color: Colors.green[700],
+                      color: Colors.amber[700],
                     ),
                     Text(
-                      '100',
+                      ' 100 pts',
                       style: TextStyle(
-                        color: Colors.green[700],
-                        fontWeight: FontWeight.w600,
+                        color: Colors.amber[800],
+                        fontWeight: FontWeight.w700,
                         fontSize: isTablet ? 16 : 14,
                       ),
                     ),
@@ -192,7 +194,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Get Your Friends to signup',
+                                  'Get your friends to sign up',
                                   style: TextStyle(
                                     color: Colors.grey[600],
                                     fontSize: isTablet ? 16 : 14,
@@ -211,7 +213,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                             ),
                           ),
                           // Premium Illustration
-                          Container(
+                          SizedBox(
                             width: screenWidth * 0.3,
                             height: screenWidth * 0.25,
                             child: Stack(
@@ -248,21 +250,21 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                     height: screenWidth * 0.15,
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
-                                        colors: [Colors.green[400]!, Colors.green[600]!],
+                                        colors: [Colors.amber[400]!, Colors.amber[700]!],
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.green.withOpacity(0.3),
+                                          color: Colors.amber.withOpacity(0.3),
                                           blurRadius: 15,
                                           offset: const Offset(0, 5),
                                         ),
                                       ],
                                     ),
                                     child: Icon(
-                                      Icons.currency_rupee,
+                                      Icons.stars_rounded,
                                       size: screenWidth * 0.08,
                                       color: Colors.white,
                                     ),
@@ -496,9 +498,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 child: Column(
                   children: [
                     _buildBenefitItem(
-                      icon: Icons.currency_rupee,
-                      color: Colors.green[600]!,
-                      title: 'Earn ₹100 Bonus',
+                      icon: Icons.stars_rounded,
+                      color: Colors.amber[700]!,
+                      title: 'Earn 100 Points',
                       subtitle: 'For each friend that joins',
                       screenWidth: screenWidth,
                       isTablet: isTablet,
@@ -508,9 +510,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
                       child: Divider(color: Colors.grey[200], thickness: 1),
                     ),
                     _buildBenefitItem(
-                      icon: Icons.people_outline,
-                      color: Colors.blue[600]!,
-                      title: 'They get ₹50 too!',
+                      icon: Icons.stars_rounded,
+                      color: Colors.indigo[600]!,
+                      title: 'They get 50 Points too!',
                       subtitle: 'Your friends also get a joining bonus',
                       screenWidth: screenWidth,
                       isTablet: isTablet,
@@ -521,7 +523,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
               SizedBox(height: screenHeight * 0.025),
 
-              // Progress Tracker - UPDATED WITH REAL DATA
+              // Progress Tracker - UPDATED WITH POINTS
               Container(
                 margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
                 padding: EdgeInsets.all(screenWidth * 0.04),
@@ -569,9 +571,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
                         ),
                         _buildProgressItem(
                           label: 'Earned',
-                          value: '₹${_referredCount * 100}', // ₹100 per referral
-                          icon: Icons.account_balance_wallet_outlined,
-                          color: Colors.blue[600]!,
+                          value: '${_referredCount * 100} pts', // 100 points per referral
+                          icon: Icons.stars_rounded,
+                          color: Colors.amber[700]!,
                           screenWidth: screenWidth,
                           isTablet: isTablet,
                         ),
@@ -692,7 +694,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   color: Colors.black87,
                 ),
               ),
-              SizedBox(height: 2),
+              const SizedBox(height: 2),
               Text(
                 subtitle,
                 style: TextStyle(
@@ -739,7 +741,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
             color: Colors.black87,
           ),
         ),
-        SizedBox(height: 2),
+        const SizedBox(height: 2),
         Text(
           label,
           style: TextStyle(
