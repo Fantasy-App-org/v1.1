@@ -5,7 +5,7 @@ import '../service/user_service.dart';
 import 'package:fantasy/model/create_team_request.dart';
 
 class TeamApi {
-  static const String baseUrl = 'http://api.start25pro.com:3000';
+  static const String baseUrl = 'http://13.60.210.139:3000';
   static final UserService _userService = UserService();
 
   // Get user team (existing method)

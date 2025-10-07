@@ -581,7 +581,7 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         const Text(
-                          'WINNINGS',
+                          'POINTS EARNED',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
@@ -597,7 +597,7 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '₹${summary['totalWinnings']}',
+                            '${summary['totalWinnings']}',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,

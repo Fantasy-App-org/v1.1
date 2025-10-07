@@ -1,3 +1,4 @@
+// /service/user_service.dart
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fantasy/model/user.dart';
@@ -18,9 +19,15 @@ class UserService {
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _authTokenKey = 'auth_token'; // Add key for auth token
   static const String _deviceTokenKey = 'device_token';
-  final String baseUrl = 'http://api.start25pro.com:3000'; // Update with your localhost port
+  final String baseUrl = 'http://13.60.210.139:3000'; // Fixed URL to match SignupService
 
-  String? get inviteFriendCode => _userData?['invite_friend_code'];
+  String? get inviteFriendCode {
+    if (_userData != null) {
+      // Check for both field names
+      return _userData!['invite_code'] ?? _userData!['invite_friend_code'];
+    }
+    return null;
+  }
 
   int? get userId {
     if (_userData != null && _userData!.containsKey('id')) {
@@ -190,54 +197,83 @@ class UserService {
 
   Future<bool> requestOtp(String contact) async {
     try {
-      print('Requesting OTP for: $contact');
+      print('Requesting login OTP for: $contact');
+
+      final Map<String, dynamic> requestBody = {
+        contact.contains('@') ? 'email' : 'mobile_number': contact,
+      };
+
+      print('Login OTP request body: ${json.encode(requestBody)}');
 
       final response = await http.post(
         Uri.parse('$baseUrl/web-services/signin'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          contact.contains('@') ? 'email' : 'mobile_number': contact,
-        }),
+        body: jsonEncode(requestBody),
       );
 
-      print('OTP Request Response Status: ${response.statusCode}');
-      print('OTP Request Response Body: ${response.body}');
+      print('Login OTP Request Response Status: ${response.statusCode}');
+      print('Login OTP Request Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        // Parse the response to get OTP token
         final responseData = jsonDecode(response.body);
 
-        // Check for the token inside the data object
-        if (responseData != null &&
-            responseData['data'] != null &&
-            responseData['data']['otpToken'] != null) {
+        // Check different possible response structures for the token
+        String? otpToken;
 
-          _otpToken = responseData['data']['otpToken'];
-          print('OTP Token received: ${_otpToken!.substring(0, 20)}...');
+        if (responseData['data'] != null && responseData['data']['otpToken'] != null) {
+          otpToken = responseData['data']['otpToken'];
+        } else if (responseData['otpToken'] != null) {
+          otpToken = responseData['otpToken'];
+        } else if (responseData['data'] != null && responseData['data']['otp_token'] != null) {
+          otpToken = responseData['data']['otp_token'];
+        }
+
+        if (otpToken != null && otpToken.isNotEmpty) {
+          _otpToken = otpToken;
+          print('Login OTP Token received: ${_otpToken!.substring(0, 20)}...');
           return true;
         } else {
-          print('OTP token not found in response');
+          print('Login OTP token not found in response');
+          print('Response structure: ${responseData.keys.toList()}');
+          if (responseData['data'] != null) {
+            print('Data structure: ${responseData['data'].keys.toList()}');
+          }
+          return false;
+        }
+      } else if (response.statusCode == 400) {
+        try {
+          final errorResponse = jsonDecode(response.body);
+          final errorMessage = errorResponse['message'] ?? 'User not found';
+          print('Login OTP error (400): $errorMessage');
+          return false;
+        } catch (e) {
+          print('Failed to parse login OTP error response: $e');
           return false;
         }
       } else {
-        print('OTP request failed. Status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('Login OTP request failed. Status code: ${response.statusCode}');
+        try {
+          final errorResponse = jsonDecode(response.body);
+          print('Error message: ${errorResponse['message'] ?? 'Unknown error'}');
+        } catch (e) {
+          print('Failed to parse error response: $e');
+        }
         return false;
       }
     } catch (e) {
-      print('OTP request error: $e');
+      print('Login OTP request error: $e');
       return false;
     }
   }
 
   Future<bool> verifyOtp(String contact, String otp) async {
-    if (_otpToken == null) {
-      print('OTP token is null. Cannot verify OTP.');
+    if (_otpToken == null || _otpToken!.isEmpty) {
+      print('Login OTP token is null or empty. Cannot verify OTP.');
       return false;
     }
 
     try {
-      print('Verifying OTP with token: ${_otpToken!.substring(0, 20)}...');
+      print('Verifying login OTP with token: ${_otpToken!.substring(0, 20)}...');
 
       final Map<String, dynamic> requestBody = {
         'user_otp': otp,
@@ -245,7 +281,7 @@ class UserService {
         'fcm_token': _deviceToken ?? 'device_token_placeholder'
       };
 
-      print('Verify OTP Request: ${json.encode(requestBody)}');
+      print('Verify login OTP Request: ${json.encode(requestBody)}');
 
       final response = await http.post(
         Uri.parse('$baseUrl/web-services/verify-otp'),
@@ -253,8 +289,8 @@ class UserService {
         body: jsonEncode(requestBody),
       );
 
-      print('Verify OTP Response Status: ${response.statusCode}');
-      print('Verify OTP Response Body: ${response.body}');
+      print('Verify Login OTP Response Status: ${response.statusCode}');
+      print('Verify Login OTP Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -291,13 +327,23 @@ class UserService {
           print('Response data keys: ${data is Map ? data.keys.toList() : 'Not a map'}');
           return false;
         }
+      } else if (response.statusCode == 400) {
+        try {
+          final errorResponse = jsonDecode(response.body);
+          final errorMessage = errorResponse['message'] ?? 'Invalid OTP';
+          print('Login OTP verification error (400): $errorMessage');
+          return false;
+        } catch (e) {
+          print('Failed to parse OTP verification error: $e');
+          return false;
+        }
       } else {
-        print('OTP verification failed. Status code: ${response.statusCode}');
+        print('Login OTP verification failed. Status code: ${response.statusCode}');
         print('Response body: ${response.body}');
         return false;
       }
     } catch (e) {
-      print('OTP verification error: $e');
+      print('Login OTP verification error: $e');
       return false;
     }
   }
@@ -332,9 +378,18 @@ class UserService {
   }
 
   // Add this method to your UserService class
+// Add this method to your UserService class
   Future<Map<String, dynamic>?> getReferralData() async {
     try {
       print('Fetching referral data...');
+      print('Auth token available: ${_authToken != null}');
+      print('Is logged in: $_isLoggedIn');
+
+      // Check if user is logged in and has auth token
+      if (!_isLoggedIn || _authToken == null || _authToken!.isEmpty) {
+        print('User not logged in or no auth token available');
+        return null;
+      }
 
       final response = await makeAuthenticatedRequest(
         endpoint: '/web-services/getreferralcode',
@@ -347,22 +402,40 @@ class UserService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
+        // Check if response structure is valid
         if (responseData['status'] == true && responseData['data'] != null) {
           final data = responseData['data'];
           print('Referral data fetched successfully');
           print('Invite code: ${data['invite_code']}');
           print('Referred count: ${data['referred_count']}');
 
+          // Update the user data with the referral info for fallback
+          if (_userData != null) {
+            _userData!['invite_code'] = data['invite_code'];
+            _userData!['invite_friend_code'] = data['invite_code']; // For backward compatibility
+
+            // Save updated user data
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString(_userDataKey, jsonEncode(_userData!));
+          }
+
           return {
             'invite_code': data['invite_code'],
             'referred_count': data['referred_count'] ?? 0,
           };
         } else {
-          print('Referral data not found in response');
+          print('Invalid response structure or status false');
+          print('Response status: ${responseData['status']}');
+          print('Response data: ${responseData['data']}');
           return null;
         }
+      } else if (response.statusCode == 401) {
+        print('Authentication failed - token might be expired');
+        await _clearAuthData();
+        return null;
       } else {
         print('Failed to fetch referral data. Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
         return null;
       }
     } catch (e) {

@@ -450,22 +450,17 @@ class _WalletScreenState extends State<WalletScreen> {
       ),
       child: Column(
         children: [
-          _buildBalanceItem('Gift Reward Point (GRP)', _removeCurrencySymbol(walletService.getCashDepositFormatted()), screenWidth, isTablet),
-          Divider(color: Colors.grey[200], thickness: 1),
           _buildBalanceItem('Total Reward Point (TRP)', _removeCurrencySymbol(walletService.getWinningsFormatted()), screenWidth, isTablet),
           Divider(color: Colors.grey[200], thickness: 1),
-          _buildBalanceItem('Winning Reward Point (WRP)', _removeCurrencySymbol(walletService.getCashbackFormatted()), screenWidth, isTablet),
-          Divider(color: Colors.grey[200], thickness: 1),
-          _buildBalanceItem('Pool Reward Point (PRP)', _removeCurrencySymbol(walletService.getLevelIncomeFormatted()), screenWidth, isTablet),
+          _buildBalanceItem('Gift Reward Point (GRP)', _removeCurrencySymbol(walletService.getCashbackFormatted()), screenWidth, isTablet),
           Divider(color: Colors.grey[200], thickness: 1),
           _buildBalanceItem('Referral Reward Point (RRP)', _removeCurrencySymbol(walletService.getBonusFormatted()), screenWidth, isTablet),
           Divider(color: Colors.grey[200], thickness: 1),
-          _buildBalanceItem('Bonus Reward Point (BRP)', _removeCurrencySymbol(walletService.getBonusFormatted()), screenWidth, isTablet),
+          _buildBalanceItem('Bonus Reward Point (BRP)', _removeCurrencySymbol(walletService.getLevelIncomeFormatted()), screenWidth, isTablet),
         ],
       ),
     );
   }
-
 
   Widget _buildActionItems(WalletService walletService, double screenWidth, double screenHeight, bool isTablet) {
     return Column(
@@ -696,17 +691,11 @@ class _WalletScreenState extends State<WalletScreen> {
 
     String content = '';
     switch (title) {
-      case 'Gift Reward Point (GRP)':
-        content = 'Points you earn as gift rewards from the platform.';
-        break;
       case 'Total Reward Point (TRP)':
         content = 'The total of all your reward points combined.';
         break;
-      case 'Winning Reward Point (WRP)':
+      case 'Gift Reward Point (GRP)':
         content = 'Points earned by winning contests or activities.';
-        break;
-      case 'Pool Reward Point (PRP)':
-        content = 'Reward points earned from pooled contributions or special events.';
         break;
       case 'Referral Reward Point (RRP)':
         content = 'Points earned by referring friends to the platform.';
@@ -734,7 +723,6 @@ class _WalletScreenState extends State<WalletScreen> {
       },
     );
   }
-
 
   // Updated navigation methods with proper navigation
   void _navigateToTransactions() {

@@ -4,7 +4,7 @@ import '../service/user_service.dart';
 import '../config/debug_config.dart';
 
 class LiveMatchApi {
-  static const String baseUrl = 'http://13.60.245.44:3000';
+  static const String baseUrl = 'http://13.60.210.139:3000';
   static const String myMatchesEndpoint = '/web-services/my-matches';
 
   /// Get live matches specifically from my-matches API

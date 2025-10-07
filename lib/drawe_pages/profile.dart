@@ -1212,7 +1212,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '₹ ${_walletBalances['cashBalance']?.toStringAsFixed(2) ?? '0.00'}',
+                                ' ${_walletBalances['cashBalance']?.toStringAsFixed(2) ?? '0.00'}',
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -1258,7 +1258,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                 Icon(Icons.add, size: 16),
                                 SizedBox(width: 4),
                                 Text(
-                                  'ADD CASH',
+                                  'ADD POINTS',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12,
@@ -1279,7 +1279,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '₹ ${_walletBalances['winningAmount']?.toStringAsFixed(2) ?? '0.00'}',
+                                'a ${_walletBalances['winningAmount']?.toStringAsFixed(2) ?? '0.00'}',
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,

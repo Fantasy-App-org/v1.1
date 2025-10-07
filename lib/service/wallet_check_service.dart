@@ -5,7 +5,7 @@ import '../model/wallet_balance.dart';
 import '../service/user_service.dart';
 
 class WalletCheckService {
-  static const String baseUrl = 'http://api.start25pro.com:3000/web-services';
+  static const String baseUrl = 'http://13.60.210.139:3000/web-services';
   static final UserService _userService = UserService();
 
   // Get wallet balance for contest joining

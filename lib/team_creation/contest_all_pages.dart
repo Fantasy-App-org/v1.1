@@ -663,7 +663,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Entry Fee: ₹${contest.entryFee ?? 0} × ${selectedTeams.length}',
+                                    'Entry Fee: Pts${contest.entryFee ?? 0} × ${selectedTeams.length}',
                                     style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 12,
@@ -671,7 +671,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Total Cost: ₹$totalCost',
+                                    'Total Cost: Pts$totalCost',
                                     style: const TextStyle(
                                       color: Color(0xFF22C55E),
                                       fontSize: 16,
@@ -1139,7 +1139,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                             style: const TextStyle(color: Colors.white70, fontSize: 12),
                           ),
                           Text(
-                            '₹${contest.entryFee?.toStringAsFixed(2)}',
+                            'Pts${contest.entryFee?.toStringAsFixed(2)}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -1179,7 +1179,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                             ),
                           ),
                           Text(
-                            '₹${totalCost.toStringAsFixed(2)}',
+                            'Pts${totalCost.toStringAsFixed(2)}',
                             style: const TextStyle(
                               color: Color(0xFF22C55E),
                               fontSize: 16,
@@ -1214,7 +1214,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Prize Pool: ₹${contest.prizeMoney ?? 0}',
+                        'Prize Pool: Pts${contest.prizeMoney ?? 0}',
                         style: const TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                       const SizedBox(height: 8),
@@ -1290,7 +1290,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                                     ),
                                   ),
                                   Text(
-                                    '₹${contest.entryFee?.toStringAsFixed(0)}',
+                                    'Pts${contest.entryFee?.toStringAsFixed(0)}',
                                     style: const TextStyle(
                                       color: Color(0xFF22C55E),
                                       fontSize: 11,
@@ -1322,7 +1322,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Insufficient balance! You need ₹${(totalCost - balance.totalAmount).toStringAsFixed(2)} more.',
+                            'Insufficient balance! You need Pts${(totalCost - balance.totalAmount).toStringAsFixed(2)} more.',
                             style: const TextStyle(
                               color: Colors.red,
                               fontSize: 12,
@@ -1976,7 +1976,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                                 color: Colors.white70, fontSize: 12),
                           ),
                           Text(
-                            '₹${entryFee.toStringAsFixed(2)}',
+                            'Pts${entryFee.toStringAsFixed(2)}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -1998,7 +1998,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                             ),
                           ),
                           Text(
-                            '₹${entryFee.toStringAsFixed(2)}',
+                            'Pts${entryFee.toStringAsFixed(2)}',
                             style: const TextStyle(
                               color: Color(0xFF22C55E),
                               fontSize: 16,
@@ -2032,7 +2032,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Prize Pool: ₹${contest.prizeMoney ?? 0}',
+                        'Prize Pool: Pts${contest.prizeMoney ?? 0}',
                         style: const TextStyle(
                             color: Colors.white70, fontSize: 12),
                       ),
@@ -2064,7 +2064,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Insufficient balance! You need ₹${(entryFee -
+                            'Insufficient balance! You need Pts${(entryFee -
                                 balance.totalAmount).toStringAsFixed(2)} more.',
                             style: const TextStyle(
                               color: Colors.red,
@@ -2391,7 +2391,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                   const Icon(Icons.account_balance_wallet, color: Colors.white,
                       size: 16),
                   const SizedBox(width: 6),
-                  const Text('₹0', style: TextStyle(color: Colors.white,
+                  const Text('Pts0', style: TextStyle(color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w500)),
                   const SizedBox(width: 8),
@@ -2818,7 +2818,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      '₹${contest.entryFee ?? 0}',
+                      'Pts${contest.entryFee ?? 0}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
@@ -2833,7 +2833,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
               Row(
                 children: [
                   Text(
-                    '₹${contest.prizeMoney ?? 0}',
+                    'Pts${contest.prizeMoney ?? 0}',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -2913,7 +2913,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                       Icons.emoji_events, color: Colors.orange, size: 16),
                   const SizedBox(width: 4),
                   Text(
-                    '₹${((contest.prizeMoney ?? 0) ~/
+                    'Pts${((contest.prizeMoney ?? 0) ~/
                         (contest.totalWinners ?? 1))}',
                     style: const TextStyle(
                       fontSize: 12,
@@ -3487,7 +3487,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        '₹${contest.entryFee ?? 0}',
+                        'Pts${contest.entryFee ?? 0}',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -3522,7 +3522,7 @@ class _ContestAllPageState extends State<ContestAllPage> with TickerProviderStat
                               Icon(Icons.emoji_events, color: Colors.orange, size: 16),
                               const SizedBox(width: 4),
                               Text(
-                                'Prize Pool: ₹${contest.prizeMoney ?? 0}',
+                                'Prize Pool: Pts${contest.prizeMoney ?? 0}',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey[600],

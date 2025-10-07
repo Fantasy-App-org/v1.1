@@ -19,86 +19,155 @@ class _ReferralScreenState extends State<ReferralScreen> {
   @override
   void initState() {
     super.initState();
-    _loadReferralData();
+    // Add a small delay to ensure the screen is fully built before making API calls
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadReferralData();
+    });
   }
 
   Future<void> _loadReferralData() async {
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // First try to get referral data from API
-      final referralData = await _userService.getReferralData();
 
-      if (referralData != null) {
+      // Check if user is logged in first
+      final isLoggedIn = await _userService.checkLoginStatus();
+      print('👤 Login status: $isLoggedIn');
+
+      if (!isLoggedIn) {
+        print('❌ User not logged in, cannot fetch referral data');
+        if (mounted) {
+          setState(() {
+            _inviteCode = 'Please login first';
+            _referredCount = 0;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // Try to get referral data from API
+      print('📡 Fetching referral data from API...');
+      final referralData = await _userService.getReferralData();
+      print('📥 Referral data received: $referralData');
+
+      if (referralData != null && mounted) {
+        print('✅ Using API data - invite_code: ${referralData['invite_code']}, referred_count: ${referralData['referred_count']}');
         setState(() {
           _inviteCode = referralData['invite_code'];
           _referredCount = referralData['referred_count'] ?? 0;
           _isLoading = false;
         });
       } else {
+        print('⚠️ API failed or returned null, trying fallback from user data');
         // Fallback to user data if API fails
+        final fallbackCode = _userService.inviteFriendCode;
+        print('🔄 Fallback invite code: $fallbackCode');
+
+        if (mounted) {
+          setState(() {
+            _inviteCode = fallbackCode ?? 'N/A';
+            _referredCount = 0;
+            _isLoading = false;
+          });
+
+          // Show error message if no invite code found
+          if (fallbackCode == null || fallbackCode == 'N/A') {
+            _showSnackBar(
+              'Unable to load referral code. Please try again.',
+              Colors.orange[600]!,
+              showRetry: true,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print('❌ Error loading referral data: $e');
+
+      if (mounted) {
+        // Try fallback on error
+        final fallbackCode = _userService.inviteFriendCode;
         setState(() {
-          _inviteCode = _userService.inviteFriendCode ?? 'N/A';
+          _inviteCode = fallbackCode ?? 'Error loading code';
           _referredCount = 0;
           _isLoading = false;
         });
+
+        // Show error message
+        _showSnackBar(
+          'Error loading referral data: ${e.toString()}',
+          Colors.red[600]!,
+          showRetry: true,
+        );
       }
-    } catch (e) {
-      print('Error loading referral data: $e');
-      // Fallback to user data
-      setState(() {
-        _inviteCode = _userService.inviteFriendCode ?? 'N/A';
-        _referredCount = 0;
-        _isLoading = false;
-      });
     }
   }
 
+  void _showSnackBar(String message, Color backgroundColor, {bool showRetry = false}) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+        action: showRetry ? SnackBarAction(
+          label: 'Retry',
+          textColor: Colors.white,
+          onPressed: _loadReferralData,
+        ) : null,
+        duration: Duration(seconds: showRetry ? 5 : 3),
+      ),
+    );
+  }
+
   void _shareOnWhatsApp() {
-    if (_inviteCode != null && _inviteCode != 'Loading...' && _inviteCode != 'N/A') {
+    if (_inviteCode != null &&
+        _inviteCode != 'Loading...' &&
+        _inviteCode != 'N/A' &&
+        _inviteCode != 'Please login first' &&
+        _inviteCode != 'Error loading code') {
       final message = "Download the exciting gaming app Star 25 pro from https://start25pro.com/ and use my invite code $_inviteCode to Play.";
 
       Share.share(
         message,
         subject: 'Join Star 25 Pro and Win!',
       );
+    } else {
+      _showSnackBar('Please wait for invite code to load', Colors.orange[600]!);
     }
   }
 
   void _shareMoreOptions() {
-    if (_inviteCode != null && _inviteCode != 'Loading...' && _inviteCode != 'N/A') {
+    if (_inviteCode != null &&
+        _inviteCode != 'Loading...' &&
+        _inviteCode != 'N/A' &&
+        _inviteCode != 'Please login first' &&
+        _inviteCode != 'Error loading code') {
       final message = "Download the exciting gaming app Star 25 pro from https://start25pro.com/ and use my invite code $_inviteCode to Play.";
 
       Share.share(
         message,
         subject: 'Join Star 25 Pro and Win!',
       );
+    } else {
+      _showSnackBar('Please wait for invite code to load', Colors.orange[600]!);
     }
   }
 
   void _copyInviteCode() {
-    if (_inviteCode != null && _inviteCode != 'Loading...' && _inviteCode != 'N/A') {
+    if (_inviteCode != null &&
+        _inviteCode != 'Loading...' &&
+        _inviteCode != 'N/A' &&
+        _inviteCode != 'Please login first' &&
+        _inviteCode != 'Error loading code') {
       Clipboard.setData(ClipboardData(text: _inviteCode!));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: const [
-              Icon(Icons.check_circle_outline, color: Colors.white, size: 16),
-              SizedBox(width: 8),
-              Text('Code copied successfully'),
-            ],
-          ),
-          backgroundColor: Colors.green[600],
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          margin: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04),
-        ),
-      );
+      _showSnackBar('Code copied successfully', Colors.green[600]!);
+    } else {
+      _showSnackBar('No valid invite code to copy', Colors.orange[600]!);
     }
   }
 
@@ -136,23 +205,23 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   vertical: screenHeight * 0.01,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.green[50],
+                  color: Colors.amber[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green[200]!),
+                  border: Border.all(color: Colors.amber[200]!),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.currency_rupee,
+                      Icons.stars_rounded,
                       size: isTablet ? 18 : 16,
-                      color: Colors.green[700],
+                      color: Colors.amber[700],
                     ),
                     Text(
-                      '100',
+                      ' 100 pts',
                       style: TextStyle(
-                        color: Colors.green[700],
-                        fontWeight: FontWeight.w600,
+                        color: Colors.amber[800],
+                        fontWeight: FontWeight.w700,
                         fontSize: isTablet ? 16 : 14,
                       ),
                     ),
@@ -165,8 +234,21 @@ class _ReferralScreenState extends State<ReferralScreen> {
       ),
       body: _isLoading
           ? const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Loading referral data...',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+          ],
         ),
       )
           : RefreshIndicator(
@@ -192,7 +274,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Get Your Friends to signup',
+                                  'Get your friends to sign up',
                                   style: TextStyle(
                                     color: Colors.grey[600],
                                     fontSize: isTablet ? 16 : 14,
@@ -248,21 +330,21 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                     height: screenWidth * 0.15,
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
-                                        colors: [Colors.green[400]!, Colors.green[600]!],
+                                        colors: [Colors.amber[400]!, Colors.amber[700]!],
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.green.withOpacity(0.3),
+                                          color: Colors.amber.withOpacity(0.3),
                                           blurRadius: 15,
                                           offset: const Offset(0, 5),
                                         ),
                                       ],
                                     ),
                                     child: Icon(
-                                      Icons.currency_rupee,
+                                      Icons.stars_rounded,
                                       size: screenWidth * 0.08,
                                       color: Colors.white,
                                     ),
@@ -299,17 +381,34 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                 ),
                               ),
                               const Spacer(),
-                              Container(
-                                width: 20,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.info_outline,
-                                  size: 14,
-                                  color: Colors.grey[600],
+                              GestureDetector(
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: Text('Referral Code Info'),
+                                      content: Text('Share your referral code with friends. When they sign up using your code, you both earn bonus points!'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context),
+                                          child: Text('Got it'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.info_outline,
+                                    size: 14,
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
                               ),
                             ],
@@ -328,15 +427,19 @@ class _ReferralScreenState extends State<ReferralScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  _inviteCode ?? 'Loading...',
-                                  style: TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: isTablet ? 20 : 18,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 1.5,
+                                Expanded(
+                                  child: Text(
+                                    _inviteCode ?? 'Loading...',
+                                    style: TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: isTablet ? 20 : 18,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.5,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                                SizedBox(width: 8),
                                 GestureDetector(
                                   onTap: _copyInviteCode,
                                   child: Container(
@@ -496,9 +599,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 child: Column(
                   children: [
                     _buildBenefitItem(
-                      icon: Icons.currency_rupee,
-                      color: Colors.green[600]!,
-                      title: 'Earn ₹100 Bonus',
+                      icon: Icons.stars_rounded,
+                      color: Colors.amber[700]!,
+                      title: 'Earn 100 Points',
                       subtitle: 'For each friend that joins',
                       screenWidth: screenWidth,
                       isTablet: isTablet,
@@ -508,9 +611,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
                       child: Divider(color: Colors.grey[200], thickness: 1),
                     ),
                     _buildBenefitItem(
-                      icon: Icons.people_outline,
-                      color: Colors.blue[600]!,
-                      title: 'They get ₹50 too!',
+                      icon: Icons.stars_rounded,
+                      color: Colors.indigo[600]!,
+                      title: 'They get 50 Points too!',
                       subtitle: 'Your friends also get a joining bonus',
                       screenWidth: screenWidth,
                       isTablet: isTablet,
@@ -539,13 +642,48 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Referral Progress',
-                      style: TextStyle(
-                        fontSize: isTablet ? 18 : 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Referral Progress',
+                          style: TextStyle(
+                            fontSize: isTablet ? 18 : 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _loadReferralData,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[50],
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.blue[200]!),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.refresh,
+                                  size: 12,
+                                  color: Colors.blue[600],
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Refresh',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.blue[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: screenHeight * 0.02),
                     Row(
@@ -569,9 +707,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
                         ),
                         _buildProgressItem(
                           label: 'Earned',
-                          value: '₹${_referredCount * 100}', // ₹100 per referral
-                          icon: Icons.account_balance_wallet_outlined,
-                          color: Colors.blue[600]!,
+                          value: '${_referredCount * 100} pts', // 100 points per referral
+                          icon: Icons.stars_rounded,
+                          color: Colors.amber[700]!,
                           screenWidth: screenWidth,
                           isTablet: isTablet,
                         ),

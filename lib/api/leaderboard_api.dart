@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../service/user_service.dart';
 
 class LeaderboardApi {
-  static const String baseUrl = 'http://13.60.245.44:3000';
+  static const String baseUrl = 'http://13.60.210.139:3000';
 
   // Get leaderboard for a specific match and contest with pagination
   static Future<Map<String, dynamic>> getLeaderboard({

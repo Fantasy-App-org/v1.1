@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:fantasy/service/user_service.dart';
 
 class ProfileApi {
-  static const String baseUrl = 'http://api.start25pro.com:3000';
+  static const String baseUrl = 'http://13.60.210.139:3000';
   static final UserService _userService = UserService();
 
   /// Get user profile data

@@ -383,7 +383,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                     if (entry['winning_amount'] != null && entry['winning_amount'] > 0) ...[
                       const SizedBox(width: 8),
                       Text(
-                        '• ₹${entry['winning_amount']}',
+                        '${entry['winning_amount']}',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,

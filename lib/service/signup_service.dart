@@ -1,3 +1,4 @@
+//service/signup_service.dart
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -16,7 +17,7 @@ class SignupService {
   static const String _isSignupInProgressKey = 'is_signup_in_progress';
   static const String _otpTokenKey = 'otp_token';
   static const String _deviceTokenKey = 'device_token';
-  final String baseUrl = 'http://13.232.147.237:3000'; // Update with your localhost port
+  final String baseUrl = 'http://13.60.210.139:3000'; // Fixed URL to match UserService
 
   factory SignupService() {
     return _instance;
@@ -102,6 +103,8 @@ class SignupService {
         requestBody['mobile_number'] = contact;
       }
 
+      print('Request body: ${json.encode(requestBody)}');
+
       final response = await http.post(
         Uri.parse('$baseUrl/web-services/signup'),
         headers: {'Content-Type': 'application/json'},
@@ -114,11 +117,20 @@ class SignupService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
 
-        if (responseData != null &&
-            responseData['data'] != null &&
-            responseData['data']['otpToken'] != null) {
+        // Check different possible response structures
+        String? otpToken;
 
-          _otpToken = responseData['data']['otpToken'];
+        // Try different possible paths for the token
+        if (responseData['data'] != null && responseData['data']['otpToken'] != null) {
+          otpToken = responseData['data']['otpToken'];
+        } else if (responseData['otpToken'] != null) {
+          otpToken = responseData['otpToken'];
+        } else if (responseData['data'] != null && responseData['data']['otp_token'] != null) {
+          otpToken = responseData['data']['otp_token'];
+        }
+
+        if (otpToken != null && otpToken.isNotEmpty) {
+          _otpToken = otpToken;
           _isSignupInProgress = true;
 
           // Store signup data for later use
@@ -139,27 +151,62 @@ class SignupService {
           return true;
         } else {
           print('Signup OTP token not found in response');
+          print('Response structure: ${responseData.keys.toList()}');
+          if (responseData['data'] != null) {
+            print('Data structure: ${responseData['data'].keys.toList()}');
+          }
           return false;
+        }
+      } else if (response.statusCode == 400) {
+        // Handle specific error cases
+        try {
+          final errorResponse = jsonDecode(response.body);
+          final errorMessage = errorResponse['message'] ?? 'Bad request';
+          print('Signup error (400): $errorMessage');
+
+          if (errorMessage.toLowerCase().contains('already exist') ||
+              errorMessage.toLowerCase().contains('user already')) {
+            throw Exception('user already exist');
+          } else if (errorMessage.toLowerCase().contains('invalid') &&
+              errorMessage.toLowerCase().contains('invite')) {
+            throw Exception('invalid invite code');
+          }
+
+          throw Exception(errorMessage);
+        } catch (e) {
+          if (e.toString().contains('user already exist') ||
+              e.toString().contains('invalid invite code')) {
+            rethrow;
+          }
+          print('Failed to parse error response: $e');
+          throw Exception('Signup request failed. Please try again.');
         }
       } else {
         print('Signup OTP request failed. Status code: ${response.statusCode}');
         try {
           final errorResponse = jsonDecode(response.body);
-          print('Error message: ${errorResponse['message'] ?? 'Unknown error'}');
+          final errorMessage = errorResponse['message'] ?? 'Unknown error';
+          print('Error message: $errorMessage');
+          throw Exception(errorMessage);
         } catch (e) {
           print('Failed to parse error response: $e');
+          throw Exception('Network error. Please check your connection and try again.');
         }
-        return false;
       }
     } catch (e) {
       print('Signup OTP request error: $e');
-      return false;
+      // Re-throw specific errors, wrap others
+      if (e.toString().contains('user already exist') ||
+          e.toString().contains('invalid invite code')) {
+        rethrow;
+      }
+      throw Exception('Network error: ${e.toString()}');
     }
   }
 
   Future<bool> verifySignupOtp(String otp) async {
-    if (_otpToken == null) {
-      print('Signup OTP token is null. Cannot verify OTP.');
+    if (_otpToken == null || _otpToken!.isEmpty) {
+      print('Signup OTP token is null or empty. Cannot verify OTP.');
       return false;
     }
 
@@ -173,6 +220,8 @@ class SignupService {
         'fcm_token': _deviceToken ?? 'device_token_placeholder'
       };
 
+      print('Verify signup OTP request: ${json.encode(requestBody)}');
+
       final response = await http.post(
         Uri.parse('$baseUrl/web-services/verify-otp'),
         headers: {'Content-Type': 'application/json'},
@@ -185,18 +234,43 @@ class SignupService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
 
-        // Update signup data with response data
-        if (responseData['data'] != null) {
-          _signupData = {
-            ..._signupData ?? {},
-            ...responseData['data']
-          };
+        // Check if verification was successful
+        bool isSuccess = false;
+        if (responseData['status'] == true || responseData['success'] == true) {
+          isSuccess = true;
+        } else if (responseData['data'] != null) {
+          // If there's data, assume success
+          isSuccess = true;
         }
 
-        // Clear signup state after successful verification
-        await _clearSignupState();
+        if (isSuccess) {
+          // Update signup data with response data
+          if (responseData['data'] != null) {
+            _signupData = {
+              ..._signupData ?? {},
+              ...responseData['data']
+            };
+          }
 
-        return true;
+          // Clear signup state after successful verification
+          await _clearSignupState();
+
+          print('Signup OTP verification successful');
+          return true;
+        } else {
+          print('Signup OTP verification failed - invalid response structure');
+          return false;
+        }
+      } else if (response.statusCode == 400) {
+        try {
+          final errorResponse = jsonDecode(response.body);
+          final errorMessage = errorResponse['message'] ?? 'Invalid OTP';
+          print('OTP verification error (400): $errorMessage');
+          return false;
+        } catch (e) {
+          print('Failed to parse OTP verification error: $e');
+          return false;
+        }
       } else {
         print('Signup OTP verification failed. Status code: ${response.statusCode}');
         try {

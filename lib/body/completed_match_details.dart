@@ -1,6 +1,100 @@
+// /body/completed_match_details.dart
 import 'package:flutter/material.dart';
 import 'package:fantasy/body/match_details.dart';
 import '../api/contest_api.dart';
+
+// Add the TeamFlagWidget here (copy from homescreen.dart)
+class TeamFlagWidget extends StatelessWidget {
+  final String? flagUrl;
+  final String teamShort;
+  final double size;
+  final Color fallbackColor;
+
+  const TeamFlagWidget({
+    Key? key,
+    required this.flagUrl,
+    required this.teamShort,
+    required this.size,
+    required this.fallbackColor,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: fallbackColor.withOpacity(0.3),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: flagUrl != null && flagUrl!.isNotEmpty
+            ? Image.network(
+          flagUrl!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [fallbackColor.withOpacity(0.8), fallbackColor],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: SizedBox(
+                  width: size * 0.4,
+                  height: size * 0.4,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return _buildFallbackFlag();
+          },
+        )
+            : _buildFallbackFlag(),
+      ),
+    );
+  }
+
+  Widget _buildFallbackFlag() {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [fallbackColor.withOpacity(0.8), fallbackColor],
+        ),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          teamShort,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            fontSize: size * 0.25,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class CompletedMatchesPage extends StatefulWidget {
   const CompletedMatchesPage({Key? key}) : super(key: key);
@@ -234,6 +328,10 @@ class _CompletedMatchesPageState extends State<CompletedMatchesPage> {
     final team1Short = _getTeamShort(team1Name);
     final team2Short = _getTeamShort(team2Name);
 
+    // Extract flag URLs (add these fields if available in your API response)
+    final team1Flag = match['team_a_flag']; // Add this field to your API response
+    final team2Flag = match['team_b_flag']; // Add this field to your API response
+
     // Extract scorecard data if available
     String team1Score = 'N/A';
     String team1Overs = '';
@@ -377,7 +475,7 @@ class _CompletedMatchesPageState extends State<CompletedMatchesPage> {
                 ),
               ),
 
-              // Teams section
+              // Teams section with flags
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: const BoxDecoration(
@@ -386,36 +484,15 @@ class _CompletedMatchesPageState extends State<CompletedMatchesPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    // Team 1
+                    // Team 1 - Now using TeamFlagWidget
                     Expanded(
                       child: Column(
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [Colors.blue[100]!, Colors.blue[300]!],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.blue.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: CircleAvatar(
-                              radius: 28,
-                              backgroundColor: Colors.transparent,
-                              child: Text(
-                                team1Short,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                            ),
+                          TeamFlagWidget(
+                            flagUrl: team1Flag,
+                            teamShort: team1Short,
+                            size: 56,
+                            fallbackColor: Colors.blue,
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -467,36 +544,15 @@ class _CompletedMatchesPageState extends State<CompletedMatchesPage> {
                       ),
                     ),
 
-                    // Team 2
+                    // Team 2 - Now using TeamFlagWidget
                     Expanded(
                       child: Column(
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [Colors.orange[100]!, Colors.orange[300]!],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.orange.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: CircleAvatar(
-                              radius: 28,
-                              backgroundColor: Colors.transparent,
-                              child: Text(
-                                team2Short,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Colors.orange,
-                                ),
-                              ),
-                            ),
+                          TeamFlagWidget(
+                            flagUrl: team2Flag,
+                            teamShort: team2Short,
+                            size: 56,
+                            fallbackColor: Colors.orange,
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -637,4 +693,5 @@ class _CompletedMatchesPageState extends State<CompletedMatchesPage> {
         builder: (context) => MatchDetailsPage(matchData: match),
       ),
     );
-  }}
+  }
+}

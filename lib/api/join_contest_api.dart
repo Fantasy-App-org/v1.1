@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../service/user_service.dart';
 
 class JoinContestApi {
-  static const String baseUrl = 'http://api.start25pro.com:3000';
+  static const String baseUrl = 'http://13.60.210.139:3000';
   static final UserService _userService = UserService();
 
   /// Join a contest with a selected team

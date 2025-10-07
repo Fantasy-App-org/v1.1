@@ -1,8 +1,9 @@
+//auth/signup.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../body/homescreen.dart';
 import 'login.dart';
-import '../api/signup_api.dart'; // Backend API from code-3
+import 'package:fantasy/api/signup_api.dart'; // Backend APIf
 
 class SignupPage extends StatefulWidget {
   const SignupPage({Key? key}) : super(key: key);
@@ -32,6 +33,7 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initializeAnimations();
+    _initializeSignupApi();
   }
 
   void _initializeAnimations() {
@@ -56,6 +58,10 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
 
     _fadeController.forward();
     _slideController.forward();
+  }
+
+  Future<void> _initializeSignupApi() async {
+    await SignupApi.initialize();
   }
 
   @override
@@ -91,14 +97,43 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
   Future<void> _handleSignup() async {
     if (!areFieldsValid()) {
       setState(() {
-        errorMessage = "Please fill all required fields";
+        errorMessage = "Please fill all required fields and verify your age";
       });
       return;
     }
 
-    String contact = isEmailSignup ? emailController.text : mobileController.text;
-    String userName = nameController.text;
-    String inviteCode = referralController.text;
+    String contact = isEmailSignup ? emailController.text.trim() : mobileController.text.trim();
+    String userName = nameController.text.trim();
+    String inviteCode = referralController.text.trim().toUpperCase();
+
+    // Basic validation
+    if (userName.length < 2) {
+      setState(() {
+        errorMessage = "Name must be at least 2 characters long";
+      });
+      return;
+    }
+
+    if (!isEmailSignup && contact.length < 10) {
+      setState(() {
+        errorMessage = "Please enter a valid mobile number";
+      });
+      return;
+    }
+
+    if (isEmailSignup && !contact.contains('@')) {
+      setState(() {
+        errorMessage = "Please enter a valid email address";
+      });
+      return;
+    }
+
+    if (inviteCode.length < 5) {
+      setState(() {
+        errorMessage = "Please enter a valid referral code";
+      });
+      return;
+    }
 
     setState(() {
       isLoading = true;
@@ -106,6 +141,11 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
     });
 
     try {
+      print('Starting signup process...');
+      print('Contact: $contact');
+      print('UserName: $userName');
+      print('InviteCode: $inviteCode');
+
       // Request OTP from backend
       Map<String, dynamic> response = await SignupApi.requestSignupOtp(
         contact,
@@ -113,7 +153,9 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
         inviteCode,
       );
 
-      if (response['success']) {
+      print('Signup response: $response');
+
+      if (response['success'] == true) {
         // Navigate to OTP screen
         Navigator.push(
           context,
@@ -138,7 +180,10 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
         );
       } else {
         String errorMessage = response['message'] ?? 'Failed to send OTP. Please try again.';
-        if (errorMessage.toLowerCase().contains('user already exist')) {
+
+        // Handle specific error cases
+        if (errorMessage.toLowerCase().contains('user already exist') ||
+            errorMessage.toLowerCase().contains('already registered')) {
           errorMessage = 'This account already exists. Please login instead.';
 
           // Show snackbar with login option
@@ -159,14 +204,48 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
             ),
           );
           return;
+        } else if (errorMessage.toLowerCase().contains('invalid') &&
+            errorMessage.toLowerCase().contains('invite')) {
+          errorMessage = 'Invalid referral code. Please check and try again.';
         }
+
         setState(() {
           this.errorMessage = errorMessage;
         });
       }
     } catch (e) {
+      print('Signup error: $e');
+      String errorMessage = "An error occurred. Please try again.";
+
+      if (e.toString().contains('user already exist')) {
+        errorMessage = 'This account already exists. Please login instead.';
+
+        // Show snackbar with login option
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Login',
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Dream11LoginPage()),
+                );
+              },
+            ),
+          ),
+        );
+        return;
+      } else if (e.toString().contains('invalid invite code')) {
+        errorMessage = 'Invalid referral code. Please check and try again.';
+      } else if (e.toString().contains('network') || e.toString().contains('connection')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      }
+
       setState(() {
-        errorMessage = "An error occurred: ${e.toString()}";
+        this.errorMessage = errorMessage;
       });
     } finally {
       setState(() {
@@ -825,12 +904,16 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
 }
 
 // Enhanced OTP Verification Screen with Backend Integration
+// Enhanced OTP Verification Screen with Proper Backend Integration
+
+// Enhanced OTP Verification Screen with Keyboard Fix
 class OTPVerificationScreen extends StatefulWidget {
   final String contact;
   final bool isEmail;
   final bool isSignup;
   final String userName;
   final String inviteCode;
+  final String? otpToken;
 
   const OTPVerificationScreen({
     Key? key,
@@ -839,6 +922,7 @@ class OTPVerificationScreen extends StatefulWidget {
     this.isSignup = false,
     required this.userName,
     required this.inviteCode,
+    this.otpToken,
   }) : super(key: key);
 
   @override
@@ -866,6 +950,11 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
     super.initState();
     startResendTimer();
 
+    print('OTP Screen initialized:');
+    print('- isSignup: ${widget.isSignup}');
+    print('- otpToken: ${widget.otpToken?.substring(0, 20)}...' ?? 'null');
+    print('- contact: ${widget.contact}');
+
     _pulseController = AnimationController(
       duration: Duration(milliseconds: 1000),
       vsync: this,
@@ -875,17 +964,23 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
+    // Add listeners without frequent setState calls
     for (var controller in otpControllers) {
       controller.addListener(_checkOTPComplete);
     }
   }
 
   void _checkOTPComplete() {
-    setState(() {
-      isOTPComplete = otpControllers.every(
-            (controller) => controller.text.isNotEmpty,
-      );
-    });
+    final bool newIsComplete = otpControllers.every(
+          (controller) => controller.text.isNotEmpty,
+    );
+
+    // Only call setState if the completion state actually changed
+    if (newIsComplete != isOTPComplete) {
+      setState(() {
+        isOTPComplete = newIsComplete;
+      });
+    }
   }
 
   void startResendTimer() {
@@ -911,9 +1006,37 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
     });
 
     try {
-      bool success = await SignupApi.verifySignupOtp(getOTP());
+      final otp = getOTP();
+      print('Verifying OTP: $otp for ${widget.isSignup ? 'signup' : 'login'}');
+
+      bool success = false;
+
+      if (widget.isSignup) {
+        print('Using signup verification method');
+        print('OTP Token: ${widget.otpToken?.substring(0, 20)}...' ?? 'null');
+
+        success = await SignupApi.verifySignupOtpForSignup(
+          otp,
+          widget.otpToken,
+          fcmToken: "test_fcm_token",
+        );
+      } else {
+        print('Using login verification method');
+        success = await SignupApi.verifySignupOtp(otp);
+      }
+
+      print('Verification result: $success');
 
       if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Verification successful!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 1),
+          ),
+        );
+
+        await Future.delayed(Duration(milliseconds: 500));
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
@@ -926,16 +1049,26 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
         setState(() {
           errorMessage = 'Invalid OTP. Please try again.';
         });
+        _clearOTPFields();
       }
     } catch (e) {
+      print('OTP verification error: $e');
       setState(() {
-        errorMessage = "An error occurred: ${e.toString()}";
+        errorMessage = "Verification failed. Please try again.";
       });
+      _clearOTPFields();
     } finally {
       setState(() {
         isVerifying = false;
       });
     }
+  }
+
+  void _clearOTPFields() {
+    for (var controller in otpControllers) {
+      controller.clear();
+    }
+    focusNodes[0].requestFocus();
   }
 
   Future<void> _resendOTP() async {
@@ -947,31 +1080,49 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
     });
 
     try {
-      Map<String, dynamic> response = await SignupApi.requestSignupOtp(
-        widget.contact,
-        widget.userName,
-        widget.inviteCode,
-      );
+      print('Resending OTP for ${widget.isSignup ? 'signup' : 'login'}');
 
-      if (response['success']) {
+      Map<String, dynamic> response;
+
+      if (widget.isSignup) {
+        response = await SignupApi.requestSignupOtp(
+          widget.contact,
+          widget.userName,
+          widget.inviteCode,
+        );
+      } else {
+        response = {
+          'success': false,
+          'message': 'Login OTP resend not implemented yet'
+        };
+        print('Login OTP resend needs to be implemented');
+      }
+
+      if (response['success'] == true) {
         setState(() {
           resendTimer = 30;
           startResendTimer();
         });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('OTP sent successfully'),
-            backgroundColor: Colors.orange,
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
           ),
         );
       } else {
         setState(() {
-          errorMessage = 'Failed to resend OTP. Please try again.';
+          errorMessage = response['message'] ?? 'Failed to resend OTP. Please try again.';
         });
       }
     } catch (e) {
+      print('Resend OTP error: $e');
       setState(() {
-        errorMessage = "An error occurred: ${e.toString()}";
+        errorMessage = "Failed to resend OTP. Please try again.";
       });
     } finally {
       setState(() {
@@ -1004,19 +1155,35 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
     final bool isTablet = screenWidth > 600;
     final bool isSmallScreen = screenHeight < 700;
 
+    // Get keyboard height
+    final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final bool isKeyboardVisible = keyboardHeight > 0;
+
     return Scaffold(
       backgroundColor: Color(0xFF0f1419),
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1a1c2e), Color(0xFF16213e), Color(0xFF0f3460)],
+            colors: [
+              Color(0xFF0F0C29),
+              Color(0xFF24243e),
+              Color(0xFF302B63),
+              Color(0xFF4A00E0),
+            ],
+            stops: [0.0, 0.3, 0.7, 1.0],
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.all(screenWidth * 0.06),
+          child: SingleChildScrollView(
+            // Simplified scroll physics - no conditional changes
+            physics: AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(
+              horizontal: screenWidth * 0.06,
+              vertical: 20,
+            ),
             child: Column(
               children: [
                 // Back Button
@@ -1024,14 +1191,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                   alignment: Alignment.centerLeft,
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.1),
-                          Colors.white.withOpacity(0.05),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(15),
                     ),
                     child: IconButton(
                       icon: Icon(
@@ -1044,117 +1205,117 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                   ),
                 ),
 
-                Expanded(
+                SizedBox(height: isKeyboardVisible ? 20 : 60),
+
+                // Animated icon (only show when keyboard is hidden)
+                if (!isKeyboardVisible) ...[
+                  ScaleTransition(
+                    scale: _pulseAnimation,
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFFFD700), Color(0xFFFF6B35)],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xFFFFD700).withOpacity(0.4),
+                            blurRadius: 20,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Icon(Icons.security, color: Colors.white, size: 60),
+                    ),
+                  ),
+                  SizedBox(height: 40),
+                ],
+
+                // Title
+                Text(
+                  'Verify Your ${widget.isEmail ? 'Email' : 'Phone'}',
+                  style: TextStyle(
+                    fontSize: isTablet ? 28 : 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+
+                SizedBox(height: 16),
+
+                Text(
+                  'Enter the 6-digit verification code sent to',
+                  style: TextStyle(
+                    fontSize: isTablet ? 16 : 14,
+                    color: Colors.white.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                SizedBox(height: 8),
+
+                // Contact Display
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    widget.isEmail
+                        ? widget.contact
+                        : '+91 ${widget.contact}',
+                    style: TextStyle(
+                      fontSize: isTablet ? 18 : 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFFFD700),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 40),
+
+                // OTP Input Fields - FIXED VERSION
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  padding: EdgeInsets.all(20),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Animated OTP Icon
-                      ScaleTransition(
-                        scale: _pulseAnimation,
-                        child: Container(
-                          padding: EdgeInsets.all(isTablet ? 35 : 30),
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              colors: [
-                                Colors.orange.withOpacity(0.3),
-                                Colors.orange.withOpacity(0.1),
-                                Colors.transparent,
-                              ],
-                            ),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.orange.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.security,
-                            size: isTablet ? 70 : 60,
-                            color: Colors.orange,
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: isSmallScreen ? 30 : 40),
-
-                      // Title
-                      ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [Colors.orange, Colors.amber],
-                        ).createShader(bounds),
-                        child: Text(
-                          'Verify Your Account',
-                          style: TextStyle(
-                            fontSize: isTablet ? 28 : (isSmallScreen ? 20 : 24),
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: 16),
-
                       Text(
-                        'Enter the 6-digit verification code sent to',
+                        'Enter OTP Code',
                         style: TextStyle(
-                          fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
-                          color: Colors.white.withOpacity(0.7),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      SizedBox(height: 8),
-
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.white.withOpacity(0.1),
-                              Colors.white.withOpacity(0.05),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.2)),
-                        ),
-                        child: Text(
-                          widget.isEmail
-                              ? widget.contact
-                              : '+91 ${widget.contact}',
-                          style: TextStyle(
-                            fontSize: isTablet ? 18 : (isSmallScreen ? 14 : 16),
-                            fontWeight: FontWeight.w600,
-                            color: Colors.orange,
-                          ),
+                          color: Colors.white,
+                          fontSize: isTablet ? 18 : 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-
-                      SizedBox(height: isSmallScreen ? 30 : 40),
-
-                      // OTP Input Fields
+                      SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: List.generate(6, (index) {
                           return Container(
-                            width: isTablet ? 55 : (isSmallScreen ? 40 : 45),
-                            height: isTablet ? 65 : (isSmallScreen ? 50 : 60),
+                            width: isTablet ? 55 : 45,
+                            height: isTablet ? 65 : 60,
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.15),
-                                  Colors.white.withOpacity(0.08),
-                                ],
-                              ),
+                              color: Colors.white.withOpacity(0.9), // Better background
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: otpControllers[index].text.isNotEmpty
-                                    ? Colors.orange.withOpacity(0.8)
-                                    : Colors.white.withOpacity(0.3),
+                                    ? Color(0xFFFFD700)
+                                    : Colors.grey.withOpacity(0.5),
                                 width: 2,
                               ),
                               boxShadow: otpControllers[index].text.isNotEmpty
                                   ? [
                                 BoxShadow(
-                                  color: Colors.orange.withOpacity(0.3),
+                                  color: Color(0xFFFFD700).withOpacity(0.3),
                                   blurRadius: 8,
                                   offset: Offset(0, 4),
                                 ),
@@ -1166,176 +1327,211 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                               focusNode: focusNodes[index],
                               textAlign: TextAlign.center,
                               keyboardType: TextInputType.number,
-                              maxLength: 1,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(1),
+                              ],
                               style: TextStyle(
-                                fontSize: isTablet ? 24 : (isSmallScreen ? 18 : 20),
+                                fontSize: isTablet ? 24 : 20,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black.withOpacity(0.8),
-                                    offset: Offset(1, 1),
-                                    blurRadius: 2,
-                                  ),
-                                ],
+                                color: Colors.black,
                               ),
                               decoration: InputDecoration(
-                                counterText: '',
                                 border: InputBorder.none,
                                 hintText: '•',
                                 hintStyle: TextStyle(
-                                  color: Colors.white.withOpacity(0.4),
+                                  color: Colors.grey.withOpacity(0.5),
                                   fontSize: isTablet ? 24 : 20,
                                 ),
+                                counterText: '', // Hide counter
+                                contentPadding: EdgeInsets.zero,
                               ),
                               onChanged: (value) {
+                                // Handle navigation between fields
                                 if (value.isNotEmpty && index < 5) {
                                   focusNodes[index + 1].requestFocus();
                                 } else if (value.isEmpty && index > 0) {
                                   focusNodes[index - 1].requestFocus();
                                 }
-                                setState(() {});
+
+                                // Clear error message when user starts typing
+                                if (errorMessage != null) {
+                                  setState(() {
+                                    errorMessage = null;
+                                  });
+                                }
+
+                                // Note: _checkOTPComplete is called via listener, no setState here
+                              },
+                              onTap: () {
+                                // Select all text instead of clearing
+                                otpControllers[index].selection = TextSelection(
+                                  baseOffset: 0,
+                                  extentOffset: otpControllers[index].text.length,
+                                );
                               },
                             ),
                           );
                         }),
                       ),
+                    ],
+                  ),
+                ),
 
-                      // Error message
-                      if (errorMessage != null) ...[
-                        SizedBox(height: screenHeight * 0.02),
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.withOpacity(0.3)),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.error_outline, color: Colors.red, size: 20),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  errorMessage!,
-                                  style: TextStyle(color: Colors.red, fontSize: isTablet ? 14 : 12),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
+                // Error message display
+                if (errorMessage != null) ...[
+                  SizedBox(height: 16),
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red, size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            errorMessage!,
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: isTablet ? 14 : 12,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ],
 
-                      SizedBox(height: isSmallScreen ? 24 : 32),
+                SizedBox(height: 32),
 
-                      // Resend Code
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Didn\'t receive code? ',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
-                              fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: (resendTimer == 0 && !isVerifying) ? () {
-                              HapticFeedback.selectionClick();
-                              _resendOTP();
-                            } : null,
-                            child: Text(
-                              resendTimer > 0 ? 'Resend in ${resendTimer}s' : 'Resend',
-                              style: TextStyle(
-                                color: resendTimer > 0 ? Colors.white.withOpacity(0.4) : Colors.orange,
-                                fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
+                // Verify Button
+                GestureDetector(
+                  onTap: (isOTPComplete && !isVerifying) ? () {
+                    HapticFeedback.lightImpact();
+                    _verifyOTP();
+                  } : null,
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 200),
+                    width: double.infinity,
+                    height: isTablet ? 60 : 56,
+                    decoration: BoxDecoration(
+                      gradient: (isOTPComplete && !isVerifying)
+                          ? LinearGradient(
+                        colors: [
+                          Color(0xFFFFD700),
+                          Color(0xFFFF6B35),
+                          Color(0xFFE91E63),
                         ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                          : null,
+                      color: (isOTPComplete && !isVerifying) ? null : Colors.grey.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: (isOTPComplete && !isVerifying)
+                          ? [
+                        BoxShadow(
+                          color: Color(0xFFFFD700).withOpacity(0.4),
+                          blurRadius: 15,
+                          offset: Offset(0, 8),
+                        ),
+                      ]
+                          : null,
+                    ),
+                    child: Center(
+                      child: isVerifying
+                          ? CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                          : Text(
+                        'VERIFY & CONTINUE',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isTablet ? 18 : 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 24),
+
+                // Resend Code
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Didn\'t receive code? ',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: isTablet ? 16 : 14,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: (resendTimer == 0 && !isVerifying) ? () {
+                        HapticFeedback.selectionClick();
+                        _resendOTP();
+                      } : null,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: resendTimer == 0
+                              ? Color(0xFFFFD700).withOpacity(0.2)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(
+                            color: resendTimer == 0
+                                ? Color(0xFFFFD700)
+                                : Colors.white.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Text(
+                          resendTimer > 0 ? 'Resend in ${resendTimer}s' : 'Resend',
+                          style: TextStyle(
+                            color: resendTimer > 0 ? Colors.white.withOpacity(0.4) : Color(0xFFFFD700),
+                            fontSize: isTablet ? 16 : 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 16),
+
+                // Edit Contact Option
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.edit_outlined,
+                        color: Colors.white.withOpacity(0.6),
+                        size: 16,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Edit ${widget.isEmail ? 'Email' : 'Mobile Number'}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: isTablet ? 16 : 14,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-                // Bottom Section
-                Column(
-                  children: [
-                    // Verify Button
-                    GestureDetector(
-                      onTap: (isOTPComplete && !isVerifying) ? () {
-                        HapticFeedback.lightImpact();
-                        _verifyOTP();
-                      } : null,
-                      child: AnimatedContainer(
-                        duration: Duration(milliseconds: 200),
-                        width: double.infinity,
-                        height: isTablet ? 60 : (isSmallScreen ? 50 : 56),
-                        decoration: BoxDecoration(
-                          gradient: (isOTPComplete && !isVerifying)
-                              ? LinearGradient(
-                            colors: [Colors.orange, Colors.amber],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          )
-                              : null,
-                          color: (isOTPComplete && !isVerifying) ? null : Colors.grey.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: (isOTPComplete && !isVerifying)
-                              ? [
-                            BoxShadow(
-                              color: Colors.orange.withOpacity(0.4),
-                              blurRadius: 15,
-                              offset: Offset(0, 8),
-                            ),
-                          ]
-                              : null,
-                        ),
-                        child: Center(
-                          child: isVerifying
-                              ? CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                              : Text(
-                            'VERIFY & CONTINUE',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isTablet ? 18 : (isSmallScreen ? 14 : 16),
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: 16),
-
-                    // Edit Contact Option
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.edit_outlined,
-                            color: Colors.white.withOpacity(0.6),
-                            size: 16,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Edit ${widget.isEmail ? 'Email' : 'Mobile Number'}',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
-                              fontSize: isTablet ? 16 : (isSmallScreen ? 12 : 14),
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                // Extra bottom padding for keyboard
+                SizedBox(height: 40),
               ],
             ),
           ),
