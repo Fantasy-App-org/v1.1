@@ -5,7 +5,7 @@ import '../config/debug_config.dart';
 
 class LiveMatchApi {
   static const String baseUrl = 'http://13.60.245.44:3000';
-  static const String myMatchesEndpoint = '/web-services/my-matches';
+  static const String myMatchesEndpoint = 'my-matches';
 
   /// Get live matches specifically from my-matches API
   static Future<Map<String, dynamic>> getLiveMatches() async {

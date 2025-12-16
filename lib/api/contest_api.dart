@@ -1,10 +1,10 @@
 // lib/api/contest_api.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:fantasy/config/api_config.dart';
 import '../service/user_service.dart';
 
 class ContestApi {
-  static const String baseUrl = 'http://api.start25pro.com:3000';
   static final UserService _userService = UserService();
 
   // Get contest list for a match
@@ -16,7 +16,7 @@ class ContestApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/contest_list'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.contestListEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -45,7 +45,7 @@ class ContestApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/contest-detail'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.contestDetailEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -79,7 +79,7 @@ class ContestApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/joined-contest-list'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.joinedContestListEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -110,7 +110,7 @@ class ContestApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/joined-contest-list'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.joinedContestListEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -153,7 +153,7 @@ class ContestApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/joined-contest-details'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.joinedContestDetailsEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -181,7 +181,7 @@ class ContestApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/joined-contest-detail'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.joinedContestDetailEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -209,7 +209,7 @@ class ContestApi {
       }
 
       final response = await http.get(
-        Uri.parse('$baseUrl/web-services/joined-contest-matches'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.joinedContestMatchesEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -236,7 +236,7 @@ class ContestApi {
       }
 
       final response = await http.get(
-        Uri.parse('$baseUrl/web-services/my-matches'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.myMatchesEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -263,7 +263,7 @@ class ContestApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/getscorecard'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.getScorecardEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -292,7 +292,7 @@ class ContestApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/getfullscoredata'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.getFullScorecardEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -322,7 +322,7 @@ class ContestApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/team-details'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.teamDetailsEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

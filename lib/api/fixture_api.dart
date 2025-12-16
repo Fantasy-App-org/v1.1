@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:fantasy/config/api_config.dart';
 import '../service/user_service.dart';
 
 class FixtureApi {
-  static const String baseUrl = 'http://api.start25pro.com:3000'; // Replace with your actual API URL
   static final UserService _userService = UserService();
 
   static Future<Map<String, dynamic>> getFixtures({int page = 1}) async {
@@ -14,7 +14,7 @@ class FixtureApi {
       }
 
       final response = await http.get(
-        Uri.parse('$baseUrl/web-services/fixtures?page=$page'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.fixturesEndpoint}?page=$page'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${_userService.authToken}', // Use Bearer token
@@ -45,7 +45,7 @@ class FixtureApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/fixtures/activate'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.activateFixtureEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${_userService.authToken}', // Use Bearer token
@@ -73,7 +73,7 @@ class FixtureApi {
   static Future<Map<String, dynamic>> getFixturesUsingUserService({int page = 1}) async {
     try {
       final response = await _userService.makeAuthenticatedRequest(
-        endpoint: '/web-services/fixtures?page=$page',
+        endpoint: 'fixtures?page=$page',
         method: 'GET',
       );
 

@@ -1,10 +1,10 @@
 // lib/api/match_api.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:fantasy/config/api_config.dart';
 import '../service/user_service.dart';
 
 class MatchApi {
-  static const String baseUrl = 'http://13.60.245.44:3000';
   static final UserService _userService = UserService();
 
   // Get my matches
@@ -16,7 +16,8 @@ class MatchApi {
       }
 
       final response = await http.get(
-        Uri.parse('$baseUrl/web-services/my-matches'),
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.myMatchesEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -43,7 +44,8 @@ class MatchApi {
       }
 
       final response = await http.get(
-        Uri.parse('$baseUrl/web-services/joined-contest-matches'),
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.joinedContestMatchesEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -73,7 +75,8 @@ class MatchApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/squadlist'),
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.squadListEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

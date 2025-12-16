@@ -1,11 +1,11 @@
 // lib/api/team_api.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:fantasy/config/api_config.dart';
 import '../service/user_service.dart';
 import 'package:fantasy/model/create_team_request.dart';
 
 class TeamApi {
-  static const String baseUrl = 'http://api.start25pro.com:3000';
   static final UserService _userService = UserService();
 
   // Get user team (existing method)
@@ -21,7 +21,7 @@ class TeamApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/getuserteam'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.getUserTeamEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -53,7 +53,7 @@ class TeamApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/getuserteambyid'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.getUserTeamByIdEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -98,7 +98,7 @@ class TeamApi {
         throw Exception('Authentication token not available');
       }
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/switchteam'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.switchTeamEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -139,7 +139,7 @@ class TeamApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/squadlist'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.squadListEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -172,7 +172,7 @@ class TeamApi {
       print('Create Team Request Body: ${jsonEncode(requestBody)}');
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/creatuserteam'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.createUserTeamEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -210,7 +210,7 @@ class TeamApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/squadlist'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.squadListEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

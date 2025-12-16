@@ -119,6 +119,7 @@ class Contest {
   double get fillPercentage => (totalTeams ?? 0) > 0 ? (teamsJoined ?? 0) / (totalTeams ?? 0) : 0.0;
   bool get isPaidContest => (entryFee ?? 0) > 0;
   int get prizePerWinner => (totalWinners ?? 0) > 0 ? (prizeMoney ?? 0) ~/ (totalWinners ?? 1) : 0;
+  bool get isCancelled => false; // Default to false as it's not in API response
 }
 
 class BreakupDetail {

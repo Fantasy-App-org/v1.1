@@ -1,11 +1,10 @@
-
 // lib/api/join_contest_api.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:fantasy/config/api_config.dart';
 import '../service/user_service.dart';
 
 class JoinContestApi {
-  static const String baseUrl = 'http://api.start25pro.com:3000';
   static final UserService _userService = UserService();
 
   /// Join a contest with a selected team
@@ -28,11 +27,11 @@ class JoinContestApi {
         'contest_id': contestId,
       };
 
-      print('JoinContestApi - Request URL: $baseUrl/web-services/joinContest');
+      print('JoinContestApi - Request URL: ${ApiConfig.baseUrl}${ApiConfig.joinContestEndpoint}');
       print('JoinContestApi - Request body: ${json.encode(requestBody)}');
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/joinContest'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.joinContestEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

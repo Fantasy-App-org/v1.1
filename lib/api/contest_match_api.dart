@@ -1,10 +1,10 @@
 // lib/api/contest_match_api.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:fantasy/config/api_config.dart';
 import '../service/user_service.dart';
 
 class ContestMatchApi {
-  static const String baseUrl = 'http://13.60.245.44:3000';
 
   // Get player stats for a specific match only (without contest_id)
   static Future<Map<String, dynamic>> getMatchPlayerStats({
@@ -18,7 +18,7 @@ class ContestMatchApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/getplayerstats'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.getPlayerStatsEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${userService.authToken}',
@@ -76,7 +76,7 @@ class ContestMatchApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/getplayerstats'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.getPlayerStatsEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${userService.authToken}',

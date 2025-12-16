@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:fantasy/config/api_config.dart';
 
 class UserService {
   static final UserService _instance = UserService._internal();
@@ -18,7 +20,6 @@ class UserService {
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _authTokenKey = 'auth_token'; // Add key for auth token
   static const String _deviceTokenKey = 'device_token';
-  final String baseUrl = 'http://api.start25pro.com:3000'; // Update with your localhost port
 
   String? get inviteFriendCode => _userData?['invite_friend_code'];
 
@@ -76,7 +77,11 @@ class UserService {
       String osVersion = '';
       String appVersion = packageInfo.version;
 
-      if (Platform.isAndroid) {
+      if (kIsWeb) {
+        deviceId = 'web_${DateTime.now().millisecondsSinceEpoch}';
+        deviceModel = 'web';
+        osVersion = 'web';
+      } else if (Platform.isAndroid) {
         AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
         deviceId = androidInfo.id;
         deviceModel = androidInfo.model;
@@ -87,7 +92,7 @@ class UserService {
         deviceModel = iosInfo.model ?? '';
         osVersion = iosInfo.systemVersion ?? '';
       } else {
-        // Fallback for web or other platforms
+        // Fallback for other platforms
         deviceId = 'unknown_${DateTime.now().millisecondsSinceEpoch}';
         deviceModel = 'unknown';
         osVersion = 'unknown';
@@ -193,7 +198,7 @@ class UserService {
       print('Requesting OTP for: $contact');
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/signin'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.signinEndpoint}'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           contact.contains('@') ? 'email' : 'mobile_number': contact,
@@ -248,7 +253,7 @@ class UserService {
       print('Verify OTP Request: ${json.encode(requestBody)}');
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/verify-otp'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.verifyOtpEndpoint}'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
@@ -337,7 +342,7 @@ class UserService {
       print('Fetching referral data...');
 
       final response = await makeAuthenticatedRequest(
-        endpoint: '/web-services/getreferralcode',
+        endpoint: ApiConfig.getReferralCodeEndpoint,
         method: 'GET',
       );
 
@@ -377,7 +382,7 @@ class UserService {
       if (_authToken != null) {
         try {
           await http.post(
-            Uri.parse('$baseUrl/web-services/logout'),
+            Uri.parse('${ApiConfig.baseUrl}${ApiConfig.logoutEndpoint}'),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $_authToken',
@@ -425,7 +430,7 @@ class UserService {
       ...?additionalHeaders,
     };
 
-    final uri = Uri.parse('$baseUrl$endpoint');
+    final uri = Uri.parse('${ApiConfig.baseUrl}$endpoint');
 
     print('Making authenticated ${method.toUpperCase()} request to: $uri');
     print('Using auth token: ${cleanToken.substring(0, 30)}...');
@@ -506,7 +511,7 @@ class UserService {
       print('Token length: ${_authToken!.length}');
 
       final response = await makeAuthenticatedRequest(
-        endpoint: '/web-services/fixtures?page=1',
+        endpoint: '/fixtures?page=1',
         method: 'GET',
       );
 

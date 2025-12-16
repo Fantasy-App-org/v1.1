@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:fantasy/config/api_config.dart';
 import '../service/user_service.dart';
 
 class LeaderboardApi {
-  static const String baseUrl = 'http://13.60.245.44:3000';
 
   // Get leaderboard for a specific match and contest with pagination
   static Future<Map<String, dynamic>> getLeaderboard({
@@ -20,7 +20,7 @@ class LeaderboardApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/leader_board'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.leaderboardEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${userService.authToken}',
@@ -255,7 +255,7 @@ class LeaderboardApi {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/joined-contest-list'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.joinedContestListEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${userService.authToken}',

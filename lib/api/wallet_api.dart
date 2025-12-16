@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:fantasy/config/api_config.dart';
 import '../service/user_service.dart';
 import 'package:fantasy/model/wallet.dart';
 
 class WalletApi {
-  static const String baseUrl = 'http://13.232.147.237:3000';
-  static const String walletEndpoint = '/web-services/MLMWallet';
   static final UserService _userService = UserService();
 
   // Default headers for JSON requests
@@ -26,7 +25,7 @@ class WalletApi {
         throw WalletApiException('Authentication token not available');
       }
 
-      final url = Uri.parse('$baseUrl$walletEndpoint');
+      final url = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.walletEndpoint}');
 
       // Add authorization header
       final headers = {
@@ -109,7 +108,7 @@ class WalletApi {
         throw WalletApiException('Authentication token not available');
       }
 
-      final url = Uri.parse('$baseUrl$endpoint');
+      final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
 
       // Add authorization header
       final headers = {
@@ -148,7 +147,7 @@ class WalletApi {
     required String paymentMethod,
   }) async {
     return await postWalletData(
-      endpoint: '/web-services/AddCash', // Replace with actual endpoint
+      endpoint: ApiConfig.addCashEndpoint,
       data: {
         'amount': amount,
         'payment_method': paymentMethod,
@@ -162,7 +161,7 @@ class WalletApi {
     required String bankAccount,
   }) async {
     return await postWalletData(
-      endpoint: '/web-services/WithdrawAmount', // Replace with actual endpoint
+      endpoint: ApiConfig.withdrawAmountEndpoint,
       data: {
         'amount': amount,
         'bank_account': bankAccount,
@@ -181,7 +180,7 @@ class WalletApi {
         throw WalletApiException('Authentication token not available');
       }
 
-      final url = Uri.parse('$baseUrl/web-services/TransactionHistory');
+      final url = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.transactionHistoryEndpoint}');
 
       final headers = {
         ...defaultHeaders,

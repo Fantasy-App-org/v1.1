@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:fantasy/config/api_config.dart';
 import 'package:fantasy/service/user_service.dart';
 
 class ProfileApi {
-  static const String baseUrl = 'http://api.start25pro.com:3000';
   static final UserService _userService = UserService();
 
   /// Get user profile data
@@ -15,7 +15,7 @@ class ProfileApi {
       }
 
       final response = await http.get(
-        Uri.parse('$baseUrl/web-services/profile'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.profileEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${_userService.authToken}',
@@ -47,7 +47,7 @@ class ProfileApi {
       }
 
       final response = await http.put(
-        Uri.parse('$baseUrl/web-services/profile'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.profileEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${_userService.authToken}',
@@ -104,7 +104,7 @@ class ProfileApi {
       print('Update Personal Details Request Body: ${json.encode(requestBody)}');
 
       final response = await http.put( // CHANGED FROM POST TO PUT
-        Uri.parse('$baseUrl/web-services/update_personal_details'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.updatePersonalDetailsEndpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${_userService.authToken}',
@@ -138,7 +138,7 @@ class ProfileApi {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/web-services/upload-profile-image'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.uploadProfileImageEndpoint}'),
       );
 
       request.headers.addAll({
@@ -170,7 +170,7 @@ class ProfileApi {
   static Future<Map<String, dynamic>> getProfileUsingUserService() async {
     try {
       final response = await _userService.makeAuthenticatedRequest(
-        endpoint: '/web-services/profile',
+        endpoint: 'profile',
         method: 'GET',
       );
 
@@ -194,7 +194,7 @@ class ProfileApi {
   static Future<Map<String, dynamic>> updateProfileUsingUserService(Map<String, dynamic> profileData) async {
     try {
       final response = await _userService.makeAuthenticatedRequest(
-        endpoint: '/web-services/profile',
+        endpoint: 'profile',
         method: 'PUT',
         body: profileData,
       );
@@ -241,7 +241,7 @@ class ProfileApi {
       };
 
       final response = await _userService.makeAuthenticatedRequest(
-        endpoint: '/web-services/update_personal_details',
+        endpoint: 'update_personal_details',
         method: 'PUT', // CHANGED FROM POST TO PUT
         body: requestBody,
       );
@@ -266,7 +266,7 @@ class ProfileApi {
       print('🔍 API: Fetching referrals from separate endpoint...');
 
       final response = await _userService.makeAuthenticatedRequest(
-        endpoint: '/web-services/referrals',
+        endpoint: 'referrals',
         method: 'GET',
       );
 

@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:fantasy/config/api_config.dart';
 
 class SignupService {
   static final SignupService _instance = SignupService._internal();
@@ -16,7 +18,6 @@ class SignupService {
   static const String _isSignupInProgressKey = 'is_signup_in_progress';
   static const String _otpTokenKey = 'otp_token';
   static const String _deviceTokenKey = 'device_token';
-  final String baseUrl = 'http://13.232.147.237:3000'; // Update with your localhost port
 
   factory SignupService() {
     return _instance;
@@ -47,7 +48,11 @@ class SignupService {
       String osVersion = '';
       String appVersion = packageInfo.version;
 
-      if (Platform.isAndroid) {
+      if (kIsWeb) {
+        deviceId = 'web_${DateTime.now().millisecondsSinceEpoch}';
+        deviceModel = 'web';
+        osVersion = 'web';
+      } else if (Platform.isAndroid) {
         AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
         deviceId = androidInfo.id;
         deviceModel = androidInfo.model;
@@ -103,7 +108,7 @@ class SignupService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/signup'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.signupEndpoint}'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
@@ -174,7 +179,7 @@ class SignupService {
       };
 
       final response = await http.post(
-        Uri.parse('$baseUrl/web-services/verify-otp'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.verifyOtpEndpoint}'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
